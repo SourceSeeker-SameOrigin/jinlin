@@ -1,0 +1,20 @@
+page {
+  background: #f7f8f7;
+  color: #202521;
+  font-size: 32rpx;
+  line-height: 1.6;
+}
+
+.page {
+  padding: 32rpx;
+}
+
+.page-title {
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+button {
+  min-height: 88rpx;
+  font-size: 32rpx;
+}
