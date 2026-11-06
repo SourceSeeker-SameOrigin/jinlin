@@ -2,7 +2,7 @@ const { checkText } = require('./blacklist');
 const { ensure } = require('./validate');
 
 function orderTexts(note, detail) {
-  return [note, detail.items, detail.shop, detail.desc, detail.canteenName, detail.hospital, detail.department]
+  return [note, detail.items, detail.shop, detail.desc, detail.canteenName, detail.hospital, detail.department, ...((detail.pets || []).map(pet => pet.note))]
     .filter(value => typeof value === 'string' && value.trim());
 }
 

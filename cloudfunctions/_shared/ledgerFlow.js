@@ -6,6 +6,7 @@ const { referralAward } = require('./paymentState');
 const { orderConversationId } = require('./chatData');
 const { isEnabled } = require('./features');
 const { awardReferralCoupons } = require('./couponFlow');
+const { removePetSecret } = require('./petFlow');
 
 function createLedgerFlow(server) {
   async function book(transaction, order, accountingInput = {}) {
@@ -34,6 +35,7 @@ function createLedgerFlow(server) {
       const now = new Date();
       const patch = { ...transitionPatch(current, 'completed', actor, now), completedAt: current.completedAt || now };
       await book(transaction, current);
+      if (current.serviceCode === 'pet') await removePetSecret(transaction, current);
       if (current.kind === 'idle_purchase') {
         const item = await read(transaction, 'idleItems', current.idleItemId);
         ensure(item && item.sellerOpenid === current.sellerOpenid && item.purchaseOrderId === current._id &&

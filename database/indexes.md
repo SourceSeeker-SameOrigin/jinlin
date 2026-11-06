@@ -43,6 +43,8 @@
 | conversations | member_lastAt | members 升序、lastAt 倒序 | 否 |
 | conversations | type_closeAt | type 升序、closedAt 升序、closeAt 升序 | 否 |
 | messages | conversation_id | convId 升序、_id 升序 | 否 |
+| visits | parent_date_seq | parentOrderId 升序、date 升序、seq 升序 | 否 |
+| secrets | order_unique | orderId 升序 | 是 |
 | posts | feed | communityId 升序、scope 升序、type 升序、status 升序、expireAt 升序、createdAt 倒序 | 否 |
 | posts | type_status_expireAt | type 升序、status 升序、expireAt 升序 | 否 |
 | comments | post_status_created | postId 升序、status 升序、createdAt 升序 | 否 |

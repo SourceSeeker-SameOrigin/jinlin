@@ -104,4 +104,5 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
+  ,openPetReports() { wx.navigateTo({ url: '/pet/reports?id=' + encodeURIComponent(this.orderId) }); }
 });

@@ -17,4 +17,15 @@ async function uploadPhotos(folder, count = 1) {
   } finally { wx.hideLoading(); }
 }
 
-module.exports = { uploadPhotos };
+async function uploadVideo(folder) {
+  await privacy.authorize();
+  const result = await new Promise((resolve, reject) => wx.chooseMedia({ count: 1, mediaType: ['video'], sourceType: ['camera'],
+    maxDuration: 60, camera: 'back', success: resolve, fail: reject }));
+  const file = result.tempFiles && result.tempFiles[0];
+  if (!file) throw new Error('未选择视频');
+  const uploaded = await wx.cloud.uploadFile({ cloudPath: folder + '/' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) + '.mp4',
+    filePath: file.tempFilePath });
+  return uploaded.fileID;
+}
+
+module.exports = { uploadPhotos, uploadVideo };

@@ -18,7 +18,7 @@ Codex 写代码，但下面这些步骤需要登录微信公众平台、微信�
 3. 数据库：按 `database/README.md` 创建集合、导入种子数据、建索引、设置安全规则。
 4. 把你自己设为管理员：先用开发版登录一次，然后在云开发控制台 `users` 集合找到自己那条记录，把 `roles` 改为 `["resident","admin"]`；同时把你的 openid 填进 `config.adminOpenids`。
 5. 部署云函数：在终端运行 `npm run sync`，然后在开发者工具里对每个云函数右键"上传并部署：云端安装依赖"。`timer` 部署后再右键"上传触发器"。
-6. 每个云函数配置环境变量：`ENV_ID`（环境 ID）、`SUB_MCH_ID`（商户号，没有就先留空）、`ALLOW_MOCK_PAY`（开发期 `true`）。
+6. 每个云函数配置环境变量：`ENV_ID`（环境 ID）、`SUB_MCH_ID`（商户号，没有就先留空）、`ALLOW_MOCK_PAY`（开发期 `true`）。启用喂宠时，`order` 和 `pet` 云函数还需配置同一份 `SECRET_KEY`：在本机生成 `openssl rand -hex 32`，将输出作为环境变量保存，不要写进项目、数据库或聊天记录。
 
 ## C. 微信支付（第 2–3 周）
 

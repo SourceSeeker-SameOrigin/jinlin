@@ -6,6 +6,8 @@ const { orderNo } = require('./ids');
 const { ensure, text } = require('./validate');
 const { ymd } = require('./time');
 const { lockOrderDiscounts } = require('./couponFlow');
+const { encryptSecret } = require('./crypto');
+const { createPetVisits } = require('./petFlow');
 
 function createOrderWriter(server) {
   const { db } = server;
@@ -15,7 +17,8 @@ function createOrderWriter(server) {
     const id = 'o_' + crypto.createHash('sha256').update(user.openid + ':' + event.requestId).digest('hex').slice(0, 40);
     const requestHash = crypto.createHash('sha256').update(JSON.stringify({ serviceCode: event.serviceCode,
       communityId: event.communityId, addressId: event.addressId || null, detail: context.detail, note: context.note,
-      slot: context.slot, couponId: context.pricing.couponId || null, pointsToUse: context.pricing.pointsRedeemed || 0 })).digest('hex');
+      slot: context.slot, couponId: context.pricing.couponId || null, pointsToUse: context.pricing.pointsRedeemed || 0,
+      secretHash: context.entryPassword ? crypto.createHash('sha256').update(context.entryPassword).digest('hex') : null })).digest('hex');
     let createdNow = false;
     const result = await atomic(db, async transaction => {
       const existing = await read(transaction, 'orders', id);
@@ -27,7 +30,7 @@ function createOrderWriter(server) {
       sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses', 'pointsBalance']);
       ensure(!currentUser.blocked, '账号暂不可用', 'E_FORBIDDEN');
       const currentCommunity = await read(transaction, 'communities', context.community._id);
-      sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates', 'features']);
+      sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates', 'features', 'requiredCerts']);
       const currentConfig = await read(transaction, 'config', 'global');
       sameSnapshot(currentConfig, context.config, ['features']);
       const currentBuilding = await read(transaction, 'buildings', context.building._id);
@@ -48,7 +51,12 @@ function createOrderWriter(server) {
       }
       const order = newOrder({ id, orderNo: orderNo(now), user: currentUser, community: currentCommunity,
         building: currentBuilding, serviceCode: event.serviceCode, detail: context.detail, note: context.note,
-        slot: context.slot, pricing: context.pricing, now, selectedAddress: context.selectedAddress });
+        slot: context.slot, pricing: context.pricing, now, selectedAddress: context.selectedAddress, detailAlreadyClean: event.serviceCode === 'pet' });
+      if (event.serviceCode === 'pet') {
+        order.petVisitPrices = context.pricing.perVisit;
+        if (context.entryPassword) await insert(transaction, 'secrets', { _id: 's_' + order._id, orderId: order._id,
+          ...encryptSecret(context.entryPassword, process.env.SECRET_KEY), createdAt: now });
+      }
       order.userId = user._id;
       order.requestHash = requestHash;
       order.rateSnapshot = currentCommunity.rates;
@@ -64,6 +72,7 @@ function createOrderWriter(server) {
       await insert(transaction, 'orders', order);
       await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1,
         ...(context.pricing.pointsRedeemed ? { pointsBalance: discountPatch.pointsBalance } : {}) } });
+      if (order.serviceCode === 'pet' && order.status === 'paid') await createPetVisits(transaction, order);
       createdNow = true;
       return order;
     });

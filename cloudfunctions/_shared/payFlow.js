@@ -10,6 +10,7 @@ const { createNotifier } = require('./notify');
 const { markCouponUsed, releaseOrderDiscounts, finalizeRefundDiscounts } = require('./couponFlow');
 const { releaseReservation } = require('./idleData');
 const { activateEventSignup, releaseEventSignup } = require('./eventFlow');
+const { createPetVisits, removePetSecret } = require('./petFlow');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
@@ -42,6 +43,7 @@ function createPayFlow(cloud, server) {
       await markCouponUsed(transaction, current, now);
       const eventResult = await activateEventSignup(transaction, current, now);
       cancelledEventSignup = Boolean(eventResult && eventResult.cancelled);
+      if (current.serviceCode === 'pet') await createPetVisits(transaction, { ...current, ...patch });
       await transaction.collection('users').doc(user._id).update({ data: {
         ...(first ? first.user : {}), ...(paidCount ? paidCount.user : {}), ...(membership ? membership.userPatch : {}),
         orderRevision: (currentUser.orderRevision || 0) + 1 } });
@@ -134,6 +136,7 @@ function createPayFlow(cloud, server) {
       await transaction.collection('orders').doc(order._id).update({ data: patch });
       const resultingOrder = { ...current, ...patch };
       if (reserved.refund.status === 'success') await releaseReservation(transaction, resultingOrder);
+      if (resultingOrder.serviceCode === 'pet' && resultingOrder.status === 'cancelled') await removePetSecret(transaction, resultingOrder);
       if (options.afterWrite) await options.afterWrite(transaction, resultingOrder);
       await finalizeRefundDiscounts(transaction, resultingOrder, reserved.refunds, new Date());
       return { order: resultingOrder, refund: reserved.refund };
@@ -171,6 +174,7 @@ function createPayFlow(cloud, server) {
         await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, now) });
       }
       if (current.kind === 'idle_purchase') await releaseReservation(transaction, current);
+      if (current.serviceCode === 'pet') await removePetSecret(transaction, current);
     });
   }
 
