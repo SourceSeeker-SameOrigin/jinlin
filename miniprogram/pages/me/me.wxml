@@ -5,12 +5,14 @@
     <view wx:for="{{user.moderationNotices}}" wx:key="createdAt" class="card error">{{item.message}}</view>
     <view class="card"><view class="page-title">我的门牌</view><view>{{community.name || '尚未选择小区'}}</view><view>{{user.buildingName}} {{user.unit}} {{user.room}}</view><view>{{user.phone || '尚未绑定手机号'}}</view><navigator url="/pages/bind/bind">修改门牌和手机号 ›</navigator></view>
     <navigator class="card" url="/pages/membership/index">我的月卡 ›</navigator>
+    <view wx:if="{{community.features.stationDelivery}}" class="card"><text>快递默认送上门</text><switch checked="{{doorDelivery}}" disabled="{{doorDeliveryBusy}}" bindchange="doorDeliveryChange"/><view class="muted">开启后表示同意驿站将快递送到门口，可随时关闭。</view></view>
     <navigator wx:if="{{community.enabledFeatures.board}}" class="card" url="/board/list/list">需求广场 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.idle}}" class="card" url="/idle/mine/mine">我的闲置 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.chat}}" class="card" url="/chat/list/list">站内消息<text wx:if="{{unreadTotal}}"> · {{unreadTotal}} 条未读</text> ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/mine/mine">我的优惠券 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.events && canManageEvents}}" class="card" url="/events/manage/manage">活动管理 ›</navigator>
     <navigator wx:if="{{community.features.merchants && merchant.status === 'approved'}}" class="card" url="/merchant/workbench/workbench">商家工作台 ›</navigator><navigator wx:elif="{{community.features.merchants}}" class="card" url="/merchant/apply/apply">{{merchant ? '查看商家入驻审核' : '申请商家入驻'}} ›</navigator>
+    <navigator wx:if="{{isStation}}" class="card" url="/station/workbench/workbench">驿站工作台 ›</navigator>
     <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
     <navigator wx:else class="card" url="/provider/apply/apply">{{provider ? '查看服务员申请' : '成为邻居帮手'}} ›</navigator>
     <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>

@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const { createServer } = require('./lib/shared/server');
 const { publicUser, providerSummary, parseScene, validateAddress } = require('./lib/shared/profile');
 const { ensure, text } = require('./lib/shared/validate');
+const { effectiveFeatures } = require('./lib/shared/features');
 const { issueAutomatic } = require('./lib/shared/couponFlow');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -40,7 +41,8 @@ async function login(_, { openid }) {
   const building = await get('buildings', user.buildingId);
   const config = community ? await server.config() : null;
   return { profile: publicUser({ ...user, buildingName: building && building.name }), roles: user.roles,
-    provider: providerSummary(provider), community: community ? { ...community, hotline: config.hotline } : null };
+    provider: providerSummary(provider), community: community ? { ...community,
+      features: effectiveFeatures(config, community), hotline: config.hotline } : null };
 }
 
 async function bindPhone(event, { openid }) {

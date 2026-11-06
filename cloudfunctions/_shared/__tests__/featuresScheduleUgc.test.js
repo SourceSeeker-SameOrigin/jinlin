@@ -1,4 +1,4 @@
-const { KEYS, isEnabled, validateFeatures, allOff } = require('../features');
+const { KEYS, isEnabled, validateFeatures, allOff, effectiveFeatures } = require('../features');
 const { dueTasks, daysInMonth, monthDates } = require('../schedule');
 const { report, reportOutcome, mediaStatus, localUgc, contentInCommunity, checkText, ensureCanPublish, visibleImages } = require('../ugc');
 
@@ -8,6 +8,15 @@ test('扩展开关默认全部关闭，小区可覆盖全局', () => {
   expect(isEnabled('board', config, null)).toBe(true);
   expect(isEnabled('board', config, { features: { board: false } })).toBe(false);
   expect(isEnabled('idle', config, null)).toBe(false);
+});
+
+test('对客户端计算每个扩展开关的有效值，小区覆盖优先于全局', () => {
+  const result = effectiveFeatures({ features: { stationDelivery: true, recycle: true } },
+    { features: { stationDelivery: false, pet: true } });
+  expect(result.stationDelivery).toBe(false);
+  expect(result.recycle).toBe(true);
+  expect(result.pet).toBe(true);
+  expect(Object.keys(result).sort()).toEqual([...KEYS].sort());
 });
 
 test('功能依赖开启前校验，federation 至少依赖一个内容模块', () => {

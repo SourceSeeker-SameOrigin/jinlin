@@ -12,9 +12,14 @@ test('用户公开资料仅包含白名单字段，不包含 openid、完整手�
     source: { scene: 'b=K3F9QA', buildingId: 'b', referrerProviderId: 'private' } });
   expect(result.phone).toBe('138****0000');
   expect(result.hasPhone).toBe(true);
+  expect(result.prefs).toEqual({ doorDelivery: false });
   expect(result).not.toHaveProperty('openid');
   expect(result).not.toHaveProperty('blocked');
   expect(result.source).not.toHaveProperty('referrerProviderId');
+});
+test('公开资料只暴露已定义的配送偏好', () => {
+  const result = publicUser({ _id: 'u', phone: '', roles: ['resident'], prefs: { doorDelivery: true, injected: 'private' } });
+  expect(result.prefs).toEqual({ doorDelivery: true });
 });
 test('服务员摘要不暴露实名、手机号及身份证照片', () => {
   const summary = providerSummary({ _id: 'p', status: 'approved', level: 1, communityId: 'c', onDuty: true,

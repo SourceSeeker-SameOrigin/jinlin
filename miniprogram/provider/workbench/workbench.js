@@ -12,6 +12,8 @@ Page({
       await getApp().ensureSession();
       const result = await api.call('provider', 'myStatus', {}, { loading: false });
       this.setData({ provider: result.provider, todayCount: result.todayCount, todayIncome: yuan(result.todayIncome),
+        stationDeliveryEnabled: Boolean(getApp().globalData.community && getApp().globalData.community.features &&
+          getApp().globalData.community.features.stationDelivery),
         insuranceText: result.provider ? display(result.provider.insuranceUntil).slice(0, 10) : '' });
       if (result.provider && result.provider.status === 'approved') {
         const tasks = await api.call('provider', 'myTasks', {}, { loading: false });

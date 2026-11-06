@@ -25,4 +25,7 @@ function validateFeatures(features, label = '功能开关') {
 }
 
 function allOff() { return Object.fromEntries(KEYS.map(key => [key, false])); }
-module.exports = { KEYS, DEPENDENCIES, isEnabled, validateFeatures, allOff };
+function effectiveFeatures(config, community) {
+  return Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)]));
+}
+module.exports = { KEYS, DEPENDENCIES, isEnabled, validateFeatures, allOff, effectiveFeatures };
