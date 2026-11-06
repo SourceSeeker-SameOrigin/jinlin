@@ -1,0 +1,85 @@
+const { ensure, record, integer, text } = require('./validate');
+
+function price(value, label) {
+  return integer(value, label, 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
+}
+
+// membershipState 是服务端查询后得到的 { active, dailyParcelQuota } 或 null。
+// active 必须已校验用户、小区、卡类型及有效期；本函数不查库，也不读取系统时钟。
+function quote(input) {
+  record(input, '报价参数');
+  const { serviceCode, detail, prices, user, membershipState = null, todayUsedParcels } = input;
+  ensure(['express', 'trash', 'buy', 'help'].includes(serviceCode), '暂不支持该服务');
+  record(detail, '服务详情');
+  record(prices, '价格配置', 'E_CONFIG');
+  record(user, '用户信息');
+  ensure(user.firstPaidAt == null || (user.firstPaidAt instanceof Date && Number.isFinite(user.firstPaidAt.getTime())),
+    '首次支付时间格式不正确');
+  const config = record(prices[serviceCode], '服务价格', 'E_CONFIG');
+  let listPrice;
+  let goodsCap = 0;
+  let parcels = 0;
+
+  if (serviceCode === 'express') {
+    const maxParcels = integer(config.maxParcels, '最多快递件数', 1, 10, 'E_CONFIG');
+    text(detail.stationCode, '驿站');
+    ensure(Array.isArray(detail.pickupCodes), '取件码必须为列表');
+    parcels = integer(detail.pickupCodes.length, '快递件数', 1, maxParcels);
+    for (const code of detail.pickupCodes) text(code, '取件码', 20);
+    integer(detail.largeCount, '大件数', 0, parcels);
+    ensure(detail.placement === undefined || ['door', 'hand'].includes(detail.placement), '交付方式不正确');
+    listPrice = price(config.base, '快递基础价') + price(config.extraParcel, '续件费') * (parcels - 1) +
+      price(config.largeSurcharge, '大件附加费') * detail.largeCount;
+  } else if (serviceCode === 'trash') {
+    integer(detail.bags, '垃圾袋数', 1, 3);
+    ensure(detail.sorted === true, '请确认垃圾已分类');
+    ensure(detail.placement === undefined || detail.placement === 'door', '垃圾请放在门口');
+    listPrice = price(config.single, '垃圾服务费');
+  } else if (serviceCode === 'buy') {
+    text(detail.shop, '店名');
+    text(detail.items, '代买清单', 200);
+    const min = price(config.goodsCapMin, '商品预付下限');
+    const max = price(config.goodsCapMax, '商品预付上限');
+    ensure(min <= max, '商品预付范围配置不正确', 'E_CONFIG');
+    goodsCap = integer(detail.goodsCap, '商品预付金额', min, max);
+    listPrice = price(config.serviceFee, '代买服务费');
+  } else {
+    const maxBlocks = integer(config.maxBlocks, '最多时长块数', 1, 8, 'E_CONFIG');
+    integer(detail.blocks, '时长块数', 1, maxBlocks);
+    ensure(['carry', 'elder', 'other'].includes(detail.category), '帮把手服务类别不正确');
+    text(detail.desc, '服务描述', 200);
+    listPrice = price(config.per15min, '每十五分钟价格') * detail.blocks;
+  }
+  price(listPrice, '服务总价');
+  price(listPrice + goodsCap, '支付总额');
+
+  if (todayUsedParcels !== undefined) integer(todayUsedParcels, '今日已用快递件数');
+  if (membershipState !== null) {
+    record(membershipState, '月卡状态', 'E_CONFIG');
+    ensure(typeof membershipState.active === 'boolean', '月卡状态不正确', 'E_CONFIG');
+  }
+  let payAmount = listPrice;
+  let freeByMembership = false;
+  let reason = '原价';
+  if (serviceCode === 'express' && membershipState && membershipState.active) {
+    const quota = integer(membershipState.dailyParcelQuota, '月卡每日额度', 1, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
+    integer(todayUsedParcels, '今日已用快递件数');
+    // 超额整单原价，不继续套用首单价；与 SPEC §6.1、§17 场景 12 一致。
+    if (parcels <= quota - todayUsedParcels) {
+      payAmount = 0;
+      freeByMembership = true;
+      reason = '快递月卡免单';
+    } else {
+      reason = '快递月卡额度不足，整单原价';
+    }
+  } else if (serviceCode !== 'help') {
+    const firstOrderPrice = price(prices.firstOrderPrice, '首单价');
+    if (user.firstPaidAt == null && listPrice > firstOrderPrice) {
+      payAmount = firstOrderPrice;
+      reason = '首单优惠';
+    }
+  }
+  return { listPrice, discount: listPrice - payAmount, payAmount, goodsCap, reason, freeByMembership };
+}
+
+module.exports = { quote };
