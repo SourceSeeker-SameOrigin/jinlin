@@ -1,9 +1,6 @@
 const cloud = require('wx-server-sdk');
-const { dispatch } = require('./lib/shared/dispatch');
-
+const { createServer } = require('./lib/shared/server');
+const { adminProviderActions } = require('./lib/shared/adminProviders');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
-
-// T00 骨架：尚未开放任何业务操作，也不读写数据。
-const actions = Object.freeze({});
-
-exports.main = async (event, context) => dispatch(actions, event, context);
+const server = createServer(cloud);
+exports.main = server.entry({ ...adminProviderActions(cloud, server) }, ['admin', 'property']);

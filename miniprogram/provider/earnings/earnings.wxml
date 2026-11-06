@@ -1,1 +1,1 @@
-<view class="page"><view class="page-title">收入</view></view>
+<view class="page"><view class="card"><view>待结算 ¥{{pending}}</view><view>已结算 ¥{{settled}}</view></view><empty-state wx:if="{{error}}" message="{{error}}" retry bind:retry="retry"/><view class="card" wx:for="{{rows}}" wx:key="_id"><view>¥{{item.amountText}} · {{item.settled ? '已结算' : '待结算'}}</view><view>{{item.time}}</view></view><empty-state wx:if="{{loading}}" message="正在加载收入…"/><empty-state wx:elif="{{!error && !rows.length}}" message="暂时没有收入明细"/></view>

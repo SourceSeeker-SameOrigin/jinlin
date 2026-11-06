@@ -1,4 +1,7 @@
 {
-  "navigationBarTitleText": "服务员管理",
-  "usingComponents": {}
+  "navigationBarTitleText": "服务员审核",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index",
+    "privacy-popup": "/components/privacy-popup/index"
+  }
 }

@@ -1,4 +1,7 @@
 {
-  "navigationBarTitleText": "申请成为帮手",
-  "usingComponents": {}
+  "navigationBarTitleText": "服务员申请",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index",
+    "privacy-popup": "/components/privacy-popup/index"
+  }
 }

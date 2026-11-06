@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "任务详情",
-  "usingComponents": {}
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index",
+    "privacy-popup": "/components/privacy-popup/index"
+  }
 }
