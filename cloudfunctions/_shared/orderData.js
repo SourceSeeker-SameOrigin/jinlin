@@ -56,7 +56,8 @@ function addressSnapshot(user, community, building) {
 
 function transitionPatch(order, status, actor, now) {
   assertTransition(order.status, status);
-  return { status, updatedAt: now, timeline: [...order.timeline, { status, at: now, by: actor }] };
+  return { status, alertPriority: status === 'paid' && order.alertedAt ? 1 : 0,
+    updatedAt: now, timeline: [...order.timeline, { status, at: now, by: actor }] };
 }
 
 function newOrder({ id, orderNo, user, community, building, serviceCode, detail, note, slot, pricing, now }) {
@@ -70,11 +71,11 @@ function newOrder({ id, orderNo, user, community, building, serviceCode, detail,
     photos: [], rating: null, complaint: null,
     payment: { outTradeNo: orderNo, transactionId: null, paidAt: null }, refunds: [],
     timeline: [{ status: 'pending_pay', at: now, by: user.openid }],
-    alertedAt: null, acceptedAt: null, deliveredAt: null, completedAt: null, createdAt: now, updatedAt: now };
+    alertedAt: null, alertPriority: 0, acceptedAt: null, deliveredAt: null, completedAt: null, createdAt: now, updatedAt: now };
 }
 
 function listView(order) {
-  return { _id: order._id, orderNo: order.orderNo, kind: order.kind, serviceCode: order.serviceCode,
+  return { _id: order._id, orderNo: order.orderNo, kind: order.kind, serviceCode: order.serviceCode, communityId: order.communityId,
     serviceName: SERVICE_NAMES[order.serviceCode] || '月卡', status: order.status, statusText: STATUS_TEXT[order.status],
     pricing: { payAmount: order.pricing.payAmount, goodsCap: order.pricing.goodsCap }, slot: order.slot,
     createdAt: order.createdAt, buildingName: order.address && order.address.buildingName };

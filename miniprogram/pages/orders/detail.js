@@ -5,7 +5,9 @@ const { pay } = require('../../utils/payment');
 const statuses = { pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中', delivered: '待确认',
   completed: '已完成', disputed: '售后处理中', refunded: '已退款', cancelled: '已取消', closed: '已关闭' };
 Page({
-  data: { loading: true, error: '', order: null, busy: false, timeline: [], detailRows: [] },
+  data: { loading: true, error: '', order: null, busy: false, timeline: [], detailRows: [],
+    ratingScore: '5', ratingText: '', complaintIndex: 0, complaintText: '',
+    complaintReasons: ['未上门', '物品损坏或丢失', '态度', '其他'] },
   onLoad(options) { this.orderId = options.id; },
   onShow() { this.load(); },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
@@ -45,6 +47,26 @@ Page({
   callProvider() {
     const provider = this.data.order && this.data.order.provider;
     if (provider && provider.canCall) wx.makePhoneCall({ phoneNumber: provider.phone });
+  },
+  form(event) {
+    const field = event.currentTarget.dataset.field;
+    if (['ratingScore', 'ratingText', 'complaintIndex', 'complaintText'].includes(field)) this.setData({ [field]: event.detail.value });
+  },
+  async serviceAction(event) {
+    const action = event.currentTarget.dataset.action;
+    if (this.data.busy || !['confirm', 'rate', 'complain'].includes(action)) return;
+    if (action === 'confirm') {
+      const answer = await new Promise(resolve => wx.showModal({ title: '确认完成', content: '请确认服务已经完成。', success: resolve }));
+      if (!answer.confirm) return;
+    }
+    this.setData({ busy: true, error: '' });
+    try {
+      await api.call('order', action, { orderId: this.orderId, score: Number(this.data.ratingScore),
+        text: action === 'rate' ? this.data.ratingText : this.data.complaintText,
+        reason: this.data.complaintReasons[Number(this.data.complaintIndex)] });
+      await this.load();
+    } catch (error) { this.setData({ error: error.message }); }
+    finally { this.setData({ busy: false }); }
   },
   preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
 });

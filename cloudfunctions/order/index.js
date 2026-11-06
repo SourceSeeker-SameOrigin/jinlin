@@ -10,6 +10,8 @@ const { totalFee } = require('./lib/shared/paymentState');
 const { requireRole } = require('./lib/shared/auth');
 const { createPayFlow } = require('./lib/shared/payFlow');
 const { payConfig } = require('./lib/shared/payConfig');
+const { residentOrderActions } = require('./lib/shared/residentOrders');
+const { complaintAllowed } = require('./lib/shared/orderLifecycle');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -68,6 +70,9 @@ async function detail(event, { user }) {
   ensure(order, '订单不存在');
   const [provider, config] = await Promise.all([server.get('providers', order.providerId), server.config()]);
   const result = orderView(order, user, provider, config, new Date());
+  result.canConfirm = order.userOpenid === user.openid && order.status === 'delivered';
+  result.canRate = order.userOpenid === user.openid && order.status === 'completed' && !order.rating;
+  result.canComplain = order.userOpenid === user.openid && complaintAllowed(order, new Date(), config.complaintWindowHours);
   if (result.canPay) result.paymentOptions = { mode: order.payment.mode };
   return result;
 }
@@ -101,4 +106,5 @@ async function cancel(event, { openid }) {
   return { orderId: order._id, status: patch.status };
 }
 
-exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment }, ['resident', 'admin', 'property']);
+exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment,
+  ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property']);

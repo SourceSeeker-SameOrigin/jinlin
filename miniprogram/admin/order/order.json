@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "订单处理",
-  "usingComponents": {}
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }
