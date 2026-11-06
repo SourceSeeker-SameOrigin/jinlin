@@ -51,5 +51,16 @@ Page({
     const count = subscriptions.remaining();
     this.setData({ remainingReminders: count, reminderHint: count < 3 ? '提醒次数少于 3 次，可再次点击订阅补充' : '' });
   },
+  async saveReferralPoster() {
+    try {
+      const result = await api.call('provider', 'referralPoster');
+      wx.downloadFile({ url: result.tempFileURL, success: file => {
+        if (file.statusCode !== 200) { this.setData({ error: '推荐码下载失败' }); return; }
+        wx.saveImageToPhotosAlbum({ filePath: file.tempFilePath,
+          success: () => wx.showToast({ title: '推荐码已保存', icon: 'success' }),
+          fail: error => this.setData({ error: error.errMsg || '保存失败，请检查相册权限' }) });
+      }, fail: error => this.setData({ error: error.errMsg || '下载失败' }) });
+    } catch (error) { this.setData({ error: error.message || '生成推荐码失败' }); }
+  },
   task(event) { wx.navigateTo({ url: '/provider/task/task?id=' + encodeURIComponent(event.currentTarget.dataset.id) }); }
 });

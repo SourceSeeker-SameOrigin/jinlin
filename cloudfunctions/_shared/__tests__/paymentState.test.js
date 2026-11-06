@@ -1,4 +1,4 @@
-const { totalFee, paidPatch, firstPaidChanges } = require('../paymentState');
+const { totalFee, paidPatch, firstPaidChanges, paidOrderChanges, referralAward } = require('../paymentState');
 const { sameSnapshot } = require('../transaction');
 const now = new Date('2026-11-07T00:00:00+08:00');
 const user = { _id: 'u', openid: 'owner', firstPaidAt: null, source: { scene: 'b=K3F9QA', buildingId: 'b' } };
@@ -32,6 +32,22 @@ test.each([{ ...order, kind: 'membership_purchase' }, { ...order, pricing: { pay
 });
 test('已有首单时不重复写入', () => {
   expect(firstPaidChanges(order, { ...user, firstPaidAt: now }, now)).toBeNull();
+});
+test('首个付费订单稳定归因，第二单事件幂等地只产生一次', () => {
+  expect(firstPaidChanges(order, user, now).user.firstPaidOrderId).toBe(order._id);
+  expect(paidOrderChanges(order, { ...user, paidOrderCount: 0 }, now)).toMatchObject({ user: { paidOrderCount: 1, firstPaidOrderId: order._id }, secondEvent: null });
+  expect(paidOrderChanges(order, { ...user, paidOrderCount: 1 }, now).secondEvent).toMatchObject({ _id: 'second_u', type: 'second_paid' });
+  expect(paidOrderChanges({ ...order, kind: 'membership_purchase' }, { ...user, paidOrderCount: 1 }, now)).toBeNull();
+});
+test('首单完成时奖励推荐服务员，零奖励、跨小区和本人接单不记账', () => {
+  const referred = { ...order, pricing: { payAmount: 100, goodsCap: 0 } };
+  const referredUser = { ...user, firstPaidOrderId: order._id, source: { referrerProviderId: 'p' } };
+  const provider = { _id: 'p', communityId: 'c' };
+  expect(referralAward(referred, referredUser, provider, 500)).toMatchObject({ _id: 'referral_o', providerId: 'p',
+    amounts: { provider: 500, platform: -500 } });
+  expect(referralAward(referred, referredUser, provider, 0)).toBeNull();
+  expect(referralAward(referred, referredUser, { ...provider, communityId: 'other' }, 500)).toBeNull();
+  expect(referralAward({ ...referred, providerId: 'p' }, referredUser, provider, 500)).toBeNull();
 });
 test('订单版本、首次付款或地址改变后拒绝旧报价上下文', () => {
   const previous = { ...user, orderRevision: 1, room: '302' };

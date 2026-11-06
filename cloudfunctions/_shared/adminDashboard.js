@@ -42,7 +42,20 @@ function createAdminDashboard(cloud, server) {
       totals[card.serviceCode] = (totals[card.serviceCode] || 0) + 1; return totals;
     }, {});
     const source = { scan: new Set(), bind: new Set(), first_paid: new Set(), second_paid: new Set() };
+    const byBuilding = new Map();
+    const byProvider = new Map();
+    function addFunnel(map, key, type, openid) {
+      if (!key) return;
+      if (!map.has(key)) map.set(key, { scan: new Set(), bind: new Set(), first_paid: new Set(), second_paid: new Set() });
+      if (map.get(key)[type]) map.get(key)[type].add(openid);
+    }
     for (const eventItem of events) if (source[eventItem.type]) source[eventItem.type].add(eventItem.openid);
+    for (const eventItem of events) {
+      addFunnel(byBuilding, eventItem.buildingId, eventItem.type, eventItem.openid);
+      addFunnel(byProvider, eventItem.referrerProviderId, eventItem.type, eventItem.openid);
+    }
+    const funnelRows = map => [...map].map(([id, counts]) => ({ id, scans: counts.scan.size, binds: counts.bind.size,
+      firstPaid: counts.first_paid.size, secondPaid: counts.second_paid.size }));
     return { communityId, from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
       totalOrders: orders.length, paidOrders, serviceFeeTurnover: turnover, actualIncome: net,
       residentCount: uniqueResidents.size, newFirstPaidResidents: source.first_paid.size,
@@ -55,7 +68,8 @@ function createAdminDashboard(cloud, server) {
       refundTotal: refunds, memberships: members, onDutyProviders: duty.total,
       providerStats: providers.map(provider => ({ id: provider._id, name: provider.realName, completed: provider.stats.completed,
         averageRating: provider.stats.ratingCount ? (provider.stats.ratingSum / provider.stats.ratingCount).toFixed(1) : '暂无' })),
-      funnel: { scans: source.scan.size, binds: source.bind.size, firstPaid: source.first_paid.size, secondPaid: source.second_paid.size } };
+      funnel: { scans: source.scan.size, binds: source.bind.size, firstPaid: source.first_paid.size, secondPaid: source.second_paid.size },
+      funnelByBuilding: funnelRows(byBuilding), funnelByProvider: funnelRows(byProvider) };
   }
 
   async function updateCommunity(event, { user }) {

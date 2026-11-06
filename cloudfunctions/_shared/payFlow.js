@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { atomic, read, insert } = require('./transaction');
-const { totalFee, paidPatch, firstPaidChanges } = require('./paymentState');
+const { totalFee, paidPatch, firstPaidChanges, paidOrderChanges } = require('./paymentState');
 const { reserveRefund, refundResult, success, verifiedPayment, verifiedRefund, field } = require('./refundState');
 const { payConfig } = require('./payConfig');
 const { SERVICE_NAMES, transitionPatch } = require('./orderData');
@@ -25,11 +25,14 @@ function createPayFlow(cloud, server) {
       if (!patch) return current;
       const currentUser = await read(transaction, 'users', user._id);
       const first = firstPaidChanges(current, currentUser, now);
+      const paidCount = paidOrderChanges(current, currentUser, now);
       if (first) await insert(transaction, 'events', first.event);
+      if (paidCount && paidCount.secondEvent) await insert(transaction, 'events', paidCount.secondEvent);
       const membership = current.kind === 'membership_purchase' ? await activateMembership(transaction, current, currentUser, now) : null;
       if (membership) Object.assign(patch, membership.orderPatch);
       await transaction.collection('users').doc(user._id).update({ data: {
-        ...(first ? first.user : {}), ...(membership ? membership.userPatch : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
+        ...(first ? first.user : {}), ...(paidCount ? paidCount.user : {}), ...(membership ? membership.userPatch : {}),
+        orderRevision: (currentUser.orderRevision || 0) + 1 } });
       await transaction.collection('orders').doc(order._id).update({ data: patch });
       changed = true;
       return { ...current, ...patch };

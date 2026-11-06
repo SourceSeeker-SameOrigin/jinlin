@@ -16,7 +16,7 @@ async function login(_, { openid }) {
     const now = new Date();
     const document = { _id: id, openid, phone: '', roles: ['resident'], communityId: null,
       buildingId: null, unit: '', room: '', source: null, firstPaidAt: null, blocked: false,
-      createdAt: now, updatedAt: now };
+      paidOrderCount: 0, firstPaidOrderId: null, createdAt: now, updatedAt: now };
     try {
       await db.collection('users').add({ data: document });
       user = document;

@@ -21,10 +21,31 @@ function paidPatch(order, payment, now) {
 function firstPaidChanges(order, user, now) {
   if (order.kind !== 'service' || order.pricing.payAmount <= 0 || user.firstPaidAt) return null;
   const source = user.source || {};
-  return { user: { firstPaidAt: now, updatedAt: now }, event: {
+  return { user: { firstPaidAt: now, firstPaidOrderId: order._id, updatedAt: now }, event: {
     _id: 'first_' + user._id, type: 'first_paid', openid: user.openid,
     scene: source.scene || '', buildingId: source.buildingId || order.buildingId,
     communityId: order.communityId, referrerProviderId: source.referrerProviderId || null, at: now } };
 }
 
-module.exports = { totalFee, paidPatch, firstPaidChanges };
+function paidOrderChanges(order, user, now) {
+  if (order.kind !== 'service') return null;
+  const count = user.paidOrderCount || 0;
+  const next = count + 1;
+  return { user: { paidOrderCount: next, updatedAt: now, ...(count === 0 ? { firstPaidOrderId: order._id } : {}) },
+    secondEvent: count === 1 ? { _id: 'second_' + user._id, type: 'second_paid', openid: user.openid,
+      scene: user.source && user.source.scene || '', buildingId: user.source && user.source.buildingId || order.buildingId,
+      communityId: order.communityId, referrerProviderId: user.source && user.source.referrerProviderId || null, at: now } : null };
+}
+
+function referralAward(order, user, provider, bonus) {
+  integer(bonus, '推荐奖励', 0);
+  if (bonus === 0 || order.kind !== 'service' || order.pricing.payAmount <= 0 ||
+    !user || user.firstPaidOrderId !== order._id || !user.source || !user.source.referrerProviderId ||
+    !provider || provider._id !== user.source.referrerProviderId || provider.communityId !== order.communityId ||
+    provider._id === order.providerId) return null;
+  return { _id: 'referral_' + order._id, refType: 'order', refId: order._id, communityId: order.communityId,
+    providerId: provider._id, amounts: { gross: 0, provider: bonus, property: 0, platform: -bonus, goods: 0 },
+    settled: { provider: false, property: false }, settlementIds: { provider: null, property: null } };
+}
+
+module.exports = { totalFee, paidPatch, firstPaidChanges, paidOrderChanges, referralAward };

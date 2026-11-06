@@ -71,6 +71,18 @@ async function subscriptionTemplates(event, { user }) {
   return publicTemplates(await server.config());
 }
 
+async function referralPoster(event, { openid }) {
+  const provider = await mine(openid);
+  requireApprovedProvider(provider, 1);
+  const response = await cloud.openapi.wxacode.getUnlimited({ scene: 'r=' + provider.referralCode,
+    page: 'pages/index/index', checkPath: false, envVersion: 'develop', width: 430 });
+  ensure(response && response.buffer, '推荐码生成失败', 'E_INTERNAL');
+  const file = await cloud.uploadFile({ cloudPath: 'posters/providers/' + provider._id + '.png', fileContent: response.buffer });
+  await db.collection('providers').doc(provider._id).update({ data: { referralPosterFileId: file.fileID, updatedAt: new Date() } });
+  const result = await cloud.getTempFileURL({ fileList: [file.fileID] });
+  return { fileId: file.fileID, tempFileURL: result.fileList[0].tempFileURL, referralCode: provider.referralCode };
+}
+
 async function hall(event, { openid }) {
   const provider = await mine(openid);
   canWork(provider, new Date(), 1, true);
@@ -156,4 +168,4 @@ async function earnings(event, { openid }) {
     settled: row.settled.provider, createdAt: row.createdAt })), hasMore: offset(event) + rows.length < ledger.length };
 }
 
-exports.main = server.entry({ apply, myStatus, subscriptionTemplates, setDuty, hall, accept, release, start, deliver, myTasks, earnings }, ['resident', 'admin']);
+exports.main = server.entry({ apply, myStatus, subscriptionTemplates, referralPoster, setDuty, hall, accept, release, start, deliver, myTasks, earnings }, ['resident', 'admin']);

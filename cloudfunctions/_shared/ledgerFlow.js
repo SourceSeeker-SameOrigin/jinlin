@@ -2,6 +2,7 @@ const { atomic, read, insert } = require('./transaction');
 const { accounting, ledgerDelta } = require('./orderLifecycle');
 const { transitionPatch } = require('./orderData');
 const { ensure } = require('./validate');
+const { referralAward } = require('./paymentState');
 
 function createLedgerFlow(server) {
   async function book(transaction, order, accountingInput = {}) {
@@ -19,6 +20,7 @@ function createLedgerFlow(server) {
   }
 
   async function complete(order, actor) {
+    const config = await server.config();
     return atomic(server.db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       ensure(current, '订单不存在');
@@ -27,6 +29,12 @@ function createLedgerFlow(server) {
       const now = new Date();
       const patch = { ...transitionPatch(current, 'completed', actor, now), completedAt: current.completedAt || now };
       await book(transaction, current);
+      const user = current.userId ? await read(transaction, 'users', current.userId) : null;
+      if (user && user.source && user.source.referrerProviderId) {
+        const referrer = await read(transaction, 'providers', user.source.referrerProviderId);
+        const award = referralAward(current, user, referrer, config.referralBonus || 0);
+        if (award && !(await read(transaction, 'ledger', award._id))) await insert(transaction, 'ledger', { ...award, createdAt: now });
+      }
       if (!current.completedAt && current.providerId) {
         const provider = await read(transaction, 'providers', current.providerId);
         ensure(provider, '订单服务员资料不存在', 'E_CONFIG');
