@@ -1,0 +1,3 @@
+{"_id":"demo_building_1","communityId":"demo_community","name":"1号楼","units":["1单元","2单元"],"shortCode":"A7M2XQ","posterFileId":null,"createdAt":{"$date":"2026-11-06T00:00:00.000Z"}}
+{"_id":"demo_building_2","communityId":"demo_community","name":"2号楼","units":["1单元","2单元"],"shortCode":"B8N3YR","posterFileId":null,"createdAt":{"$date":"2026-11-06T00:00:00.000Z"}}
+{"_id":"demo_building_3","communityId":"demo_community","name":"3号楼","units":["1单元","2单元"],"shortCode":"K3F9QA","posterFileId":null,"createdAt":{"$date":"2026-11-06T00:00:00.000Z"}}

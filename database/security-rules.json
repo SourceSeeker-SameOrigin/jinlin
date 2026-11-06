@@ -1,0 +1,12 @@
+{
+  "users": { "read": false, "write": false },
+  "communities": { "read": true, "write": false },
+  "buildings": { "read": true, "write": false },
+  "providers": { "read": false, "write": false },
+  "orders": { "read": false, "write": false },
+  "memberships": { "read": false, "write": false },
+  "ledger": { "read": false, "write": false },
+  "settlements": { "read": false, "write": false },
+  "events": { "read": false, "write": false },
+  "config": { "read": false, "write": false }
+}
