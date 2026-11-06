@@ -1,12 +1,21 @@
 const api = require('../../utils/api');
 const INFO = {
-  board: '需添加匹配社交/发帖类目、配置图片审核回调并安排举报审核人。', idle: '需确认二手信息内容审核与交易规则。',
-  idleEscrow: '涉及平台代收货款和电商资质，未取得资质前保持关闭。', events: '需活动类目与内容审核安排。', chat: '需匹配聊天类目并配置图片审核和举报处理。',
-  location: '需申请定位接口、更新隐私指引并配置小区坐标。', coupons: '无额外资质。', points: '需与正规回收企业合作。',
-  autoPayout: '需开通商家转账并配置 APIv3 环境变量。', elder: '需核验陪诊证书并与食堂签约。', pet: '需宠物照护准备并配置密钥。',
-  stationDelivery: '需先与驿站签合作协议。', recycle: '需与已备案回收企业合作。', merchants: '需商家协议及营业执照审核。',
-  vacantHome: '需在协议中明确钥匙保管责任。', travelCarry: '需开启需求广场并补充境外帮带条款。', federation: '需先开启需求广场、闲置或活动之一。',
-  ads: '需广告审核制度及广告内容审核。', notices: '无额外资质。'
+  coupons: '无额外资质。', notices: '无额外资质。', federation: '无额外资质。联合社区需先开启需求广场、闲置或活动之一。',
+  stationDelivery: '无额外资质。驿站送上门需先与驿站签合作协议。', vacantHome: '无额外资质。空置房巡检需在服务协议中写明钥匙保管责任。',
+  board: '公众平台添加与发帖、评论、聊天相匹配的类目（如社交类）；在公众平台配置内容安全的消息推送到 mediaCallback；指定专人每天处理举报。',
+  idle: '公众平台添加与发帖、评论、聊天相匹配的类目（如社交类）；在公众平台配置内容安全的消息推送到 mediaCallback；指定专人每天处理举报。',
+  events: '公众平台添加与发帖、评论、聊天相匹配的类目（如社交类）；在公众平台配置内容安全的消息推送到 mediaCallback；指定专人每天处理举报。',
+  chat: '公众平台添加与发帖、评论、聊天相匹配的类目（如社交类）；在公众平台配置内容安全的消息推送到 mediaCallback；指定专人每天处理举报。',
+  idleEscrow: '平台代收用户之间的货款，属于电商平台性质，需要对应类目和资质（通常涉及增值电信业务经营许可）；拿到前保持关闭，只用信息模式。',
+  travelCarry: '依赖 board；服务协议写入境外帮带规则。',
+  location: '公众平台“开发管理 → 接口设置”申请 getLocation、chooseLocation，写清用途；更新用户隐私保护指引；给每个小区设好坐标。',
+  autoPayout: '商户平台开通“商家转账”、配置转账场景、充值转账余额；云函数 payout 配好 MCH_ID、MCH_SERIAL_NO、MCH_PRIVATE_KEY、APIV3_KEY、TRANSFER_SCENE_ID。',
+  elder: '陪诊服务员参加陪诊培训并取得证书，管理员核验后勾选证书；与合作食堂签约；必要时添加医疗健康相关类目。',
+  pet: '服务员宠物照护培训；云函数配好 SECRET_KEY（32 字节随机密钥）；服务协议写明钥匙与密码的保管责任。',
+  points: '与已备案的正规回收企业签约，回收企业作为商家入驻。',
+  recycle: '与已备案的正规回收企业签约，回收企业作为商家入驻。',
+  merchants: '商家入驻协议（佣金、责任、执照公示）；按合同填写 10% 默认佣金或后台调整；确定每周对公结算流程；开锁类商家需公安部门备案（按当地要求），且核验照片留存规则确认前代码会拒绝创建开锁预约。',
+  ads: '广告审核制度；广告位价格表；广告内容符合广告法。'
 };
 const LABELS = { board:'需求广场',idle:'闲置交易',idleEscrow:'闲置担保',events:'社区活动',chat:'站内聊天',location:'地图定位',coupons:'优惠券',points:'环保积分',autoPayout:'自动打款',elder:'助老服务',pet:'上门喂宠',stationDelivery:'驿站送上门',recycle:'回收上门',merchants:'商家预约',vacantHome:'空置房巡检',travelCarry:'出行帮带',federation:'联合社区',ads:'广告位',notices:'物业公告' };
 Page({
