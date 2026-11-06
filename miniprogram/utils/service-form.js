@@ -11,7 +11,8 @@ module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
-      quote: null, amount: '--', placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
+      quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
+      pointsToUse: 0, placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
     onShow() { this.load(); },
     onHide() { clearTimeout(this.quoteTimer); this.quoteSequence = (this.quoteSequence || 0) + 1; },
     onUnload() { this.unloaded = true; clearTimeout(this.quoteTimer); },
@@ -52,6 +53,17 @@ module.exports = function serviceForm(serviceCode) {
         form: this.data.form, slot, request: this.request });
     },
     address() { wx.navigateTo({ url: '/pages/bind/bind' }); },
+    couponChange(event) {
+      this.couponChoiceSet = true;
+      this.couponId = event.detail.value === '__auto' ? undefined : event.detail.value;
+      this.queueQuote();
+    },
+    pointsChange(event) {
+      const value = event.detail.value === '' ? 0 : Number(event.detail.value);
+      this.setData({ pointsToUse: value, quote: null, amount: '--' });
+      this.saveDraft();
+      this.queueQuote();
+    },
     addressChange(event) {
       const addressIndex = Number(event.detail.value);
       const address = this.data.addresses[addressIndex];
@@ -86,8 +98,11 @@ module.exports = function serviceForm(serviceCode) {
       if (serviceCode === 'buy') detail = { shop: form.shop, items: form.items, goodsCap: toFen(form.goodsYuan) };
       if (serviceCode === 'help') detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc, blocks: Number(form.blocks) };
       const address = this.data.addresses[this.data.addressIndex];
-      return { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
+      const params = { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
         slot: this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined };
+      if (this.couponChoiceSet && this.couponId !== undefined) params.couponId = this.couponId;
+      if (this.data.pointsEnabled) params.pointsToUse = Number(this.data.pointsToUse || 0);
+      return params;
     },
     async refreshQuote() {
       if (!this.data.community) return;
@@ -103,6 +118,9 @@ module.exports = function serviceForm(serviceCode) {
           .concat(result.slots.map(value => ({ label: slotText(value), value })));
         const sameSlot = selected ? slots.findIndex(item => JSON.stringify(item.value) === JSON.stringify(selected.value)) : 0;
         this.setData({ slots, slotIndex: Math.max(0, sameSlot), hasTrashMembership: result.hasTrashMembership,
+          couponOptions: (result.couponOptions || []).map(item => ({ ...item, label: item.name + ' · 减 ¥' + yuan(item.discount) })),
+          couponsEnabled: result.couponsEnabled === true, pointsEnabled: result.pointsEnabled === true,
+          pointsBalance: result.pointsBalance || 0,
           dutyHint: result.onDutyCount > 0 ? '' : slots.length ? '现在没有服务员值班，最早 ' + slots[0].label + ' 上门' : '暂时没有可预约时段',
           quote: result.pricing, amount: result.pricing ? yuan(result.pricing.payAmount + result.pricing.goodsCap) : '--', quoteError: result.validationMessage || '' });
         if (this.pendingSlot) {

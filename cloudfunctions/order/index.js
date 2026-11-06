@@ -56,7 +56,9 @@ async function mockPay(event, { user }) {
 async function quote(event, { user }) {
   const result = await context(event, user, { metadata: event.metadata === true });
   return { pricing: result.pricing, slots: result.slots, onDutyCount: result.onDutyCount,
-    hasTrashMembership: result.hasTrashMembership, validationMessage: result.validationMessage || '' };
+    hasTrashMembership: result.hasTrashMembership, couponOptions: result.couponOptions || [],
+    pointsBalance: result.pointsBalance || 0, couponsEnabled: result.couponsEnabled === true,
+    pointsEnabled: result.pointsEnabled === true, validationMessage: result.validationMessage || '' };
 }
 
 async function subscriptionTemplates(event, { user }) {
