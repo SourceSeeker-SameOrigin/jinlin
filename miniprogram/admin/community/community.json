@@ -1,4 +1,4 @@
 {
   "navigationBarTitleText": "小区配置",
-  "usingComponents": {}
+  "usingComponents": { "empty-state": "/components/empty-state/index" }
 }

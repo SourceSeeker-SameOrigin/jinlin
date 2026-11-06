@@ -4,10 +4,13 @@ const { adminProviderActions } = require('./lib/shared/adminProviders');
 const { adminOrderActions } = require('./lib/shared/adminOrders');
 const { publicTemplates } = require('./lib/shared/notificationData');
 const { requireRole } = require('./lib/shared/auth');
+const { createAdminDashboard } = require('./lib/shared/adminDashboard');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
+const dashboardActions = createAdminDashboard(cloud, server);
 async function notificationTemplates(event, { user }) {
   requireRole(user, ['admin']);
   return publicTemplates(await server.config());
 }
-exports.main = server.entry({ ...adminProviderActions(cloud, server), ...adminOrderActions(cloud, server), notificationTemplates }, ['admin', 'property']);
+exports.main = server.entry({ ...adminProviderActions(cloud, server), ...adminOrderActions(cloud, server),
+  ...dashboardActions, notificationTemplates }, ['admin', 'property']);

@@ -1,0 +1,141 @@
+const { ensure, integer, text } = require('./validate');
+const { requireRole, requireCommunityAccess } = require('./auth');
+const { parseDate, addDays, ymd } = require('./time');
+
+function createAdminDashboard(cloud, server) {
+  const { db, command } = server;
+  async function dashboard(event, { user }) {
+    const communityId = user.roles.includes('admin') ? event.communityId || user.communityId : user.communityId;
+    ensure(communityId, '请先选择小区');
+    requireCommunityAccess(user, communityId);
+    const today = ymd(new Date());
+    const from = event.from || today;
+    const to = event.to || today;
+    const start = parseDate(from);
+    const end = addDays(parseDate(to), 1);
+    ensure(end > start && end - start <= 366 * 86400000, '统计日期范围不能超过一年');
+    const orders = await server.all('orders', { communityId, createdAt: command.gte(start).and(command.lt(end)) });
+    const providers = await server.all('providers', { communityId });
+    const [cards, duty, events] = await Promise.all([
+      server.all('memberships', { communityId, status: 'active', startAt: command.lt(end), endAt: command.gt(start) }),
+      db.collection('providers').where({ communityId, status: 'approved', onDuty: true, insuranceUntil: command.gt(new Date()) }).count(),
+      server.all('events', { communityId, at: command.gte(start).and(command.lt(end)) })
+    ]);
+    const statusCounts = {};
+    const uniqueResidents = new Set();
+    let paidOrders = 0, turnover = 0, net = 0, refunds = 0, complaints = 0, alerted = 0;
+    let acceptMs = 0, acceptedCount = 0;
+    for (const order of orders) {
+      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+      uniqueResidents.add(order.userOpenid);
+      if (order.payment && order.payment.paidAt) { paidOrders++; turnover += order.pricing.payAmount; }
+      const refunded = (order.refunds || []).filter(item => item.status === 'success').reduce((sum, item) => sum + item.amount, 0);
+      refunds += refunded; net += Math.max(0, (order.pricing.payAmount + order.pricing.goodsCap) - refunded);
+      if (order.complaint) complaints++;
+      if (order.alertedAt) alerted++;
+      if (order.acceptedAt && order.payment && order.payment.paidAt) {
+        acceptMs += new Date(order.acceptedAt) - new Date(order.payment.paidAt); acceptedCount++;
+      }
+    }
+    const completed = orders.filter(item => item.completedAt);
+    const members = cards.reduce((totals, card) => {
+      totals[card.serviceCode] = (totals[card.serviceCode] || 0) + 1; return totals;
+    }, {});
+    const source = { scan: new Set(), bind: new Set(), first_paid: new Set(), second_paid: new Set() };
+    for (const eventItem of events) if (source[eventItem.type]) source[eventItem.type].add(eventItem.openid);
+    return { communityId, from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
+      totalOrders: orders.length, paidOrders, serviceFeeTurnover: turnover, actualIncome: net,
+      residentCount: uniqueResidents.size, newFirstPaidResidents: source.first_paid.size,
+      secondPaidResidents: source.second_paid.size, acceptRate15m: acceptedCount ?
+        Math.floor(orders.filter(item => item.payment && item.payment.paidAt && item.acceptedAt &&
+          new Date(item.acceptedAt) - new Date(item.payment.paidAt) <= 15 * 60000).length * 10000 /
+          Math.max(1, orders.filter(item => item.payment && item.payment.paidAt).length)) : 0,
+      averageAcceptMinutes: acceptedCount ? Math.round(acceptMs / acceptedCount / 60000) : 0,
+      unacceptedAlerts: alerted, complaintCount: complaints, complaintRate: orders.length ? Math.floor(complaints * 10000 / orders.length) : 0,
+      refundTotal: refunds, memberships: members, onDutyProviders: duty.total,
+      providerStats: providers.map(provider => ({ id: provider._id, name: provider.realName, completed: provider.stats.completed,
+        averageRating: provider.stats.ratingCount ? (provider.stats.ratingSum / provider.stats.ratingCount).toFixed(1) : '暂无' })),
+      funnel: { scans: source.scan.size, binds: source.bind.size, firstPaid: source.first_paid.size, secondPaid: source.second_paid.size } };
+  }
+
+  async function updateCommunity(event, { user }) {
+    requireRole(user, ['admin']);
+    text(event.communityId, '小区');
+    const current = await server.get('communities', event.communityId);
+    ensure(current, '小区不存在');
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans'];
+    const patch = {};
+    for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
+    ensure(Object.keys(patch).length > 0, '没有可保存的配置');
+    if (patch.status !== undefined) ensure(['active', 'paused'].includes(patch.status), '小区状态不正确');
+    if (patch.rates) ensure(Number.isFinite(patch.rates.platform) && Number.isFinite(patch.rates.property) &&
+      patch.rates.platform >= 0 && patch.rates.property >= 0 && patch.rates.platform + patch.rates.property <= 1,
+    '分账费率配置不正确');
+    patch.updatedAt = new Date();
+    const result = await db.collection('communities').where({ _id: current._id, status: current.status }).update({ data: patch });
+    ensure(result.stats.updated === 1, '小区配置已变化，请刷新', 'E_CONFLICT');
+    return { communityId: current._id };
+  }
+
+  async function upsertBuilding(event, { user }) {
+    requireRole(user, ['admin']);
+    const name = text(event.name, '楼栋名称', 40).trim();
+    const community = await server.get('communities', event.communityId);
+    ensure(community, '小区不存在');
+    const units = event.units;
+    ensure(Array.isArray(units) && units.length > 0 && units.length <= 30 && units.every(item => typeof item === 'string' && item.trim()), '请填写有效单元列表');
+    const data = { communityId: community._id, name, units: [...new Set(units.map(item => item.trim()))], updatedAt: new Date() };
+    if (event.buildingId) {
+      const current = await server.get('buildings', event.buildingId);
+      ensure(current && current.communityId === community._id, '楼栋不存在');
+      const result = await db.collection('buildings').where({ _id: current._id, communityId: community._id }).update({ data });
+      ensure(result.stats.updated === 1, '楼栋配置已变化', 'E_CONFLICT');
+      return { buildingId: current._id };
+    }
+    const { shortCode } = require('./ids');
+    const buildingId = 'b_' + require('crypto').randomBytes(16).toString('hex');
+    await db.collection('buildings').add({ data: { _id: buildingId, ...data, shortCode: shortCode(), posterFileId: null, createdAt: new Date() } });
+    return { buildingId };
+  }
+
+  async function updateConfig(event, { user }) {
+    requireRole(user, ['admin']);
+    const current = await server.get('config', 'global');
+    ensure(current, '全局配置不存在', 'E_CONFIG');
+    const allowed = ['hotline', 'payMode', 'templateIds', 'templateFields', 'adminOpenids', 'blacklist',
+      'autoConfirmHours', 'acceptAlertMinutes', 'payTimeoutMinutes', 'complaintWindowHours', 'phoneVisibleHoursAfterDone', 'referralBonus'];
+    const patch = {};
+    for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
+    ensure(Object.keys(patch).length, '没有可保存的配置');
+    if (patch.payMode !== undefined) ensure(['mock', 'wechat'].includes(patch.payMode), '支付模式不正确');
+    if (patch.blacklist !== undefined) ensure(Array.isArray(patch.blacklist) && patch.blacklist.every(item => typeof item === 'string'), '黑名单格式不正确');
+    if (patch.adminOpenids !== undefined) ensure(Array.isArray(patch.adminOpenids) && patch.adminOpenids.every(item => typeof item === 'string'), '管理员列表格式不正确');
+    patch.updatedAt = new Date();
+    await db.collection('config').doc('global').update({ data: patch });
+    return { updated: Object.keys(patch).filter(key => key !== 'updatedAt') };
+  }
+
+  async function genPoster(event, { user }) {
+    requireRole(user, ['admin']);
+    let scene, page, collection, id;
+    if (event.buildingId) {
+      const building = await server.get('buildings', event.buildingId);
+      ensure(building, '楼栋不存在');
+      scene = 'b=' + building.shortCode; page = 'pages/index/index'; collection = 'buildings'; id = building._id;
+    } else if (event.providerId) {
+      const provider = await server.get('providers', event.providerId);
+      ensure(provider && provider.status === 'approved', '服务员不存在或未通过审核');
+      scene = 'r=' + provider.referralCode; page = 'pages/index/index'; collection = 'providers'; id = provider._id;
+    } else ensure(false, '请选择楼栋或服务员');
+    const response = await cloud.openapi.wxacode.getUnlimited({ scene, page, checkPath: false, envVersion: 'develop', width: 430 });
+    ensure(response && response.buffer, '小程序码生成失败', 'E_INTERNAL');
+    const file = await cloud.uploadFile({ cloudPath: 'posters/' + id + '.png', fileContent: response.buffer });
+    await db.collection(collection).doc(id).update({ data: { posterFileId: file.fileID, posterScene: scene, posterUpdatedAt: new Date() } });
+    const fresh = await cloud.getTempFileURL({ fileList: [file.fileID] });
+    return { fileId: file.fileID, tempFileURL: fresh.fileList[0].tempFileURL, scene };
+  }
+
+  return { dashboard, updateCommunity, upsertBuilding, updateConfig, genPoster };
+}
+
+module.exports = { createAdminDashboard };

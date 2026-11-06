@@ -1,1 +1,2 @@
 /* 通用页面样式位于 app.wxss。 */
+textarea{min-height:180rpx;white-space:pre-wrap}button{margin:20rpx 0}
