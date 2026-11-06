@@ -1,4 +1,5 @@
-const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('../station');
+const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv,
+  providerBatchView, providerBatchDetail } = require('../station');
 
 test('解析多行楼栋、单元和门牌，忽略空行并拒绝重复地址', () => {
   expect(parseAddressLines('1栋-1单元-302\n\n2栋-2单元-501')).toEqual([
@@ -55,4 +56,16 @@ test('月度对账仅统计完成批次的实际送达件数并输出公式安�
   expect(result.rows[0].skipped).toBe(1);
   expect(result.rows).toHaveLength(1);
   expect(statementCsv(result)).toContain("'=S1");
+});
+
+test('服务员批次响应只包含同意配送的履约字段', () => {
+  const batch = { _id: 'b1', communityId: 'private-community', stationCode: 'S1', providerId: 'p1',
+    providerOpenid: 'private-openid', priceSnapshot: {}, createdAt: new Date(), status: 'assigned',
+    items: [{ _id: 'i1', userId: 'private-user', consented: true, buildingName: '3号楼', unit: '1单元', room: '302', status: 'pending' },
+      { _id: 'i2', consented: false, buildingName: '3号楼', unit: '1单元', room: '303', status: 'pending' }] };
+  expect(providerBatchView(batch).itemCount).toBe(1);
+  const view = providerBatchDetail(batch);
+  expect(view.items).toHaveLength(1);
+  expect(view.items[0]).toMatchObject({ buildingName: '3号楼', room: '302', status: 'pending' });
+  expect(JSON.stringify(view)).not.toMatch(/private-user|private-openid|private-community/);
 });

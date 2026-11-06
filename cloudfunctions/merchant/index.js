@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
 const { requireRole, requireCommunityAccess } = require('./lib/shared/auth');
 const { ensure, integer, text } = require('./lib/shared/validate');
-const { application, service, visibleMerchant, visibleService, CATEGORY_NAMES } = require('./lib/shared/merchant');
+const { application, service, visibleMerchant, visibleService, merchantOrderView, CATEGORY_NAMES } = require('./lib/shared/merchant');
 const { atomic, read, insert, sameSnapshot } = require('./lib/shared/transaction');
 const { orderNo } = require('./lib/shared/ids');
 const { addressSnapshot, transitionPatch } = require('./lib/shared/orderData');
@@ -248,8 +248,7 @@ async function merchantOrders(event, { openid }) {
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
   const rows = await db.collection('orders').where({ kind: 'merchant', merchantId: merchant._id })
     .orderBy('createdAt', 'desc').skip(offset).limit(20).get();
-  return { list: rows.data.map(order => ({ ...require('./lib/shared/orderData').listView(order),
-    quote: order.quote || null, address: order.address, note: order.note, detail: order.detail, photos: order.photos || [] })),
+  return { list: rows.data.map(merchantOrderView),
     hasMore: rows.data.length === 20 };
 }
 

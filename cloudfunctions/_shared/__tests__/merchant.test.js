@@ -1,4 +1,4 @@
-const { application, service, quoteAmount, visibleMerchant, visibleService } = require('../merchant');
+const { application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView } = require('../merchant');
 
 test('商家入驻验证营业执照并只开放申请所属小区', () => {
   const value = application({ name: '安心维修', category: 'repair', licenseFileId: 'cloud://license',
@@ -35,4 +35,18 @@ test('服务图片在审核通过前仅商家本人可见', () => {
     moderationApprovedFileIds: ['cloud://ok'], priceType: 'fixed', price: 100, unit: '次', status: 'off' };
   expect(visibleService(item, 'resident').images).toEqual(['cloud://ok']);
   expect(visibleService(item, 'seller').images).toEqual(['cloud://pending', 'cloud://ok']);
+});
+
+test('商家订单视图只返回履约必需字段，不透传收款与内部身份信息', () => {
+  const view = merchantOrderView({ _id: 'o1', orderNo: 'JL1', kind: 'merchant', serviceCode: 'merchant', communityId: 'c1',
+    detail: { title: '水管维修', desc: '更换软管', category: 'repair', merchantName: '安心维修', serviceId: 's1',
+      priceType: 'quote', unit: '次', merchantId: 'private' },
+    address: { buildingName: '3号楼', unit: '1单元', room: '302', contactName: '张女士', contactPhone: '13800000000', extra: 'private' },
+    pricing: { payAmount: 5000, goodsCap: 0, internal: 'private' }, status: 'pending_pay', createdAt: new Date(), slot: null,
+    quote: { amount: 5000, detail: '含材料', by: 'openid-secret', at: new Date(), extra: 'private' }, note: '请联系',
+    photos: ['cloud://photo'], userOpenid: 'openid-secret', payment: { transactionId: 'private' }, ledger: { amount: 5000 } });
+  expect(view.address).toMatchObject({ buildingName: '3号楼', unit: '1单元', room: '302', contactPhone: '13800000000' });
+  expect(view.quote).toMatchObject({ amount: 5000, detail: '含材料' });
+  expect(JSON.stringify(view)).not.toMatch(/openid-secret|transactionId|ledger|internal|extra/);
+  expect(view.payment).toBeUndefined();
 });

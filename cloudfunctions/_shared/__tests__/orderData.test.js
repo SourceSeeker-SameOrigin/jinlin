@@ -114,4 +114,8 @@ describe('订单字段裁剪', () => {
     expect(() => orderView(assigned(), { ...user, openid: 'stranger' }, null, config, now)).toThrow();
     expect(() => orderView(order(), { ...user, openid: 'worker' }, provider, config, now)).toThrow();
   });
+  test.each(['merchant', 'station'])('%s 角色不能借用核心订单视图读取无关订单', role => {
+    expect(() => orderView(assigned(), { openid: role + '-staff', roles: [role], communityId: 'community-1' },
+      null, config, now)).toThrow(expect.objectContaining({ code: 'E_FORBIDDEN' }));
+  });
 });
