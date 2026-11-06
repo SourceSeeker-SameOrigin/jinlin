@@ -1,0 +1,42 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/bind/bind",
+    "pages/service/express",
+    "pages/service/trash",
+    "pages/service/buy",
+    "pages/service/help",
+    "pages/orders/list",
+    "pages/orders/detail",
+    "pages/membership/index",
+    "pages/me/me",
+    "pages/legal/privacy",
+    "pages/legal/terms"
+  ],
+  "subPackages": [
+    {
+      "root": "provider",
+      "pages": ["apply/apply", "workbench/workbench", "hall/hall", "task/task", "earnings/earnings"]
+    },
+    {
+      "root": "admin",
+      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements"]
+    }
+  ],
+  "window": {
+    "navigationBarTitleText": "近邻帮",
+    "navigationBarBackgroundColor": "#1F7A5C",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f8f7"
+  },
+  "tabBar": {
+    "color": "#777777",
+    "selectedColor": "#1F7A5C",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页", "iconPath": "assets/tab/home.png", "selectedIconPath": "assets/tab/home-selected.png" },
+      { "pagePath": "pages/orders/list", "text": "订单", "iconPath": "assets/tab/orders.png", "selectedIconPath": "assets/tab/orders-selected.png" },
+      { "pagePath": "pages/me/me", "text": "我的", "iconPath": "assets/tab/me.png", "selectedIconPath": "assets/tab/me-selected.png" }
+    ]
+  }
+}

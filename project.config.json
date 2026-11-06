@@ -1,0 +1,13 @@
+{
+  "description": "近邻帮微信小程序",
+  "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "compileType": "miniprogram",
+  "appid": "YOUR_APPID",
+  "projectname": "jinlin",
+  "setting": {
+    "es6": true,
+    "minified": true,
+    "urlCheck": true
+  }
+}
