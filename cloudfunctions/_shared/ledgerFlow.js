@@ -3,6 +3,8 @@ const { accounting, ledgerDelta } = require('./orderLifecycle');
 const { transitionPatch } = require('./orderData');
 const { ensure } = require('./validate');
 const { referralAward } = require('./paymentState');
+const { orderConversationId } = require('./chatData');
+const { isEnabled } = require('./features');
 
 function createLedgerFlow(server) {
   async function book(transaction, order, accountingInput = {}) {
@@ -39,6 +41,17 @@ function createLedgerFlow(server) {
         const provider = await read(transaction, 'providers', current.providerId);
         ensure(provider, '订单服务员资料不存在', 'E_CONFIG');
         await transaction.collection('providers').doc(provider._id).update({ data: { 'stats.completed': (provider.stats.completed || 0) + 1 } });
+      }
+      const community = await read(transaction, 'communities', current.communityId);
+      if (current.providerOpenid && isEnabled('chat', config, community)) {
+        const conversationId = orderConversationId(current._id, current.providerOpenid);
+        const conversation = await read(transaction, 'conversations', conversationId);
+        if (conversation && !conversation.closedAt) {
+          const closeAt = new Date(patch.completedAt.getTime() + Number(config.phoneVisibleHoursAfterDone) * 3600000);
+          await transaction.collection('conversations').doc(conversationId).update({ data: {
+            closeAt, ...(closeAt <= now ? { closedAt: now } : {}), updatedAt: now
+          } });
+        }
       }
       await transaction.collection('orders').doc(current._id).update({ data: patch });
       return { ...current, ...patch };

@@ -14,6 +14,7 @@ const { residentOrderActions } = require('./lib/shared/residentOrders');
 const { complaintAllowed } = require('./lib/shared/orderLifecycle');
 const { createNotifier } = require('./lib/shared/notify');
 const { publicTemplates } = require('./lib/shared/notificationData');
+const { isEnabled } = require('./lib/shared/features');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -83,8 +84,12 @@ async function detail(event, { user }) {
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order, '订单不存在');
-  const [provider, config] = await Promise.all([server.get('providers', order.providerId), server.config()]);
+  const [provider, config, community] = await Promise.all([server.get('providers', order.providerId), server.config(),
+    server.get('communities', order.communityId)]);
   const result = orderView(order, user, provider, config, new Date());
+  result.chatEnabled = isEnabled('chat', config, community) && Boolean(order.providerOpenid) &&
+    ['accepted', 'in_service', 'delivered', 'disputed', 'completed'].includes(order.status);
+  result.canChat = result.chatEnabled && (order.userOpenid === user.openid || order.providerOpenid === user.openid);
   result.canConfirm = order.userOpenid === user.openid && order.status === 'delivered';
   result.canRate = order.userOpenid === user.openid && order.status === 'completed' && !order.rating;
   result.canComplain = order.userOpenid === user.openid && complaintAllowed(order, new Date(), config.complaintWindowHours);

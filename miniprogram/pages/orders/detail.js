@@ -16,12 +16,20 @@ Page({
     try {
       await getApp().ensureSession();
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false, silent: true });
+      let unread = 0;
+      if (order.canChat) {
+        try {
+          const chat = await api.call('chat', 'open', { orderId: this.orderId }, { loading: false, silent: true });
+          this.chatConversationId = chat.conversationId;
+          unread = chat.unread;
+        } catch (_) { this.chatConversationId = null; }
+      }
       const labels = { stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数',
         sorted: '已分类', shop: '店名', items: '清单', goodsCap: '商品预付', category: '类别', desc: '描述', blocks: '时长块数' };
       const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
-      this.setData({ order, detailRows, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
+      this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
         slotText: slotText(order.slot), timeline: order.timeline.map(item => ({ text: statuses[item.status], time: display(item.at) })),
         refunds: order.refunds.map(item => ({ ...item, amountText: yuan(item.amount),
           statusText: { success: '已退款', processing: '退款处理中', failed: '退款失败，请联系客服' }[item.status] })) });
@@ -47,6 +55,10 @@ Page({
   callProvider() {
     const provider = this.data.order && this.data.order.provider;
     if (provider && provider.canCall) wx.makePhoneCall({ phoneNumber: provider.phone });
+  },
+  openChat() {
+    if (this.data.order && this.data.order.canChat) wx.navigateTo({ url: '/chat/room/room?conversationId=' + encodeURIComponent(this.chatConversationId || '') +
+      '&orderId=' + encodeURIComponent(this.orderId) });
   },
   form(event) {
     const field = event.currentTarget.dataset.field;

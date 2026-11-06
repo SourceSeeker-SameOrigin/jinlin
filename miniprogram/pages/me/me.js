@@ -1,3 +1,4 @@
+const api = require('../../utils/api');
 Page({
   data: { loading: true, error: '', user: null, community: null, provider: null, manage: false },
   onShow() { this.load(); },
@@ -6,7 +7,9 @@ Page({
     try {
       const app = getApp();
       const user = await app.ensureSession(true);
-      this.setData({ user, community: app.globalData.community, provider: app.globalData.provider,
+      let unreadTotal = 0;
+      try { unreadTotal = (await api.call('chat', 'list', {}, { loading: false, silent: true })).unreadTotal || 0; } catch (_) {}
+      this.setData({ user, community: app.globalData.community, provider: app.globalData.provider, unreadTotal,
         manage: user.roles.includes('admin') || user.roles.includes('property') });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
