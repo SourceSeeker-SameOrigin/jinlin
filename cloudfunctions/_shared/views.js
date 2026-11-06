@@ -21,7 +21,10 @@ function orderView(order, user, provider, config, now) {
   pricing: { ...order.pricing }, photos: order.photos, receiptPhoto: order.receiptPhoto || null, rating: order.rating,
   complaint: order.complaint ? { reason: order.complaint.reason, text: order.complaint.text,
     at: order.complaint.at, resolution: order.complaint.resolution ? {
-      refundAmount: order.complaint.resolution.refundAmount, providerLiable: order.complaint.resolution.providerLiable,
+      refundAmount: order.complaint.resolution.refundAmount,
+      serviceRefundAmount: order.complaint.resolution.serviceRefundAmount,
+      goodsRefundAmount: order.complaint.resolution.goodsRefundAmount,
+      providerLiable: order.complaint.resolution.providerLiable,
       note: order.complaint.resolution.note, at: order.complaint.resolution.at } : null } : null,
   timeline: order.timeline.map(({ status, at }) => ({ status, at })),
   refunds: order.refunds.map(({ outRefundNo, amount, reason, status, at }) => ({ amount, reason, status, at,

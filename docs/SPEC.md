@@ -1,6 +1,8 @@
 # 近邻帮 · 第一版产品与技术规格（SPEC）
 
-版本 v1.0 · 2026-11-06
+版本 v1.1 · 2026-11-07（同步用户已确认的跨午夜、事务及投诉退款规则）
+
+变更基线：原始 `jinlin-spec.zip` 保留。本文同步已确认需求，未确认方案不得作为实现或验收依据。
 
 本文是实现的唯一需求来源。凡标"必须"的，是验收项。
 
@@ -185,9 +187,9 @@ requireApprovedProvider(provider, minLevel)     // 未审核或等级不足抛 E
   providerOpenid: null, providerId: null,
   photos: [],                       // 完成照片 fileID
   rating: null,                     // { score: 1-5, text, at }
-  complaint: null,                  // { reason, text, at, resolution: { refundAmount, providerLiable, note, at, by } }
+  complaint: null,                  // { reason, text, at, resolution: { refundAmount, serviceRefundAmount, goodsRefundAmount, providerLiable, note, at, by } }
   payment: { outTradeNo, transactionId, paidAt } ,
-  refunds: [],                      // [{ outRefundNo, amount, reason, status: processing|success|failed, at }]
+  refunds: [],                      // [{ outRefundNo, amount, serviceAmount, goodsAmount, reason, status: processing|success|failed, at }]
   timeline: [{ status, at, by }],   // by = openid 或 'system'
   alertedAt: null, acceptedAt: null, deliveredAt: null, completedAt: null,
   createdAt, updatedAt
@@ -272,6 +274,8 @@ requireApprovedProvider(provider, minLevel)     // 未审核或等级不足抛 E
 
 公共字段：`communityId`、`address`（来自用户绑定的门牌，下单页可改，改了同时更新 `users`）、`note`（选填，≤ 100 字）、`slot`（"尽快" 或当天/次日的值班时段）。
 
+用户确认的时间规则：所有时段包含开始、不包含结束；结束早于开始时跨至次日，时段归属开始日期，凌晨需检查前一天尚未结束的跨夜时段；优先返回当前未结束时段，否则返回最近未来时段。开始与结束相同、重复或重叠时段均拒绝。快递月卡额度始终按北京时间自然日统计，不随跨夜班次顺延。
+
 "尽快"仅在当前小区有 ≥ 1 名值班服务员时可选；否则只能选时段，并提示"现在没有服务员值班，最早 X 点上门"。
 
 ### 5.1 代取快递 `express`（minLevel 1）
@@ -345,6 +349,8 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 
 实现时把费率换算成整数万分比（`Math.round(rate × 10000)`），统一用 `Math.floor(金额 × 万分比 / 10000)` 计算，避免浮点误差。
 
+投诉退款由管理员分别填写 `serviceRefundAmount`（服务费）与 `goodsRefundAmount`（商品款），合计为 `refundAmount`。传入分账函数的 `refundAmount` 仅为服务费退款；商品报销额为实际商品金额减去投诉退还的商品款。代买完成时已退的预付差额不得再次退款或再次从实际商品报销中扣除。各部分分别不得超过剩余可退金额；非代买订单的商品款退款必须为 0。
+
 ### 6.3 必须通过的分账单测样例
 
 | 场景 | 输入 | provider | property | platform |
@@ -391,6 +397,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 
 - `transition(order, to, actor)` 校验合法性；不合法抛 `E_BAD_STATE`。
 - 每次转换追加 `timeline`，并用条件更新防并发。两名服务员同时接单，只有一人成功，另一人收到 `E_CONFLICT`，提示"手慢了，单已被接走"。
+- 用户确认的事务等效方案：单文档继续使用 `where` 条件更新；涉及支付、用户资格、月卡额度或账本等多文档一致性时，在事务内读取并核对旧状态后用 `doc` 更新，冲突返回 `E_CONFLICT`。状态边不变，事务内不调用外部接口。
 - 进入 `completed` 时写账本（§6.2）；`disputed` 期间不写，处理完写。已写账本的订单再被投诉并退款，写一条冲减账本（金额为负的差额）。
 - 服务员放弃：`stats.released + 1`；同一订单被同一人放弃后，不再对他显示。
 - 进入 `paid` 后 `acceptAlertMinutes` 分钟仍未接单：通知 `config.adminOpenids`，记 `alertedAt`，不重复提醒。
@@ -447,6 +454,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 - 触发场景：住户在 `paid` 取消（全额）；管理员取消（全额）；代买完成时退差额；投诉处理（全额或部分）；月卡作废（管理员填金额）。
 - `refunds[]` 先写 `processing`，`refundCallback` 改为 `success` / `failed`。失败的在管理后台订单详情标红并可重试。
 - Mock 模式下退款直接记为 `success`。
+- 投诉处理分别录入服务费退款与商品款退款，前端展示合计，服务端校验分项与总额；已申请但处理中或失败待重试的退款仍占用对应可退额度，重试沿用同一退款号，不新增一笔退款。
 
 ---
 
@@ -566,6 +574,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 7. 支付后 10 分钟无人接 → 管理员收到告警 → 后台指派给某服务员 → 状态 `accepted`。
 8. 住户在 `paid` 状态取消 → 全额退款，状态 `cancelled`。
 9. 完成后投诉"物品损坏"→ 管理员部分退款 200、判定服务员无责 → 状态 `refunded`，账本按 §6.3 样例。
+   补充代买验收：服务费 400、预付商品 5000、实际商品 3250，先退差额 1750；投诉再退服务费 200、商品款 1000，合计 1200。服务员无责时最终账本 provider=300、property=10、platform=−110、goods=2250；已入账则写差额。分别超退、重复提交与失败重试不得重复退款。
 10. `delivered` 超过 24 小时未确认 → 自动完成并写账本。
 11. 买垃圾月卡（晚班），首月价 25 元 → 当天 15:30 后自动生成任务（重复触发不重复生成）→ 服务员完成 → 计件 120。
 12. 快递月卡用户当天第 1、2、3 件免费；同一天再下 2 件 → 整单原价。

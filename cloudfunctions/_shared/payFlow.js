@@ -82,13 +82,16 @@ function createPayFlow(cloud, server) {
     const result = await atomic(db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       ensure(current, '订单不存在');
-      const reserved = reserveRefund(current, amount, reason, options.key || reason, new Date());
+      if (options.validateCurrent) options.validateCurrent(current);
+      const reserved = reserveRefund(current, amount, reason, options.key || reason, new Date(), options.parts);
       if (reserved.repeated) return { order: current, refund: reserved.refund };
       ensure(current.status === order.status, '订单状态已变化，请刷新后重试', 'E_CONFLICT');
       const patch = { ...(options.patch || {}), refunds: reserved.refunds, updatedAt: new Date() };
       if (options.to) Object.assign(patch, transitionPatch(current, options.to, options.actor || 'system', new Date()));
       await transaction.collection('orders').doc(order._id).update({ data: patch });
-      return { order: { ...current, ...patch }, refund: reserved.refund };
+      const resultingOrder = { ...current, ...patch };
+      if (options.afterWrite) await options.afterWrite(transaction, resultingOrder);
+      return { order: resultingOrder, refund: reserved.refund };
     });
     await dispatchRefund(result.order, result.refund);
     return result.order;

@@ -1,4 +1,4 @@
-const { complaintAllowed, complaint, rating, accounting, ledgerDelta } = require('../orderLifecycle');
+const { complaintAllowed, complaint, rating, accounting, ledgerDelta, complaintResolution } = require('../orderLifecycle');
 const deliveredAt = new Date('2026-11-06T23:30:00+08:00');
 const order = { status: 'delivered', deliveredAt, rating: null, source: 'user',
   pricing: { listPrice: 500, payAmount: 500, goodsCap: 0, goodsActual: 0 }, rateSnapshot: { platform: 0.2, property: 0.05 } };
@@ -45,4 +45,24 @@ test('代买只按实际商品额报销，预付款不参与服务费分账', ()
 test('再次达到同一最终金额不会生成重复差额', () => {
   const value = accounting(order);
   expect(Object.values(ledgerDelta(value, value))).toEqual([0, 0, 0, 0, 0]);
+});
+test('代买投诉分别退款，预付差额不二次扣商品报销', () => {
+  const buying = { ...order, status: 'disputed', serviceCode: 'buy', complaint: { at: deliveredAt, resolution: null },
+    pricing: { listPrice: 400, payAmount: 400, goodsCap: 5000, goodsActual: 3250 },
+    refunds: [{ key: 'goods_difference', amount: 1750, serviceAmount: 0, goodsAmount: 1750 }] };
+  const event = { serviceRefundAmount: 200, goodsRefundAmount: 1000, providerLiable: false, note: '核实后部分退款' };
+  const result = complaintResolution(event, buying, 'admin', deliveredAt);
+  expect(result.refundAmount).toBe(1200);
+  const final = accounting(buying, { serviceRefund: result.serviceRefundAmount, goodsRefund: result.goodsRefundAmount, providerLiable: false });
+  expect(final).toEqual({ gross: 2450, provider: 300, property: 10, platform: -110, goods: 2250 });
+  expect(ledgerDelta(final, accounting(buying))).toEqual({ gross: -1200, provider: 0, property: -10, platform: -190, goods: -1000 });
+  expect(() => complaintResolution({ ...event, serviceRefundAmount: 401 }, buying, 'a', deliveredAt)).toThrow();
+  expect(() => complaintResolution({ ...event, goodsRefundAmount: 3251 }, buying, 'a', deliveredAt)).toThrow();
+  expect(() => complaintResolution(event, { ...buying, status: 'refunded' }, 'a', deliveredAt)).toThrow();
+});
+test('非代买订单不能填写商品退款，服务员责任必须明确为布尔值', () => {
+  const value = { ...order, serviceCode: 'trash', status: 'disputed', complaint: {}, refunds: [] };
+  const event = { serviceRefundAmount: 0, goodsRefundAmount: 1, providerLiable: false, note: '说明' };
+  expect(() => complaintResolution(event, value, 'admin', deliveredAt)).toThrow();
+  expect(() => complaintResolution({ ...event, goodsRefundAmount: 0, providerLiable: undefined }, value, 'admin', deliveredAt)).toThrow();
 });

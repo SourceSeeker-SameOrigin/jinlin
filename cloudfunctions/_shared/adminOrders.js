@@ -5,9 +5,15 @@ const { listView } = require('./orderData');
 const { conditionalTransition } = require('./orderStore');
 const { createPayFlow } = require('./payFlow');
 const { totalFee } = require('./paymentState');
+const { atomic, read } = require('./transaction');
+const { transitionPatch } = require('./orderData');
+const { complaintResolution } = require('./orderLifecycle');
+const { refundTotals } = require('./refundState');
+const { createLedgerFlow } = require('./ledgerFlow');
 
 function adminOrderActions(cloud, server) {
   const payments = createPayFlow(cloud, server);
+  const ledger = createLedgerFlow(server);
   async function managed(event, user) {
     requireRole(user, ['admin']);
     text(event.orderId, '订单');
@@ -58,6 +64,43 @@ function adminOrderActions(cloud, server) {
     const fresh = await server.get('orders', order._id);
     return { refunds: fresh.refunds.map(({ outRefundNo, amount, reason, status, at }) => ({ outRefundNo, amount, reason, status, at })) };
   }
-  return { listOrders, assign, forceCancel, retryRefund };
+  async function resolveComplaint(event, { user, openid }) {
+    const order = await managed(event, user);
+    const resolution = complaintResolution(event, order, openid, new Date());
+    const complaint = { ...order.complaint, resolution };
+    async function bookResult(transaction, resultingOrder) {
+      const totals = refundTotals(resultingOrder);
+      await ledger.book(transaction, resultingOrder, { serviceRefund: totals.service,
+        goodsRefund: totals.goodsAfterPurchase, providerLiable: resolution.providerLiable });
+    }
+    if (resolution.refundAmount > 0) {
+      await payments.requestRefund(order, resolution.refundAmount, '投诉处理退款', {
+        key: 'complaint_' + new Date(order.complaint.at).getTime(), to: 'refunded', actor: openid,
+        parts: { service: resolution.serviceRefundAmount, goods: resolution.goodsRefundAmount },
+        validateCurrent(current) {
+          complaintResolution(event, current, openid, new Date());
+          ensure(new Date(current.complaint.at).getTime() === new Date(order.complaint.at).getTime(),
+            '投诉记录已变化，请刷新', 'E_CONFLICT');
+        },
+        patch: { complaint }, afterWrite: bookResult });
+      return { status: 'refunded' };
+    }
+    await atomic(server.db, async transaction => {
+      const current = await read(transaction, 'orders', order._id);
+      complaintResolution(event, current, openid, new Date());
+      ensure(new Date(current.complaint.at).getTime() === new Date(order.complaint.at).getTime(), '投诉记录已变化，请刷新', 'E_CONFLICT');
+      await bookResult(transaction, current);
+      if (!current.completedAt && current.providerId) {
+        const provider = await read(transaction, 'providers', current.providerId);
+        ensure(provider, '服务员资料不存在', 'E_CONFIG');
+        await transaction.collection('providers').doc(provider._id).update({ data: { 'stats.completed': (provider.stats.completed || 0) + 1 } });
+      }
+      await transaction.collection('orders').doc(order._id).update({ data: {
+        ...transitionPatch(current, 'completed', openid, new Date()), complaint,
+        completedAt: current.completedAt || new Date() } });
+    });
+    return { status: 'completed' };
+  }
+  return { listOrders, assign, forceCancel, retryRefund, resolveComplaint };
 }
 module.exports = { adminOrderActions };

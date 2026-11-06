@@ -87,6 +87,7 @@
 
 - `order.confirm`、`order.rate`、`order.complain`；`admin.resolveComplaint`、`admin.forceCancel`、`admin.assign`、`admin.retryRefund`。
 - 进入 `completed` 时写账本（用 `split.js`）。
+- 用户已确认：投诉处理分别填写服务费退款与商品款退款并展示合计，各自校验剩余额度；商品款只调整报销，服务费退款影响服务分成。覆盖 SPEC §17 场景 9 的新增代买分项退款与重复/超额退款测试。
 - 云函数 `timer`（每 5 分钟）：关闭超时未付、未接单告警（先只写 `alertedAt`，通知在 T09）、自动确认、月卡到期。每项单独 try/catch，一项失败不影响其他项。
 - 页面：`pages/orders/detail` 补齐确认 / 评价 / 投诉；`admin/orders`、`admin/order`。
 

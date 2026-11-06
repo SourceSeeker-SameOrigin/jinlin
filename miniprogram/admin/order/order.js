@@ -1,8 +1,9 @@
 const api = require('../../utils/api');
-const { yuan } = require('../../utils/money');
+const { yuan, toFen } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
 Page({
-  data: { loading: true, busy: false, error: '', order: null, readOnly: true, providers: [], providerIndex: 0 },
+  data: { loading: true, busy: false, error: '', order: null, readOnly: true, providers: [], providerIndex: 0,
+    serviceRefundYuan: '0', goodsRefundYuan: '0', refundTotal: '0.00', providerLiable: false, resolutionNote: '' },
   onLoad(options) { this.orderId = options.id; },
   onShow() { this.load(); },
   async load() {
@@ -36,6 +37,24 @@ Page({
     if (answer.confirm) await this.perform('forceCancel');
   },
   retryRefund(event) { this.perform('retryRefund', { outRefundNo: event.currentTarget.dataset.no }); },
+  resolutionField(event) {
+    const field = event.currentTarget.dataset.field;
+    if (!['serviceRefundYuan', 'goodsRefundYuan', 'resolutionNote'].includes(field)) return;
+    this.setData({ [field]: event.detail.value });
+    const service = toFen(this.data.serviceRefundYuan), goods = toFen(this.data.goodsRefundYuan);
+    this.setData({ refundTotal: service === null || goods === null ? '--' : yuan(service + goods) });
+  },
+  liable(event) { this.setData({ providerLiable: event.detail.value.includes('liable') }); },
+  async resolve() {
+    const serviceRefundAmount = toFen(this.data.serviceRefundYuan);
+    const goodsRefundAmount = this.data.order.serviceCode === 'buy' ? toFen(this.data.goodsRefundYuan) : 0;
+    if (serviceRefundAmount === null || goodsRefundAmount === null) { this.setData({ error: '退款金额请填写最多两位小数的元数' }); return; }
+    const answer = await new Promise(resolve => wx.showModal({ title: '确认处理投诉',
+      content: '服务费退款 ¥' + yuan(serviceRefundAmount) + '，商品款退款 ¥' + yuan(goodsRefundAmount) +
+        '，合计 ¥' + yuan(serviceRefundAmount + goodsRefundAmount) + '。确认提交吗？', success: resolve }));
+    if (answer.confirm) await this.perform('resolveComplaint', { serviceRefundAmount, goodsRefundAmount,
+      providerLiable: this.data.providerLiable, note: this.data.resolutionNote });
+  },
   async perform(action, data = {}) {
     if (this.data.busy || this.data.readOnly) return;
     this.setData({ busy: true, error: '' });

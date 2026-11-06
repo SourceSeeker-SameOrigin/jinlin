@@ -3,15 +3,15 @@ const { payConfig } = require('../payConfig');
 const now = new Date();
 const order = { orderNo: 'JL123', pricing: { payAmount: 400, goodsCap: 5000 },
   payment: { paidAt: now, mode: 'wechat' }, refunds: [] };
-const reserved = () => reserveRefund(order, 1750, '代买退差额', 'goods', now);
+const reserved = () => reserveRefund(order, 1750, '代买退差额', 'goods_difference', now);
 
 test('代买退差额保留原支付总额及独立退款号', () => {
   expect(reserved().refund).toMatchObject({ outRefundNo: 'JL123R1', amount: 1750, status: 'processing' });
 });
 test('同业务重试复用退款号且不得改金额', () => {
   const current = { ...order, refunds: reserved().refunds };
-  expect(reserveRefund(current, 1750, '代买退差额', 'goods', now).repeated).toBe(true);
-  expect(() => reserveRefund(current, 1700, '代买退差额', 'goods', now)).toThrow();
+  expect(reserveRefund(current, 1750, '代买退差额', 'goods_difference', now).repeated).toBe(true);
+  expect(() => reserveRefund(current, 1700, '代买退差额', 'goods_difference', now)).toThrow();
 });
 test('失败和处理中退款仍占用可退金额，避免重试时超退', () => {
   for (const status of ['processing', 'failed', 'success']) {
@@ -25,7 +25,7 @@ test.each([0, -1, 0.1, NaN, 5401])('拒绝非法退款金额 %s', amount => {
 });
 test('未付款不能退，mock 直接成功', () => {
   expect(() => reserveRefund({ ...order, payment: { paidAt: null } }, 100, '退款', 'cancel', now)).toThrow();
-  expect(reserveRefund({ ...order, payment: { ...order.payment, mode: 'mock' } }, 100, '退款', 'cancel', now).refund.status).toBe('success');
+  expect(reserveRefund({ ...order, payment: { ...order.payment, mode: 'mock' } }, 5400, '退款', 'cancel', now).refund.status).toBe('success');
 });
 test('已成功退款不可被迟到失败通知降级', () => {
   const current = { ...order, refunds: [{ ...reserved().refund, status: 'success' }] };
@@ -63,4 +63,12 @@ test.each(['', 'false', 'TRUE', undefined])('mock 双开关不能绕过 %s', val
 test('真实支付允许关闭 mock；开启 mock 仍要求明确配置', () => {
   expect(payConfig('wechat', { SUB_MCH_ID: 'm', ENV_ID: 'e', ALLOW_MOCK_PAY: 'false' })).toEqual({ subMchId: 'm', envId: 'e' });
   expect(() => payConfig('mock', { ALLOW_MOCK_PAY: 'true' })).not.toThrow();
+});
+test('分项退款分别占用额度，重复总额但换分项仍被拒绝', () => {
+  const first = reserveRefund(order, 1200, '投诉处理', 'complaint', now, { service: 200, goods: 1000 });
+  expect(first.refund).toMatchObject({ serviceAmount: 200, goodsAmount: 1000, amount: 1200 });
+  const updated = { ...order, refunds: first.refunds };
+  expect(() => reserveRefund(updated, 1200, '投诉处理', 'complaint', now, { service: 100, goods: 1100 })).toThrow();
+  expect(() => reserveRefund(updated, 201, '继续处理', 'another', now, { service: 201, goods: 0 })).toThrow();
+  expect(() => reserveRefund(order, 1200, '投诉处理', 'complaint', now, { service: 200, goods: 999 })).toThrow();
 });

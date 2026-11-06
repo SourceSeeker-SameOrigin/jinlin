@@ -47,7 +47,7 @@ docs/                   SPEC.md、SPEC_EXT.md、TASKS.md、MANUAL_SETUP.md
 2. **价格只在服务端计算**。前端显示的报价来自 `order.quote`，`order.create` 必须重新计算，不信任前端传来的金额。
 3. **所有数据库写操作只在云函数里做**。前端不直接写数据库。安全规则按 `database/security-rules.json`。
 4. **每个云函数入口都要做身份与角色校验**（`_shared/auth.js`），openid 只取自 `cloud.getWXContext()`，不信任前端传的 openid。
-5. **状态变更必须走 `_shared/stateMachine.js`**，并用条件更新（`where({ _id, status: 旧状态 })`）防并发；更新条数为 0 时返回 `E_CONFLICT`。
+5. **状态变更必须走 `_shared/stateMachine.js`**。单文档使用条件更新（`where({ _id, status: 旧状态 })`），更新条数为 0 时返回 `E_CONFLICT`；多文档一致性操作采用用户确认的等效方案：在事务内读取并核对旧状态后使用 `doc` 更新，事务冲突返回 `E_CONFLICT`。事务内不得调用外部支付或内容安全接口，时间线必须原子追加或在事务内基于最新值追加。
 6. **支付回调、退款回调、月卡任务生成必须幂等**。
 7. **不得在代码里写死** 云环境 ID、商户号、订阅消息模板 ID、管理员 openid。这些来自环境变量或 `config` 集合。
 8. 时间一律按北京时间（UTC+8）处理，使用 `_shared/time.js`，**不要依赖服务器本地时区**。

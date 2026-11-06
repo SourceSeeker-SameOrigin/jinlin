@@ -1,5 +1,6 @@
 const { ensure, integer, text } = require('./validate');
 const { split } = require('./split');
+const { refundTotals } = require('./refundState');
 
 const COMPLAINT_REASONS = ['未上门', '物品损坏或丢失', '态度', '其他'];
 function complaintAllowed(order, now, hours) {
@@ -45,4 +46,14 @@ function ledgerDelta(target, booked) {
 }
 
 function resolutionNote(value) { return text(value, '处理说明', 500).trim(); }
-module.exports = { COMPLAINT_REASONS, complaintAllowed, complaint, rating, accounting, ledgerDelta, resolutionNote };
+function complaintResolution(event, order, actor, now) {
+  ensure(order.status === 'disputed' && order.complaint && !order.complaint.resolution, '投诉已处理或不存在', 'E_CONFLICT');
+  const totals = refundTotals(order);
+  const service = integer(event.serviceRefundAmount, '服务费退款', 0, order.pricing.payAmount - totals.service);
+  const goods = integer(event.goodsRefundAmount, '商品款退款', 0, order.serviceCode === 'buy'
+    ? Math.min(order.pricing.goodsCap - totals.goods, (order.pricing.goodsActual || 0) - totals.goodsAfterPurchase) : 0);
+  ensure(typeof event.providerLiable === 'boolean', '请选择服务员是否有责');
+  return { refundAmount: service + goods, serviceRefundAmount: service, goodsRefundAmount: goods,
+    providerLiable: event.providerLiable, note: resolutionNote(event.note), at: now, by: actor };
+}
+module.exports = { COMPLAINT_REASONS, complaintAllowed, complaint, rating, accounting, ledgerDelta, resolutionNote, complaintResolution };

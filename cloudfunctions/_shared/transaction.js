@@ -4,7 +4,8 @@ const { ensure } = require('./validate');
 async function atomic(db, work) {
   try { return await db.runTransaction(work, 0); }
   catch (error) {
-    if (error && error.code === 'DATABASE_TRANSACTION_CONFLICT') {
+    if (error && (error.code === 'DATABASE_TRANSACTION_CONFLICT' ||
+        String(error.errMsg || error.message || '').includes('DATABASE_TRANSACTION_CONFLICT'))) {
       throw new AppError('E_CONFLICT', '数据已变化，请刷新后重试');
     }
     throw error;
