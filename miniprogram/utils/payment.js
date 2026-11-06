@@ -12,7 +12,18 @@ async function pay(created) {
   }
   if (created.payment) {
     await new Promise((resolve, reject) => wx.requestPayment({ ...created.payment, success: resolve, fail: reject }));
-    return true;
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline) {
+      const remaining = deadline - Date.now();
+      const order = await Promise.race([
+        api.call('order', 'detail', { orderId: created.orderId }, { loading: false, silent: true }).catch(() => null),
+        new Promise(resolve => setTimeout(() => resolve(null), remaining))
+      ]);
+      if (order && order.status !== 'pending_pay') return true;
+      if (deadline - Date.now() > 800) await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    wx.showToast({ title: '支付结果确认中，请稍后刷新订单', icon: 'none' });
+    return false;
   }
   throw new Error('支付参数暂不可用，请到订单页重试');
 }

@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { atomic, read, insert, sameSnapshot } = require('./transaction');
 const { newOrder, transitionPatch, validateSlot } = require('./orderData');
-const { totalFee, paidPatch, firstPaidChanges } = require('./paymentState');
+const { totalFee } = require('./paymentState');
 const { orderNo } = require('./ids');
 const { ensure, text } = require('./validate');
 const { ymd } = require('./time');
@@ -55,24 +55,7 @@ function createOrderWriter(server) {
     });
   }
 
-  async function markPaid(order, payment) {
-    const user = await server.user(order.userOpenid);
-    return atomic(db, async transaction => {
-      const current = await read(transaction, 'orders', order._id);
-      ensure(current, '订单不存在');
-      const now = new Date();
-      const patch = paidPatch(current, payment, now);
-      if (!patch) return current;
-      const currentUser = await read(transaction, 'users', user._id);
-      const first = firstPaidChanges(current, currentUser, now);
-      if (first) await insert(transaction, 'events', first.event);
-      await transaction.collection('users').doc(user._id).update({ data: {
-        ...(first ? first.user : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
-      await transaction.collection('orders').doc(order._id).update({ data: patch });
-      return { ...current, ...patch };
-    });
-  }
-  return { create, markPaid };
+  return { create };
 }
 
 module.exports = { createOrderWriter };

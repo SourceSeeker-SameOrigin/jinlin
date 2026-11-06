@@ -38,7 +38,7 @@ Page({
   async pay() {
     if (this.data.busy) return;
     this.setData({ busy: true });
-    try { await pay({ orderId: this.orderId, ...this.data.order.paymentOptions }); await this.load(); }
+    try { await pay(await api.call('order', 'retryPayment', { orderId: this.orderId })); await this.load(); }
     catch (error) { this.setData({ error: error.message || '支付未完成，可重试' }); }
     finally { this.setData({ busy: false }); }
   },
