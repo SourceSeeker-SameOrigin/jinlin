@@ -6,15 +6,18 @@ const { payConfig } = require('./payConfig');
 const { SERVICE_NAMES, transitionPatch } = require('./orderData');
 const { ensure } = require('./validate');
 const { activateMembership } = require('./membershipFlow');
+const { createNotifier } = require('./notify');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
   const nonce = () => crypto.randomBytes(16).toString('hex');
+  const notify = createNotifier(cloud, server);
 
   async function onPaid(order, payment) {
     const user = await server.one('users', { openid: order.userOpenid });
     ensure(user, '订单用户不存在', 'E_CONFIG');
-    return atomic(db, async transaction => {
+    let changed = false;
+    const result = await atomic(db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       ensure(current, '订单不存在');
       const now = new Date();
@@ -28,8 +31,15 @@ function createPayFlow(cloud, server) {
       await transaction.collection('users').doc(user._id).update({ data: {
         ...(first ? first.user : {}), ...(membership ? membership.userPatch : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
       await transaction.collection('orders').doc(order._id).update({ data: patch });
+      changed = true;
       return { ...current, ...patch };
     });
+    if (changed) await notify.newTask(result);
+    if (changed && result.kind === 'service') {
+      await notify.resident('accepted', result);
+      await notify.resident('delivered', result);
+    }
+    return result;
   }
 
   async function prepare(order) {

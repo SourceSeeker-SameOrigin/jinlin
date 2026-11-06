@@ -10,10 +10,13 @@ const { shortCode } = require('./lib/shared/ids');
 const { ymd, parseDate, addDays } = require('./lib/shared/time');
 const { createPayFlow } = require('./lib/shared/payFlow');
 const { conditionalTransition } = require('./lib/shared/orderStore');
+const { publicTemplates } = require('./lib/shared/notificationData');
+const { createNotifier } = require('./lib/shared/notify');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const { db, command } = server;
 const payments = createPayFlow(cloud, server);
+const notify = createNotifier(cloud, server);
 const mine = openid => server.one('providers', { openid });
 const offset = event => integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
 
@@ -45,7 +48,8 @@ async function myStatus(event, { openid }) {
     db.collection('orders').where({ providerId: provider._id, completedAt: command.gte(start).and(command.lt(addDays(start, 1))) }).count(),
     server.all('ledger', { providerId: provider._id, createdAt: command.gte(start).and(command.lt(addDays(start, 1))) })
   ]);
-  return { provider: providerView(provider), todayCount: done.total,
+  const config = await server.config();
+  return { provider: providerView(provider), templateIds: publicTemplates(config), todayCount: done.total,
     todayIncome: ledger.reduce((sum, row) => sum + row.amounts.provider + row.amounts.goods, 0) };
 }
 
@@ -59,6 +63,12 @@ async function setDuty(event, { openid }) {
     onDuty: event.on, dutySince: event.on ? new Date() : null, updatedAt: new Date() } });
   ensure(result.stats.updated === 1, '服务员状态已变化，请刷新', 'E_CONFLICT');
   return { onDuty: event.on };
+}
+
+async function subscriptionTemplates(event, { user }) {
+  const provider = await mine(user.openid);
+  requireApprovedProvider(provider, 1);
+  return publicTemplates(await server.config());
 }
 
 async function hall(event, { openid }) {
@@ -121,6 +131,7 @@ async function deliver(event, { openid }) {
   else {
     await conditionalTransition(server, order, 'delivered', openid, patch, { providerId: provider._id });
   }
+  await notify.resident('delivered', { ...order, ...patch, status: 'delivered', deliveredAt: patch.deliveredAt });
   return { orderId: order._id, status: 'delivered' };
 }
 
@@ -145,4 +156,4 @@ async function earnings(event, { openid }) {
     settled: row.settled.provider, createdAt: row.createdAt })), hasMore: offset(event) + rows.length < ledger.length };
 }
 
-exports.main = server.entry({ apply, myStatus, setDuty, hall, accept, release, start, deliver, myTasks, earnings }, ['resident', 'admin']);
+exports.main = server.entry({ apply, myStatus, subscriptionTemplates, setDuty, hall, accept, release, start, deliver, myTasks, earnings }, ['resident', 'admin']);

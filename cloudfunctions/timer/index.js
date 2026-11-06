@@ -4,10 +4,12 @@ const { createPayFlow } = require('./lib/shared/payFlow');
 const { createLedgerFlow } = require('./lib/shared/ledgerFlow');
 const { ensure, integer } = require('./lib/shared/validate');
 const { createMembershipTasks } = require('./lib/shared/membershipFlow');
+const { createNotifier } = require('./lib/shared/notify');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const payments = createPayFlow(cloud, server);
 const ledger = createLedgerFlow(server);
+const notify = createNotifier(cloud, server);
 const { db, command } = server;
 
 exports.main = async (event = {}) => {
@@ -29,7 +31,9 @@ exports.main = async (event = {}) => {
     order => payments.closeUnpaid(order, 'system'));
   await run('unaccepted', () => ({ kind: 'service', status: 'paid', alertedAt: null,
     'payment.paidAt': command.lte(new Date(now - integer(config.acceptAlertMinutes, '告警时限', 1) * 60000)) }), async order => {
-    await db.collection('orders').where({ _id: order._id, status: 'paid', alertedAt: null }).update({ data: { alertedAt: now, alertPriority: 1 } });
+    const updated = await db.collection('orders').where({ _id: order._id, status: 'paid', alertedAt: null })
+      .update({ data: { alertedAt: now, alertPriority: 1 } });
+    if (updated.stats.updated === 1) await notify.unaccepted({ ...order, alertedAt: now });
   });
   await run('autoConfirm', () => ({ status: 'delivered', deliveredAt: command.lte(new Date(now - integer(config.autoConfirmHours, '自动确认时限', 1) * 3600000)) }),
     order => ledger.complete(order, 'system'));

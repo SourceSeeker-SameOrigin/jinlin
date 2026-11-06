@@ -14,7 +14,8 @@ function createOrderWriter(server) {
     const id = 'o_' + crypto.createHash('sha256').update(user.openid + ':' + event.requestId).digest('hex').slice(0, 40);
     const requestHash = crypto.createHash('sha256').update(JSON.stringify({ serviceCode: event.serviceCode,
       communityId: event.communityId, detail: context.detail, note: context.note, slot: context.slot })).digest('hex');
-    return atomic(db, async transaction => {
+    let createdNow = false;
+    const result = await atomic(db, async transaction => {
       const existing = await read(transaction, 'orders', id);
       if (existing) {
         ensure(existing.userOpenid === user.openid && existing.requestHash === requestHash, '请求编号已用于其他订单', 'E_CONFLICT');
@@ -51,8 +52,10 @@ function createOrderWriter(server) {
       }
       await insert(transaction, 'orders', order);
       await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1 } });
+      createdNow = true;
       return order;
     });
+    return { ...result, createdNow };
   }
 
   return { create };

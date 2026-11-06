@@ -3,6 +3,7 @@ const { createServer } = require('./lib/shared/server');
 const { parseScene } = require('./lib/shared/profile');
 const { nextDutyWindow } = require('./lib/shared/time');
 const { ensure, text, integer } = require('./lib/shared/validate');
+const { publicTemplates } = require('./lib/shared/notificationData');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -25,7 +26,7 @@ async function getCommunity(event) {
     insuranceUntil: server.command.gt(new Date()) }).count();
   const config = await server.config();
   return { ...community, buildings, onDutyCount: duty.total,
-    nextDutyWindow: nextDutyWindow(community.dutyWindows, new Date()), hotline: config.hotline };
+    nextDutyWindow: nextDutyWindow(community.dutyWindows, new Date()), hotline: config.hotline, templateIds: publicTemplates(config) };
 }
 
 async function resolveScene(event) {
@@ -39,4 +40,5 @@ async function resolveScene(event) {
   return { communityId: community._id, buildingId: scene.type === 'b' ? target._id : null };
 }
 
-exports.main = server.entry({ listCommunities, getCommunity, resolveScene });
+async function templates() { return publicTemplates(await server.config()); }
+exports.main = server.entry({ listCommunities, getCommunity, resolveScene, templates });

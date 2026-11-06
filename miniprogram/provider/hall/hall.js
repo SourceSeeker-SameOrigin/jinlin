@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 const { slotText } = require('../../utils/time');
+const subscriptions = require('../../utils/subscriptions');
 Page({
   data: { loading: false, busy: false, error: '', tasks: [], hasMore: true },
   onShow() { this.visible = true; this.load(true); this.timer = setInterval(() => { if (!this.data.loading && !this.data.busy) this.load(true); }, 15000); },
@@ -23,7 +24,10 @@ Page({
   async accept(event) {
     if (this.data.busy) return;
     this.setData({ busy: true });
-    try { const result = await api.call('provider', 'accept', { orderId: event.currentTarget.dataset.id });
+    try {
+      const result = await api.call('provider', 'accept', { orderId: event.currentTarget.dataset.id });
+      subscriptions.consume();
+      subscriptions.request(['newTask']);
       wx.navigateTo({ url: '/provider/task/task?id=' + encodeURIComponent(result.orderId) }); }
     catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }

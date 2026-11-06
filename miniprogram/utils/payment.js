@@ -1,4 +1,5 @@
 const api = require('./api');
+const subscriptions = require('./subscriptions');
 
 async function pay(created) {
   if (created.free) return true;
@@ -8,10 +9,12 @@ async function pay(created) {
       fail: () => resolve({ confirm: false }) }));
     if (!answer.confirm) return false;
     await api.call('order', 'mockPay', { orderId: created.orderId });
+    subscriptions.request(['accepted', 'delivered']);
     return true;
   }
   if (created.payment) {
     await new Promise((resolve, reject) => wx.requestPayment({ ...created.payment, success: resolve, fail: reject }));
+    subscriptions.request(['accepted', 'delivered']);
     const deadline = Date.now() + 10000;
     while (Date.now() < deadline) {
       const remaining = deadline - Date.now();

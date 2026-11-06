@@ -1,1 +1,1 @@
-<view class="page"><view class="page-title">管理看板</view></view>
+<view class="page"><view class="page-title">管理看板</view><view wx:if="{{loading}}">正在加载提醒设置…</view><view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view><view class="card">未接单告警订阅已准备。只有在公众平台配置模板 ID 并授权后才会发送。</view></view>

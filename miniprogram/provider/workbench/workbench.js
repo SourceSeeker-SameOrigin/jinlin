@@ -1,10 +1,12 @@
 const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
+const subscriptions = require('../../utils/subscriptions');
 Page({
   data: { loading: true, busy: false, error: '', provider: null, tasks: [], todayCount: 0, todayIncome: '0.00' },
   onShow() { this.load(); },
   async load() {
+    this.setData({ remainingReminders: subscriptions.remaining() });
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -32,9 +34,22 @@ Page({
   async duty(event) {
     if (this.data.busy) return;
     this.setData({ busy: true, error: '' });
-    try { await api.call('provider', 'setDuty', { on: event.detail.value }); await this.load(); }
+    try {
+      await api.call('provider', 'setDuty', { on: event.detail.value });
+      if (event.detail.value) {
+        const result = await subscriptions.request(['newTask']);
+        const count = subscriptions.remaining();
+        this.setData({ remainingReminders: count, reminderHint: count < 3 ? '提醒次数少于 3 次，可再次点击订阅补充' : '' });
+      }
+      await this.load();
+    }
     catch (error) { this.setData({ error: error.message, 'provider.onDuty': !event.detail.value }); }
     finally { this.setData({ busy: false }); }
+  },
+  async subscribeMore() {
+    await subscriptions.request(['newTask']);
+    const count = subscriptions.remaining();
+    this.setData({ remainingReminders: count, reminderHint: count < 3 ? '提醒次数少于 3 次，可再次点击订阅补充' : '' });
   },
   task(event) { wx.navigateTo({ url: '/provider/task/task?id=' + encodeURIComponent(event.currentTarget.dataset.id) }); }
 });

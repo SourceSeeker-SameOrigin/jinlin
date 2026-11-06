@@ -12,6 +12,8 @@ const { createPayFlow } = require('./lib/shared/payFlow');
 const { payConfig } = require('./lib/shared/payConfig');
 const { residentOrderActions } = require('./lib/shared/residentOrders');
 const { complaintAllowed } = require('./lib/shared/orderLifecycle');
+const { createNotifier } = require('./lib/shared/notify');
+const { publicTemplates } = require('./lib/shared/notificationData');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -19,6 +21,7 @@ const server = createServer(cloud);
 const context = createOrderContext(server);
 const writer = createOrderWriter(server);
 const payments = createPayFlow(cloud, server);
+const notify = createNotifier(cloud, server);
 
 function mockEnabled(config) {
   ensure(config.payMode === 'mock', '模拟支付未开启，请联系管理员', 'E_CONFIG');
@@ -31,6 +34,7 @@ async function create(event, { user }) {
   if (result.pricing.payAmount + result.pricing.goodsCap > 0) payConfig(result.config.payMode);
   await checkOrderContent(cloud, user.openid, result.note, result.detail, result.config.blacklist);
   const order = await writer.create(event, user, result);
+  if (order.createdNow && order.status === 'paid') await notify.newTask(order);
   try { return await payments.prepare(order); }
   catch (error) {
     // 已建单后统一返回订单编号，网络失败也可在详情页重试，避免再次下单。
@@ -53,6 +57,11 @@ async function quote(event, { user }) {
   const result = await context(event, user, { metadata: event.metadata === true });
   return { pricing: result.pricing, slots: result.slots, onDutyCount: result.onDutyCount,
     hasTrashMembership: result.hasTrashMembership, validationMessage: result.validationMessage || '' };
+}
+
+async function subscriptionTemplates(event, { user }) {
+  requireRole(user, ['resident']);
+  return publicTemplates(await server.config());
 }
 
 async function listMine(event, { openid }) {
@@ -113,5 +122,5 @@ async function cancel(event, { openid }) {
   return { orderId: order._id, status: patch.status };
 }
 
-exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment,
+exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates,
   ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property']);
