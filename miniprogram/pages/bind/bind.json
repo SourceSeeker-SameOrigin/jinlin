@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "选择门牌",
-  "usingComponents": {}
+  "usingComponents": {
+    "privacy-popup": "/components/privacy-popup/index"
+  }
 }

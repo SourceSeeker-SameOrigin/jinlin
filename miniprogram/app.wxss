@@ -18,3 +18,13 @@ button {
   min-height: 88rpx;
   font-size: 32rpx;
 }
+
+button[type=primary] { background: #1F7A5C; color: #fff; }
+.card { padding: 28rpx; margin-bottom: 24rpx; border-radius: 20rpx; background: #fff; }
+.muted { color: #65706a; }
+.error { padding: 24rpx; color: #a33030; background: #fff3f1; border-radius: 12rpx; }
+.field { margin: 24rpx 0; }
+.label { display: block; margin-bottom: 12rpx; font-weight: 600; }
+input, textarea, .picker { box-sizing: border-box; width: 100%; padding: 20rpx; min-height: 88rpx; background: #f2f5f3; border-radius: 12rpx; }
+.links { display: flex; flex-wrap: wrap; gap: 24rpx; color: #1F7A5C; margin: 24rpx 0; }
+.section-title { font-size: 36rpx; font-weight: 600; margin-bottom: 20rpx; }

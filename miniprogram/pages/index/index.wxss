@@ -1,1 +1,5 @@
 /* 通用页面样式位于 app.wxss。 */
+.services { display: grid; grid-template-columns: 1fr 1fr; gap: 24rpx; margin: 24rpx 0; }
+.services button { width: 100%; padding: 24rpx; background: #fff; }
+.icon { min-height: 160rpx; display: flex; align-items: center; justify-content: center; font-size: 80rpx; }
+.offer { padding: 28rpx; border-radius: 20rpx; background: #e6f3eb; color: #15583f; font-weight: 600; }
