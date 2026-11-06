@@ -66,3 +66,11 @@ test('非代买订单不能填写商品退款，服务员责任必须明确为�
   expect(() => complaintResolution(event, value, 'admin', deliveredAt)).toThrow();
   expect(() => complaintResolution({ ...event, goodsRefundAmount: 0, providerLiable: undefined }, value, 'admin', deliveredAt)).toThrow();
 });
+
+test('商家单按佣金分账并在退款时冲减商家、平台和物业金额', () => {
+  const merchantOrder = { ...order, kind: 'merchant', merchantRateSnapshot: 0.10, rateSnapshot: { property: 0.05 },
+    pricing: { listPrice: 10001, payAmount: 10001, goodsCap: 0, goodsActual: 0 } };
+  expect(accounting(merchantOrder)).toEqual({ gross: 10001, provider: 0, property: 50, platform: 950, goods: 0, merchant: 9001 });
+  expect(ledgerDelta(accounting(merchantOrder, { serviceRefund: 1001 }), accounting(merchantOrder)))
+    .toEqual({ gross: -1001, provider: 0, property: -5, platform: -95, goods: 0, merchant: -901 });
+});

@@ -28,6 +28,14 @@ function residentOrderActions(cloud, server) {
     await atomic(server.db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       rating(event, current, new Date());
+      if (current.kind === 'merchant') {
+        const merchant = await read(transaction, 'merchants', current.merchantId);
+        ensure(merchant, '商家资料不存在', 'E_CONFIG');
+        await transaction.collection('orders').doc(order._id).update({ data: { rating: value, updatedAt: new Date() } });
+        await transaction.collection('merchants').doc(merchant._id).update({ data: {
+          ratingSum: (merchant.ratingSum || 0) + value.score, ratingCount: (merchant.ratingCount || 0) + 1 } });
+        return;
+      }
       const provider = await read(transaction, 'providers', current.providerId);
       ensure(provider, '服务员资料不存在', 'E_CONFIG');
       await transaction.collection('orders').doc(order._id).update({ data: { rating: value, updatedAt: new Date() } });

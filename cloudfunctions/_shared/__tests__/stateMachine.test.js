@@ -1,6 +1,7 @@
 const { canTransition, assertTransition, STATUS_TEXT } = require('../stateMachine');
 
 const allowed = [
+  ['pending_quote', 'pending_pay'], ['pending_quote', 'closed'],
   ['pending_pay', 'paid'], ['pending_pay', 'closed'], ['paid', 'accepted'], ['paid', 'cancelled'],
   ['accepted', 'in_service'], ['accepted', 'paid'], ['accepted', 'cancelled'],
   ['in_service', 'delivered'], ['in_service', 'cancelled'], ['delivered', 'completed'], ['delivered', 'disputed'],
@@ -22,7 +23,7 @@ test.each([
   expect(() => assertTransition(from, to)).toThrow(expect.objectContaining({ code: 'E_BAD_STATE' }));
 });
 
-test('全部十种状态都有中文名称', () => {
-  expect(STATUS_TEXT).toEqual({ pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中',
+test('全部状态都有中文名称', () => {
+  expect(STATUS_TEXT).toEqual({ pending_quote: '待报价', pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中',
     delivered: '待确认', disputed: '售后处理中', completed: '已完成', cancelled: '已取消', closed: '已关闭', refunded: '已退款' });
 });

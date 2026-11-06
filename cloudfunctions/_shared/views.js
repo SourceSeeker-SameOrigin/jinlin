@@ -21,7 +21,7 @@ function orderView(order, user, provider, config, now) {
   if (!owner && !admin) delete pricing.couponId;
   const view = { ...listView(order), note: owner || assigned || admin ? order.note : '', address: owner || assigned || admin ? order.address :
     { buildingName: order.address && order.address.buildingName },
-  pricing: { ...pricing }, photos: order.kind === 'idle_purchase' ? order.idleDelivery && order.idleDelivery.photos || [] : order.photos,
+  pricing: { ...pricing }, ...(order.kind === 'merchant' ? { quote: order.quote || null, merchantName: order.detail && order.detail.merchantName } : {}), photos: order.kind === 'idle_purchase' ? order.idleDelivery && order.idleDelivery.photos || [] : order.photos,
   receiptPhoto: order.receiptPhoto || null, rating: order.rating,
   complaint: order.complaint ? { reason: order.complaint.reason, text: order.complaint.text,
     at: order.complaint.at, resolution: order.complaint.resolution ? {
@@ -35,7 +35,7 @@ function orderView(order, user, provider, config, now) {
     ...(admin ? { outRefundNo } : {}) })),
   userPhone: assigned && phoneAllowed ? order.userPhone : maskPhone(order.userPhone),
   canCallResident: Boolean(assigned && phoneAllowed),
-  canCancel: owner && order.kind !== 'event_signup' && (order.status === 'pending_pay' || order.status === 'paid' && order.kind !== 'membership_purchase'),
+  canCancel: owner && order.kind !== 'event_signup' && (order.status === 'pending_quote' || order.status === 'pending_pay' || order.status === 'paid' && order.kind !== 'membership_purchase'),
   canPay: owner && order.status === 'pending_pay',
   provider: null };
   if (owner || assigned || admin || seller && order.kind === 'idle_purchase') view.detail = order.detail;

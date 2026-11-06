@@ -34,7 +34,7 @@ function adminOrderActions(cloud, server) {
     if (communityId) { requireCommunityAccess(user, communityId); filter.communityId = communityId; }
     else ensure(user.roles.includes('admin'), '请先设置物业所属小区', 'E_FORBIDDEN');
     if (event.status) {
-      ensure(['pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'].includes(event.status), '订单状态不正确');
+      ensure(['pending_quote', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'].includes(event.status), '订单状态不正确');
       filter.status = event.status;
     }
     const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
@@ -82,7 +82,7 @@ function adminOrderActions(cloud, server) {
   async function forceCancel(event, { user, openid }) {
     const order = await managed(event, user);
     ensure(order.kind !== 'membership_purchase' || order.status === 'pending_pay', '已开卡订单请使用月卡作废功能');
-    ensure(['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status), '当前状态不能强制取消', 'E_BAD_STATE');
+    ensure(['pending_quote', 'pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status), '当前状态不能强制取消', 'E_BAD_STATE');
     if (order.status === 'pending_pay') { await payments.closeUnpaid(order, openid); return { status: 'closed' }; }
     const amount = totalFee(order) - order.refunds.reduce((sum, item) => sum + item.amount, 0);
     if (amount > 0) await payments.requestRefund(order, amount, '管理员取消订单', { key: 'admin_cancel', to: 'cancelled', actor: openid,

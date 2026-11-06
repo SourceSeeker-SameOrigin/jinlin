@@ -3,7 +3,7 @@ const { yuan } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
 const subscriptions = require('../../utils/subscriptions');
-const statuses = { pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中', delivered: '待确认',
+const statuses = { pending_quote: '待报价', pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中', delivered: '待确认',
   completed: '已完成', disputed: '售后处理中', refunded: '已退款', cancelled: '已取消', closed: '已关闭' };
 Page({
   data: { loading: true, error: '', order: null, busy: false, timeline: [], detailRows: [],
@@ -26,11 +26,12 @@ Page({
         } catch (_) { this.chatConversationId = null; }
       }
       const labels = { stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数',
-        sorted: '已分类', shop: '店名', canteenName: '合作食堂', items: '清单', goodsCap: '预付金额', category: '类别', desc: '描述', blocks: '时长块数',
+        sorted: '已分类', shop: '店名', canteenName: '合作食堂', items: '清单', goodsCap: '预付金额', category: '类别', desc: '描述', blocks: '时长块数', merchantName: '商家', title: '服务', unit: '单位', priceType: '价格方式',
         title: '悬赏任务', needEnterHome: '需要进入家中', hospital: '医院', department: '科室', date: '日期', start: '开始时间', pickup: '需要接送' };
       const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
+      if (order.quote) detailRows.push({ label: '商家报价', value: '¥' + yuan(order.quote.amount) + (order.quote.detail ? ' · ' + order.quote.detail : '') });
       this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
         couponDiscountText: yuan(order.pricing.couponDiscount || 0), pointsRedeemed: order.pricing.pointsRedeemed || 0,
         mapMarkers: order.providerLocation ? [{ id: 1, latitude: order.providerLocation.latitude, longitude: order.providerLocation.longitude,
@@ -43,7 +44,8 @@ Page({
   },
   async cancel() {
     if (this.data.busy) return;
-    const answer = await new Promise(resolve => wx.showModal({ title: '取消订单', content: '确认取消这笔订单吗？已支付且未接单的订单将全额退款。', success: resolve }));
+    const content = this.data.order.status === 'pending_quote' ? '确认取消这条尚未报价的预约吗？' : '确认取消这笔订单吗？已支付且未接单的订单将全额退款。';
+    const answer = await new Promise(resolve => wx.showModal({ title: '取消订单', content, success: resolve }));
     if (!answer.confirm) return;
     this.setData({ busy: true });
     try { await api.call('order', 'cancel', { orderId: this.orderId }); await this.load(); }
