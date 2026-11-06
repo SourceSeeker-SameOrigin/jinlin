@@ -28,3 +28,5 @@ button[type=primary] { background: #1F7A5C; color: #fff; }
 input, textarea, .picker { box-sizing: border-box; width: 100%; padding: 20rpx; min-height: 88rpx; background: #f2f5f3; border-radius: 12rpx; }
 .links { display: flex; flex-wrap: wrap; gap: 24rpx; color: #1F7A5C; margin: 24rpx 0; }
 .section-title { font-size: 36rpx; font-weight: 600; margin-bottom: 20rpx; }
+.restored { color: #15583f; background: #e6f3eb; }
+button[disabled] { opacity: .55; }
