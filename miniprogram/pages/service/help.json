@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "帮把手",
-  "usingComponents": {}
+  "usingComponents": {
+    "price-bar": "/components/price-bar/index",
+    "empty-state": "/components/empty-state/index"
+  }
 }

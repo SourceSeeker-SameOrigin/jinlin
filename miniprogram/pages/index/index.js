@@ -16,7 +16,6 @@ Page({
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
   },
-  service(event) { wx.navigateTo({ url: '/pages/service/' + event.currentTarget.dataset.code }); },
   callHotline() {
     const phoneNumber = this.data.community && this.data.community.hotline;
     if (phoneNumber && phoneNumber !== '400-000-0000') wx.makePhoneCall({ phoneNumber });

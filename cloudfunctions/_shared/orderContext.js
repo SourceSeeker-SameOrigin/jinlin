@@ -1,0 +1,51 @@
+const { quote } = require('./pricing');
+const { cleanNote, cleanDetail, addressSnapshot, availableSlots, validateSlot } = require('./orderData');
+const { ymd, parseDate, addDays } = require('./time');
+const { ensure } = require('./validate');
+
+function createOrderContext(server) {
+  const { db, command, get } = server;
+  return async function orderContext(event, user, { metadata = false } = {}) {
+    const now = new Date();
+    ensure(event.communityId === user.communityId, '请选择已绑定的小区门牌');
+    const [community, building, config] = await Promise.all([
+      get('communities', user.communityId), get('buildings', user.buildingId), server.config()
+    ]);
+    const address = addressSnapshot(user, community, building);
+    const [duty, memberships] = await Promise.all([
+      db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
+        insuranceUntil: command.gt(now) }).count(),
+      server.all('memberships', { userOpenid: user.openid, communityId: community._id, status: 'active',
+        startAt: command.lte(now), endAt: command.gt(now) })
+    ]);
+    const membership = memberships.find(item => item.planCode === 'express_monthly');
+    let membershipState = null;
+    let todayUsedParcels = 0;
+    if (membership && event.serviceCode === 'express') {
+      const plan = community.cardPlans.find(item => item.code === 'express_monthly');
+      ensure(plan, '快递月卡配置缺失', 'E_CONFIG');
+      membershipState = { active: true, dailyParcelQuota: plan.dailyParcelQuota };
+      const start = parseDate(ymd(now));
+      const usedOrders = await server.all('orders', { userOpenid: user.openid, communityId: community._id,
+        'pricing.freeByMembership': true, createdAt: command.gte(start).and(command.lt(addDays(start, 1))) });
+      todayUsedParcels = usedOrders.reduce((sum, order) => sum + order.detail.pickupCodes.length, 0);
+    }
+    const slots = availableSlots(community.dutyWindows, now);
+    const common = { now, community, building, config, address, onDutyCount: duty.total, slots,
+      hasTrashMembership: memberships.some(item => item.planCode === 'trash_monthly'),
+      membership, membershipState, todayUsedParcels };
+    try {
+      const pricing = quote({ ...event, prices: community.prices, user, membershipState, todayUsedParcels });
+      const detail = cleanDetail(event.serviceCode, event.detail, community);
+      const note = cleanNote(event.note);
+      const slot = event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
+      validateSlot(slot, community.dutyWindows, duty.total, now);
+      return { ...common, pricing, detail, note, slot };
+    } catch (error) {
+      if (!metadata || error.code !== 'E_INVALID_PARAM') throw error;
+      return { ...common, pricing: null, validationMessage: error.message };
+    }
+  };
+}
+
+module.exports = { createOrderContext };

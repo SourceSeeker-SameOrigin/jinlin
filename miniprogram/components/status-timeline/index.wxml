@@ -1,0 +1,1 @@
+<view class="line" wx:for="{{items}}" wx:key="index"><view class="dot"></view><view><view>{{item.text}}</view><view class="date">{{item.time}}</view></view></view>

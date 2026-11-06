@@ -1,1 +1,1 @@
-/* 通用页面样式位于 app.wxss。 */
+.tabs{display:flex;gap:12rpx}.tabs button{flex:1;padding:0 8rpx;font-size:32rpx}

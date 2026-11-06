@@ -1,0 +1,78 @@
+const crypto = require('crypto');
+const { atomic, read, insert, sameSnapshot } = require('./transaction');
+const { newOrder, transitionPatch, validateSlot } = require('./orderData');
+const { totalFee, paidPatch, firstPaidChanges } = require('./paymentState');
+const { orderNo } = require('./ids');
+const { ensure, text } = require('./validate');
+const { ymd } = require('./time');
+
+function createOrderWriter(server) {
+  const { db } = server;
+  async function create(event, user, context) {
+    text(event.requestId, '请求编号', 80);
+    ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
+    const id = 'o_' + crypto.createHash('sha256').update(user.openid + ':' + event.requestId).digest('hex').slice(0, 40);
+    const requestHash = crypto.createHash('sha256').update(JSON.stringify({ serviceCode: event.serviceCode,
+      communityId: event.communityId, detail: context.detail, note: context.note, slot: context.slot })).digest('hex');
+    return atomic(db, async transaction => {
+      const existing = await read(transaction, 'orders', id);
+      if (existing) {
+        ensure(existing.userOpenid === user.openid && existing.requestHash === requestHash, '请求编号已用于其他订单', 'E_CONFLICT');
+        return existing;
+      }
+      const currentUser = await read(transaction, 'users', user._id);
+      sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked']);
+      ensure(!currentUser.blocked, '账号暂不可用', 'E_FORBIDDEN');
+      const currentCommunity = await read(transaction, 'communities', context.community._id);
+      sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates']);
+      const currentBuilding = await read(transaction, 'buildings', context.building._id);
+      sameSnapshot(currentBuilding, context.building, ['communityId', 'name', 'units']);
+      if (context.membership) {
+        const card = await read(transaction, 'memberships', context.membership._id);
+        sameSnapshot(card, context.membership, ['status', 'startAt', 'endAt', 'planCode', 'userOpenid', 'communityId']);
+        ensure(card.endAt > new Date(), '月卡已到期，请重新报价', 'E_CONFLICT');
+      }
+      const now = new Date();
+      ensure(ymd(now) === ymd(context.now), '日期已变化，请重新获取报价', 'E_CONFLICT');
+      validateSlot(context.slot, currentCommunity.dutyWindows, context.onDutyCount, now);
+      const order = newOrder({ id, orderNo: orderNo(now), user: currentUser, community: currentCommunity,
+        building: currentBuilding, serviceCode: event.serviceCode, detail: context.detail, note: context.note,
+        slot: context.slot, pricing: context.pricing, now });
+      order.userId = user._id;
+      order.requestHash = requestHash;
+      order.rateSnapshot = currentCommunity.rates;
+      order.membershipTaskPayout = currentCommunity.prices.membershipTaskPayout;
+      order.payment.mode = totalFee(order) === 0 ? 'free' : context.config.payMode;
+      if (order.pricing.freeByMembership) order.membershipId = context.membership._id;
+      if (totalFee(order) === 0) {
+        Object.assign(order, transitionPatch(order, 'paid', 'system', now));
+        order.payment.paidAt = now;
+        order.payment.transactionId = 'free_' + id;
+      }
+      await insert(transaction, 'orders', order);
+      await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1 } });
+      return order;
+    });
+  }
+
+  async function markPaid(order, payment) {
+    const user = await server.user(order.userOpenid);
+    return atomic(db, async transaction => {
+      const current = await read(transaction, 'orders', order._id);
+      ensure(current, '订单不存在');
+      const now = new Date();
+      const patch = paidPatch(current, payment, now);
+      if (!patch) return current;
+      const currentUser = await read(transaction, 'users', user._id);
+      const first = firstPaidChanges(current, currentUser, now);
+      if (first) await insert(transaction, 'events', first.event);
+      await transaction.collection('users').doc(user._id).update({ data: {
+        ...(first ? first.user : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
+      await transaction.collection('orders').doc(order._id).update({ data: patch });
+      return { ...current, ...patch };
+    });
+  }
+  return { create, markPaid };
+}
+
+module.exports = { createOrderWriter };

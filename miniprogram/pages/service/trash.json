@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "代扔垃圾",
-  "usingComponents": {}
+  "usingComponents": {
+    "price-bar": "/components/price-bar/index",
+    "empty-state": "/components/empty-state/index"
+  }
 }

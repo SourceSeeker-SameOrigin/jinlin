@@ -1,0 +1,1 @@
+<view class="card" bindtap="open"><view class="row"><text>{{order.serviceName}}</text><text>{{order.statusText}}</text></view><view>{{order.buildingName}}</view><view>{{order.slotText}}</view><view class="row"><text>{{order.createdText}}</text><text>¥{{order.amountText}}</text></view><view class="hint">查看订单详情 ›</view></view>

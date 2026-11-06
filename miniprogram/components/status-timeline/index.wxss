@@ -1,0 +1,1 @@
+.line{display:flex;gap:24rpx;padding:18rpx 0;font-size:32rpx}.dot{width:18rpx;height:18rpx;border-radius:50%;background:#1F7A5C;margin-top:16rpx}.date{color:#65706a;}

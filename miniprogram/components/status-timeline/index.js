@@ -1,0 +1,2 @@
+Component({ properties: { items: Array } });
+

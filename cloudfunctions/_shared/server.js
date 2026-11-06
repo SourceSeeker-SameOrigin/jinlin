@@ -4,7 +4,7 @@ const { ensure } = require('./validate');
 
 // 云函数运行边界；cloud 由各入口注入，模块加载时不初始化 SDK、不发请求。
 function createServer(cloud) {
-  const db = cloud.database();
+  const db = cloud.database({ throwOnNotFound: false });
   const command = db.command;
   async function one(collection, filter) {
     const result = await db.collection(collection).where(filter).limit(1).get();

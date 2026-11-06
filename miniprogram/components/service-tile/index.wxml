@@ -1,0 +1,1 @@
+<button class="tile" bindtap="open"><view class="icon">{{icon}}</view><view>{{name}}</view></button>

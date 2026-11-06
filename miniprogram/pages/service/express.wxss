@@ -1,1 +1,1 @@
-/* 通用页面样式位于 app.wxss。 */
+.service-page{padding-bottom:240rpx}navigator{color:#1F7A5C}.retry{margin:20rpx 0}

@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "周边代买",
-  "usingComponents": {}
+  "usingComponents": {
+    "price-bar": "/components/price-bar/index",
+    "empty-state": "/components/empty-state/index"
+  }
 }
