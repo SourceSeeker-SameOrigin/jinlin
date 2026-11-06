@@ -31,7 +31,7 @@ function orderView(order, user, provider, config, now) {
     ...(admin ? { outRefundNo } : {}) })),
   userPhone: assigned && phoneAllowed ? order.userPhone : maskPhone(order.userPhone),
   canCallResident: Boolean(assigned && phoneAllowed),
-  canCancel: owner && ['pending_pay', 'paid'].includes(order.status),
+  canCancel: owner && (order.status === 'pending_pay' || order.status === 'paid' && order.kind !== 'membership_purchase'),
   canPay: owner && order.status === 'pending_pay',
   provider: null };
   if (owner || assigned || admin) view.detail = order.detail;

@@ -59,7 +59,13 @@ async function listMine(event, { openid }) {
   const group = event.group || 'ongoing';
   ensure(Object.prototype.hasOwnProperty.call(STATUS_GROUPS, group), '订单分组不正确');
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
-  const rows = await server.db.collection('orders').where({ userOpenid: openid, status: server.command.in(STATUS_GROUPS[group]) })
+  const command = server.command;
+  const stateFilter = group === 'ongoing' ? command.or([
+    { kind: command.neq('membership_purchase'), status: command.in(STATUS_GROUPS.ongoing) },
+    { kind: 'membership_purchase', status: 'pending_pay' }
+  ]) : group === 'done' ? command.or([{ status: command.in(STATUS_GROUPS.done) },
+    { kind: 'membership_purchase', status: 'paid' }]) : { status: command.in(STATUS_GROUPS.aftersale) };
+  const rows = await server.db.collection('orders').where(command.and([{ userOpenid: openid }, stateFilter]))
     .orderBy('createdAt', 'desc').orderBy('_id', 'desc').skip(offset).limit(20).get();
   return { list: rows.data.map(listView), hasMore: rows.data.length === 20 };
 }
@@ -88,6 +94,7 @@ async function cancel(event, { openid }) {
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.userOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
+  ensure(order.kind !== 'membership_purchase' || order.status === 'pending_pay', '月卡不支持自行退款，请联系客服', 'E_BAD_STATE');
   ensure(['pending_pay', 'paid'].includes(order.status), '订单已接单或已结束，无法自行取消', 'E_BAD_STATE');
   if (order.status === 'pending_pay') {
     await payments.closeUnpaid(order, openid);

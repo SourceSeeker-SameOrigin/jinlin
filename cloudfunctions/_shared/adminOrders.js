@@ -5,11 +5,13 @@ const { listView } = require('./orderData');
 const { conditionalTransition } = require('./orderStore');
 const { createPayFlow } = require('./payFlow');
 const { totalFee } = require('./paymentState');
-const { atomic, read } = require('./transaction');
+const { atomic, read, insert } = require('./transaction');
 const { transitionPatch } = require('./orderData');
 const { complaintResolution } = require('./orderLifecycle');
 const { refundTotals } = require('./refundState');
 const { createLedgerFlow } = require('./ledgerFlow');
+const { splitMembershipSale } = require('./split');
+const { ledgerDelta } = require('./orderLifecycle');
 
 function adminOrderActions(cloud, server) {
   const payments = createPayFlow(cloud, server);
@@ -48,6 +50,7 @@ function adminOrderActions(cloud, server) {
   }
   async function forceCancel(event, { user, openid }) {
     const order = await managed(event, user);
+    ensure(order.kind !== 'membership_purchase' || order.status === 'pending_pay', '已开卡订单请使用月卡作废功能');
     ensure(['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status), '当前状态不能强制取消', 'E_BAD_STATE');
     if (order.status === 'pending_pay') { await payments.closeUnpaid(order, openid); return { status: 'closed' }; }
     const amount = totalFee(order) - order.refunds.reduce((sum, item) => sum + item.amount, 0);
@@ -101,6 +104,42 @@ function adminOrderActions(cloud, server) {
     });
     return { status: 'completed' };
   }
-  return { listOrders, assign, forceCancel, retryRefund, resolveComplaint };
+  async function voidMembership(event, { user, openid }) {
+    const order = await managed(event, user);
+    ensure(order.kind === 'membership_purchase' && order.status === 'paid' && order.membershipId,
+      '只有已开卡且未作废的购买订单可执行此操作', 'E_BAD_STATE');
+    const amount = integer(event.refundAmount, '月卡退款', 0, order.pricing.payAmount);
+    const note = text(event.note, '作废说明', 200).trim();
+    const pendingTasks = await server.all('orders', { membershipId: order.membershipId, source: 'membership', status: 'paid' });
+    async function revoke(transaction, current) {
+      const card = await read(transaction, 'memberships', current.membershipId);
+      ensure(card, '月卡不存在', 'E_CONFIG');
+      await transaction.collection('memberships').doc(card._id).update({ data: { status: 'refunded' } });
+      for (const id of new Set([...pendingTasks.map(task => task._id), ...(card.lastTaskId ? [card.lastTaskId] : [])])) {
+        const task = await read(transaction, 'orders', id);
+        if (task && task.status === 'paid') await transaction.collection('orders').doc(task._id)
+          .update({ data: transitionPatch(task, 'cancelled', openid, new Date()) });
+      }
+      if (amount > 0) {
+        const original = { gross: current.pricing.payAmount, ...splitMembershipSale(current.pricing.payAmount, current.rateSnapshot) };
+        const after = { gross: current.pricing.payAmount - amount, ...splitMembershipSale(current.pricing.payAmount - amount, current.rateSnapshot) };
+        await insert(transaction, 'ledger', { _id: 'membership_refund_' + current._id,
+          refType: 'membership_sale', refId: current._id, communityId: current.communityId, providerId: null,
+          amounts: ledgerDelta(after, original), settled: { provider: false, property: false },
+          settlementIds: { provider: null, property: null }, createdAt: new Date() });
+      }
+    }
+    if (amount > 0) await payments.requestRefund(order, amount, note, { key: 'membership_void',
+      to: 'cancelled', actor: openid, patch: { membershipVoided: true }, afterWrite: revoke });
+    else await atomic(server.db, async transaction => {
+      const current = await read(transaction, 'orders', order._id);
+      ensure(current.status === 'paid', '月卡订单状态已变化', 'E_CONFLICT');
+      await revoke(transaction, current);
+      await transaction.collection('orders').doc(order._id).update({ data: {
+        ...transitionPatch(current, 'cancelled', openid, new Date()), membershipVoided: true } });
+    });
+    return { status: 'cancelled' };
+  }
+  return { listOrders, assign, forceCancel, retryRefund, resolveComplaint, voidMembership };
 }
 module.exports = { adminOrderActions };

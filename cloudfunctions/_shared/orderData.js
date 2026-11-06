@@ -76,7 +76,8 @@ function newOrder({ id, orderNo, user, community, building, serviceCode, detail,
 
 function listView(order) {
   return { _id: order._id, orderNo: order.orderNo, kind: order.kind, serviceCode: order.serviceCode, communityId: order.communityId,
-    serviceName: SERVICE_NAMES[order.serviceCode] || '月卡', status: order.status, statusText: STATUS_TEXT[order.status],
+    serviceName: SERVICE_NAMES[order.serviceCode] || '月卡', status: order.status,
+    statusText: order.kind === 'membership_purchase' && order.status === 'paid' ? '已开卡' : STATUS_TEXT[order.status],
     pricing: { payAmount: order.pricing.payAmount, goodsCap: order.pricing.goodsCap }, slot: order.slot,
     createdAt: order.createdAt, buildingName: order.address && order.address.buildingName };
 }

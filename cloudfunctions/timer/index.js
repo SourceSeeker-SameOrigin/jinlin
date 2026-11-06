@@ -3,6 +3,7 @@ const { createServer } = require('./lib/shared/server');
 const { createPayFlow } = require('./lib/shared/payFlow');
 const { createLedgerFlow } = require('./lib/shared/ledgerFlow');
 const { ensure, integer } = require('./lib/shared/validate');
+const { createMembershipTasks } = require('./lib/shared/membershipFlow');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const payments = createPayFlow(cloud, server);
@@ -40,6 +41,15 @@ exports.main = async (event = {}) => {
       } catch (error) { console.error('退款核对待重试', order._id, error.code || 'E_PAYMENT'); }
     }
   });
+  try {
+    const cards = await server.all('memberships', { status: 'active', serviceCode: 'trash', startAt: command.lte(now), endAt: command.gt(now) });
+    results.membershipTasks = { created: 0, failed: 0 };
+    const tasks = createMembershipTasks(server);
+    for (const card of cards) {
+      try { if (await tasks.generate(card, now)) results.membershipTasks.created++; }
+      catch (error) { results.membershipTasks.failed++; console.error('月卡任务生成失败', card._id, error.code || 'E_INTERNAL'); }
+    }
+  } catch (error) { results.membershipTasks = { failed: true }; console.error('月卡任务查询失败', error.code || 'E_INTERNAL'); }
   try {
     results.expireMemberships = await db.collection('memberships').where({ status: 'active', endAt: command.lte(now) })
       .update({ data: { status: 'expired' } });

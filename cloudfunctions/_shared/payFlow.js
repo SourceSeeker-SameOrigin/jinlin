@@ -5,6 +5,7 @@ const { reserveRefund, refundResult, success, verifiedPayment, verifiedRefund, f
 const { payConfig } = require('./payConfig');
 const { SERVICE_NAMES, transitionPatch } = require('./orderData');
 const { ensure } = require('./validate');
+const { activateMembership } = require('./membershipFlow');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
@@ -22,8 +23,10 @@ function createPayFlow(cloud, server) {
       const currentUser = await read(transaction, 'users', user._id);
       const first = firstPaidChanges(current, currentUser, now);
       if (first) await insert(transaction, 'events', first.event);
+      const membership = current.kind === 'membership_purchase' ? await activateMembership(transaction, current, currentUser, now) : null;
+      if (membership) Object.assign(patch, membership.orderPatch);
       await transaction.collection('users').doc(user._id).update({ data: {
-        ...(first ? first.user : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
+        ...(first ? first.user : {}), ...(membership ? membership.userPatch : {}), orderRevision: (currentUser.orderRevision || 0) + 1 } });
       await transaction.collection('orders').doc(order._id).update({ data: patch });
       return { ...current, ...patch };
     });

@@ -1,4 +1,6 @@
 {
-  "navigationBarTitleText": "月卡",
-  "usingComponents": {}
+  "navigationBarTitleText": "我的月卡",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
 }
