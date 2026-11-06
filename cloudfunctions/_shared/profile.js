@@ -15,7 +15,11 @@ function publicUser(user) {
     communityId: user.communityId || null, buildingId: user.buildingId || null,
     buildingName: user.buildingName || '',
     unit: user.unit || '', room: user.room || '', firstPaidAt: user.firstPaidAt || null,
-    source: user.source ? { scene: user.source.scene, buildingId: user.source.buildingId || null } : null
+    source: user.source ? { scene: user.source.scene, buildingId: user.source.buildingId || null } : null,
+    moderationNotices: (user.moderationNotices || []).slice(-10),
+    addresses: (user.addresses || []).slice(0, 5).map(item => ({ id: item.id, communityId: item.communityId,
+      buildingId: item.buildingId, buildingName: item.buildingName || '', unit: item.unit, room: item.room,
+      contactName: item.contactName || '', contactPhone: maskPhone(item.contactPhone), isDefault: item.isDefault === true }))
   };
 }
 

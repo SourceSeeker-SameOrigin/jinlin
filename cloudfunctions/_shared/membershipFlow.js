@@ -5,6 +5,7 @@ const { newOrder, transitionPatch } = require('./orderData');
 const { membershipTaskId, orderNo } = require('./ids');
 const { ymd, nextDutyWindow } = require('./time');
 const { ensure } = require('./validate');
+const { dueTasks } = require('./schedule');
 
 async function activateMembership(transaction, order, user, now) {
   const key = membershipKey(order.communityId, order.planCode);
@@ -24,18 +25,23 @@ async function activateMembership(transaction, order, user, now) {
 
 function createMembershipTasks(server) {
   async function generate(card, now) {
-    if (!taskDue(card, now)) return false;
+    const cardCommunity = await server.get('communities', card.communityId);
+    const plan = cardCommunity && cardCommunity.cardPlans.find(item => item.code === card.planCode);
+    if (!taskDue(card, now, plan)) return false;
     const user = await server.one('users', { openid: card.userOpenid });
     ensure(user && user.communityId === card.communityId, '月卡门牌需要住户重新确认', 'E_CONFIG');
     return atomic(server.db, async transaction => {
       const current = await read(transaction, 'memberships', card._id);
-      if (!current || !taskDue(current, now)) return false;
+      if (!current || !taskDue(current, now, plan)) return false;
       const profile = await read(transaction, 'users', user._id);
       const community = await read(transaction, 'communities', current.communityId);
       const building = await read(transaction, 'buildings', profile.buildingId);
       ensure(!profile.blocked, '住户账号暂不可用', 'E_FORBIDDEN');
       nextDutyWindow(community.dutyWindows, now);
-      const window = community.dutyWindows[current.slot === 'morning' ? 0 : community.dutyWindows.length - 1];
+      const due = dueTasks(current, plan, ymd(now))[0];
+      const shift = due.slot === 'evening' && community.dutyWindows.length < 3 ? community.dutyWindows.length - 1 :
+        { morning: 0, afternoon: 1, evening: 2 }[due.slot];
+      const window = community.dutyWindows[shift];
       ensure(window, '月卡上门时段未配置', 'E_CONFIG');
       const date = ymd(now);
       const id = membershipTaskId(current._id, date, current.slot);

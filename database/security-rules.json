@@ -8,5 +8,8 @@
   "ledger": { "read": false, "write": false },
   "settlements": { "read": false, "write": false },
   "events": { "read": false, "write": false },
-  "config": { "read": false, "write": false }
+  "config": { "read": false, "write": false },
+  "reports": { "read": false, "write": false },
+  "auditLogs": { "read": false, "write": false },
+  "mediaChecks": { "read": false, "write": false }
 }

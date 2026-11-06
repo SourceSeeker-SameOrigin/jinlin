@@ -31,7 +31,7 @@ async function apply(event, { user, openid }) {
     const now = new Date();
     const data = { ...(previous || {}), ...fields, _id: id, openid, userId: user._id, level: 1,
       status: 'pending', insuranceUntil: null, onDuty: false, dutySince: null,
-      referralCode: previous ? previous.referralCode : shortCode(), stats: previous ? previous.stats :
+      referralCode: previous ? previous.referralCode : shortCode(), certs: previous ? previous.certs || [] : [], stats: previous ? previous.stats :
         { completed: 0, released: 0, ratingSum: 0, ratingCount: 0 }, reviewNote: '', createdAt: previous ? previous.createdAt : now, updatedAt: now };
     if (previous) { const { _id, ...update } = data; await transaction.collection('providers').doc(id).set({ data: update }); }
     else await insert(transaction, 'providers', data);
@@ -89,7 +89,7 @@ async function hall(event, { openid }) {
   const result = await db.collection('orders').where({ kind: 'service', communityId: provider.communityId,
     status: 'paid', minLevel: command.lte(provider.level), releasedProviderIds: command.nin([provider._id]) })
     .orderBy('createdAt', 'asc').skip(offset(event)).limit(20).get();
-  return { list: result.data.map(hallView), hasMore: result.data.length === 20 };
+  return { list: result.data.filter(order => !order.requiredCert || (provider.certs || []).includes(order.requiredCert)).map(hallView), hasMore: result.data.length === 20 };
 }
 
 async function assigned(event, openid) {

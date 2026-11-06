@@ -22,17 +22,23 @@ function renewCard(existing, order, now) {
     existing.planCode === order.planCode, '月卡归属不一致', 'E_CONFIG');
   const active = existing && existing.status === 'active' && existing.endAt > now;
   const slot = plan.serviceCode === 'trash' ? order.detail.slot : null;
-  ensure(plan.serviceCode !== 'trash' || ['morning', 'evening'].includes(slot), '请选择早班或晚班');
+  ensure(plan.serviceCode !== 'trash' || ['morning', 'afternoon', 'evening'].includes(slot), '请选择上门时段');
   return { ...(active ? existing : {}), _id: active ? existing._id : 'card_' + order._id,
     userOpenid: order.userOpenid, communityId: order.communityId, planCode: plan.code, serviceCode: plan.serviceCode,
     slot, skipDates: active ? existing.skipDates : [], startAt: active ? existing.startAt : now,
     endAt: addDays(active ? existing.endAt : now, plan.days), status: 'active', purchaseOrderId: order._id,
     createdAt: active ? existing.createdAt : now };
 }
-function taskDue(card, now) {
+function taskDue(card, now, plan) {
+  if (plan && plan.schedule) {
+    const { dueTasks } = require('./schedule');
+    const dueDate = ymd(now);
+    return dueTasks(card, plan, dueDate).length > 0 && card.status === 'active' && card.startAt <= now && card.endAt > now &&
+      card.lastGeneratedDate !== dueDate && hm(now) >= (card.slot === 'morning' ? '05:30' : card.slot === 'afternoon' ? '10:30' : '15:30');
+  }
   return card.status === 'active' && card.serviceCode === 'trash' && card.startAt <= now && card.endAt > now &&
     !card.skipDates.includes(ymd(now)) && card.lastGeneratedDate !== ymd(now) &&
-    hm(now) >= (card.slot === 'morning' ? '05:30' : '15:30');
+    hm(now) >= (card.slot === 'morning' ? '05:30' : card.slot === 'afternoon' ? '10:30' : '15:30');
 }
 function purchaseOrder({ id, orderNo, user, community, building, plan, first, slot, now, payMode }) {
   const amount = first ? plan.firstPeriodPrice : plan.price;

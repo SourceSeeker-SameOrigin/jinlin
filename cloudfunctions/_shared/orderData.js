@@ -44,7 +44,9 @@ function cleanNote(note = '') {
   return note.trim();
 }
 
-function addressSnapshot(user, community, building) {
+function addressSnapshot(user, community, building, selected = null) {
+  if (selected) user = { ...user, communityId: selected.communityId, buildingId: selected.buildingId,
+    unit: selected.unit, room: selected.room, phone: selected.contactPhone };
   ensure(community && community.status === 'active', '该小区暂不可用');
   ensure(building && building.communityId === community._id && user.communityId === community._id,
     '请重新绑定本小区门牌');
@@ -60,10 +62,11 @@ function transitionPatch(order, status, actor, now) {
     updatedAt: now, timeline: [...order.timeline, { status, at: now, by: actor }] };
 }
 
-function newOrder({ id, orderNo, user, community, building, serviceCode, detail, note, slot, pricing, now }) {
+function newOrder({ id, orderNo, user, community, building, serviceCode, detail, note, slot, pricing, now, selectedAddress = null }) {
   return { _id: id, orderNo, kind: 'service', serviceCode, planCode: null,
-    communityId: community._id, buildingId: building._id, address: addressSnapshot(user, community, building),
-    userOpenid: user.openid, userPhone: user.phone, minLevel: serviceCode === 'help' ? 2 : 1,
+    communityId: community._id, buildingId: building._id, address: { ...addressSnapshot(user, community, building, selectedAddress),
+      ...(selectedAddress ? { contactName: selectedAddress.contactName || '', contactPhone: selectedAddress.contactPhone } : {}) },
+    userOpenid: user.openid, userPhone: selectedAddress ? selectedAddress.contactPhone : user.phone, minLevel: serviceCode === 'help' ? 2 : 1,
     detail: cleanDetail(serviceCode, detail, community), note: cleanNote(note), slot,
     pricing: { listPrice: pricing.listPrice, discount: pricing.discount, payAmount: pricing.payAmount,
       goodsCap: pricing.goodsCap, goodsActual: 0, freeByMembership: pricing.freeByMembership },

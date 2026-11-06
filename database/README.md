@@ -2,7 +2,7 @@
 
 | 维度 | 内容 |
 | --- | --- |
-| What | 创建核心集合、导入示例种子、建立索引及应用前端权限规则 |
+| What | 创建核心与已实现扩展集合、导入示例种子、建立索引及应用前端权限规则 |
 | Why | 为登录、门牌绑定和 mock 订单提供测试数据 |
 | Who | 开发者准备文件；用户在集中验收时确认云环境并操作控制台 |
 | When | 首次部署业务云函数前完成，之后按下列步骤验证 |
@@ -11,7 +11,7 @@
 | How much | 5 条示例文档；初始化云端资源可能使用已有套餐额度 |
 
 1. 打开微信开发者工具的云开发控制台，确认当前是开发环境。
-2. 创建 `users`、`communities`、`buildings`、`providers`、`orders`、`memberships`、`ledger`、`settlements`、`events`、`config` 十个集合。
+2. 创建 `users`、`communities`、`buildings`、`providers`、`orders`、`memberships`、`ledger`、`settlements`、`events`、`config`、`reports`、`auditLogs`、`mediaChecks` 集合。
 3. 在每个集合的权限设置中，选择自定义安全规则，将 `security-rules.json` 中对应集合的规则对象单独粘贴并保存。该文件是集合到规则的清单，不能整个粘贴为单个集合的规则。
 4. 依次进入 `communities`、`buildings`、`config`，使用「导入」选择同名 `seed/*.json`。文件内容为 UTF-8 JSON Lines：每行一个对象，不是数组，也不是格式化的多行 JSON。
 5. 日期使用扩展 JSON 的 `$date` 表示；导入后检查 `createdAt`、`updatedAt` 是 Date 类型，而不是普通对象或字符串。示例时间是固定测试时间，不能代表真实创建时间。

@@ -1,6 +1,7 @@
 const { AppError, wrap } = require('./errors');
 const { requireRole } = require('./auth');
 const { ensure } = require('./validate');
+const { isEnabled } = require('./features');
 
 // 云函数运行边界；cloud 由各入口注入，模块加载时不初始化 SDK、不发请求。
 function createServer(cloud) {
@@ -35,6 +36,11 @@ function createServer(cloud) {
     ensure(value, '请先初始化全局配置', 'E_CONFIG');
     return value;
   }
+  async function feature(name, communityId) {
+    const [settings, community] = await Promise.all([config(), get('communities', communityId)]);
+    ensure(isEnabled(name, settings, community), '该功能暂未开放', 'E_FEATURE_OFF');
+    return { settings, community };
+  }
   // 每个业务入口均从微信上下文取身份，不采信 event.openid/roles。
   function entry(actions, roles = null) {
     return wrap(async (event = {}) => {
@@ -48,7 +54,7 @@ function createServer(cloud) {
       return actions[event.action](event, { openid: id, user: actor });
     });
   }
-  return { db, command, one, get, all, openid, user, config, entry };
+  return { db, command, one, get, all, openid, user, config, feature, entry };
 }
 
 module.exports = { createServer };

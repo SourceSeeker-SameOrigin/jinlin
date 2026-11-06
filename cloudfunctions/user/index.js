@@ -16,7 +16,7 @@ async function login(_, { openid }) {
     const now = new Date();
     const document = { _id: id, openid, phone: '', roles: ['resident'], communityId: null,
       buildingId: null, unit: '', room: '', source: null, firstPaidAt: null, blocked: false,
-      paidOrderCount: 0, firstPaidOrderId: null, createdAt: now, updatedAt: now };
+      paidOrderCount: 0, firstPaidOrderId: null, addresses: [], mutedUntil: null, moderationNotices: [], createdAt: now, updatedAt: now };
     try {
       await db.collection('users').add({ data: document });
       user = document;
@@ -51,11 +51,19 @@ async function setAddress(event, { openid }) {
   const community = await get('communities', event.communityId);
   const building = await get('buildings', event.buildingId);
   const address = validateAddress(event, community, building);
-  await db.collection('users').doc(user._id).update({ data: { ...address, updatedAt: new Date() } });
+  const addressId = 'addr_' + crypto.createHash('sha256').update([user._id, address.communityId, address.buildingId,
+    address.unit, address.room].join(':')).digest('hex').slice(0, 16);
+  const addresses = user.addresses || [];
+  const savedAddress = { id: addressId, ...address, buildingName: building.name, contactName: event.contactName || '', contactPhone: event.contactPhone || user.phone,
+    isDefault: true };
+  ensure(typeof savedAddress.contactName === 'string' && [...savedAddress.contactName].length <= 30, '联系人姓名不能超过 30 字');
+  ensure(/^1\d{10}$/.test(savedAddress.contactPhone), '请输入有效联系人手机号');
+  const nextAddresses = [savedAddress, ...addresses.filter(item => item.id !== addressId).map(item => ({ ...item, isDefault: false }))].slice(0, 5);
+  await db.collection('users').doc(user._id).update({ data: { ...address, addresses: nextAddresses, updatedAt: new Date() } });
   await db.collection('events').add({ data: { type: 'bind', openid, scene: user.source && user.source.scene || '',
     buildingId: address.buildingId, communityId: address.communityId,
     referrerProviderId: user.source && user.source.referrerProviderId || null, at: new Date() } });
-  return publicUser({ ...user, ...address, buildingName: building.name });
+  return publicUser({ ...user, ...address, addresses: nextAddresses, buildingName: building.name });
 }
 
 async function recordScene(event, { openid }) {

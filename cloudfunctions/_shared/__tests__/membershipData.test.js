@@ -42,6 +42,8 @@ test('晚班15:30开始生成，早班05:30开始；使用北京时间', () => {
   expect(taskDue(active, new Date('2026-11-07T07:30:00Z'))).toBe(true);
   expect(taskDue({ ...active, slot: 'morning' }, new Date('2026-11-06T21:29:59Z'))).toBe(false);
   expect(taskDue({ ...active, slot: 'morning' }, new Date('2026-11-06T21:30:00Z'))).toBe(true);
+  expect(taskDue({ ...active, slot: 'afternoon' }, new Date('2026-11-07T02:29:59Z'), { schedule: { type: 'daily' } })).toBe(false);
+  expect(taskDue({ ...active, slot: 'afternoon' }, new Date('2026-11-07T02:30:00Z'), { schedule: { type: 'daily' } })).toBe(true);
 });
 test('跳过、已生成、到期或尚未生效均不再生成', () => {
   for (const patch of [{ skipDates: ['2026-11-07'] }, { lastGeneratedDate: '2026-11-07' },

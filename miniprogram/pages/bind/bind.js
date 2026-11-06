@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 
 Page({
   data: { loading: true, saving: false, error: '', communities: [], buildings: [], units: [],
-    communityIndex: 0, buildingIndex: 0, unitIndex: 0, room: '', phone: '', agreed: false },
+    communityIndex: 0, buildingIndex: 0, unitIndex: 0, room: '', phone: '', contactName: '', contactPhone: '', agreed: false },
   onLoad() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -53,6 +53,8 @@ Page({
   },
   unitChange(event) { this.setData({ unitIndex: Number(event.detail.value) }); },
   roomChange(event) { this.setData({ room: event.detail.value }); },
+  contactNameChange(event) { this.setData({ contactName: event.detail.value }); },
+  contactPhoneChange(event) { this.setData({ contactPhone: event.detail.value }); },
   agreementChange(event) { this.setData({ agreed: event.detail.value.includes('agree') }); },
   async phone(event) {
     if (!event.detail.code) { this.setData({ error: '未取得手机号授权，可重新点击授权' }); return; }
@@ -71,7 +73,8 @@ Page({
     this.setData({ saving: true, error: '' });
     try {
       const user = await api.call('user', 'setAddress', { communityId: communities[communityIndex]._id,
-        buildingId: buildings[buildingIndex]._id, unit: units[unitIndex], room, privacyAgreed: agreed });
+        buildingId: buildings[buildingIndex]._id, unit: units[unitIndex], room, contactName: this.data.contactName,
+        contactPhone: this.data.contactPhone, privacyAgreed: agreed });
       getApp().globalData.user = user;
       wx.switchTab({ url: '/pages/index/index' });
     } catch (error) { this.setData({ error: error.message }); }

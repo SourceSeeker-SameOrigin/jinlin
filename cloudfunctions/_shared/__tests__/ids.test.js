@@ -33,6 +33,7 @@ test('确定性月卡任务 ID 对相同输入保持一致，日期和时段区�
   expect(membershipTaskId('card_123', '2026-11-06', 'evening')).toBe(id);
   expect(membershipTaskId('card_123', '2026-11-07', 'evening')).not.toBe(id);
   expect(membershipTaskId('card_123', '2026-11-06', 'morning')).not.toBe(id);
+  expect(membershipTaskId('card_123', '2026-11-06', 'afternoon')).not.toBe(id);
 });
 
 test.each([['', '2026-11-06', 'morning'], ['card', '2026-02-30', 'morning'],

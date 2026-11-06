@@ -7,11 +7,15 @@ function createOrderContext(server) {
   const { db, command, get } = server;
   return async function orderContext(event, user, { metadata = false } = {}) {
     const now = new Date();
-    ensure(event.communityId === user.communityId, '请选择已绑定的小区门牌');
+    const selectedAddress = event.addressId ? (user.addresses || []).find(item => item.id === event.addressId) : null;
+    ensure(!event.addressId || selectedAddress, '请选择已保存的上门地址');
+    const communityId = selectedAddress ? selectedAddress.communityId : user.communityId;
+    const buildingId = selectedAddress ? selectedAddress.buildingId : user.buildingId;
+    ensure(event.communityId === communityId, '请选择已保存地址所属的小区');
     const [community, building, config] = await Promise.all([
-      get('communities', user.communityId), get('buildings', user.buildingId), server.config()
+      get('communities', communityId), get('buildings', buildingId), server.config()
     ]);
-    const address = addressSnapshot(user, community, building);
+    const address = addressSnapshot(user, community, building, selectedAddress);
     const [duty, memberships] = await Promise.all([
       db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
         insuranceUntil: command.gt(now) }).count(),
@@ -40,7 +44,7 @@ function createOrderContext(server) {
       const note = cleanNote(event.note);
       const slot = event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
       validateSlot(slot, community.dutyWindows, duty.total, now);
-      return { ...common, pricing, detail, note, slot };
+      return { ...common, pricing, detail, note, slot, selectedAddress };
     } catch (error) {
       if (!metadata || error.code !== 'E_INVALID_PARAM') throw error;
       return { ...common, pricing: null, validationMessage: error.message };

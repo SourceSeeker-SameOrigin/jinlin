@@ -1,6 +1,7 @@
 const { ensure, integer, text } = require('./validate');
 const { requireRole, requireCommunityAccess } = require('./auth');
 const { parseDate, addDays, ymd } = require('./time');
+const { validateFeatures } = require('./features');
 
 function createAdminDashboard(cloud, server) {
   const { db, command } = server;
@@ -77,11 +78,15 @@ function createAdminDashboard(cloud, server) {
     text(event.communityId, '小区');
     const current = await server.get('communities', event.communityId);
     ensure(current, '小区不存在');
-    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans'];
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length > 0, '没有可保存的配置');
     if (patch.status !== undefined) ensure(['active', 'paused'].includes(patch.status), '小区状态不正确');
+    if (patch.features) {
+      const config = await server.config();
+      validateFeatures({ ...(config.features || {}), ...(current.features || {}), ...patch.features });
+    }
     if (patch.rates) ensure(Number.isFinite(patch.rates.platform) && Number.isFinite(patch.rates.property) &&
       patch.rates.platform >= 0 && patch.rates.property >= 0 && patch.rates.platform + patch.rates.property <= 1,
     '分账费率配置不正确');
@@ -117,16 +122,29 @@ function createAdminDashboard(cloud, server) {
     const current = await server.get('config', 'global');
     ensure(current, '全局配置不存在', 'E_CONFIG');
     const allowed = ['hotline', 'payMode', 'templateIds', 'templateFields', 'adminOpenids', 'blacklist',
-      'autoConfirmHours', 'acceptAlertMinutes', 'payTimeoutMinutes', 'complaintWindowHours', 'phoneVisibleHoursAfterDone', 'referralBonus'];
+      'autoConfirmHours', 'acceptAlertMinutes', 'payTimeoutMinutes', 'complaintWindowHours', 'phoneVisibleHoursAfterDone', 'referralBonus', 'features'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length, '没有可保存的配置');
     if (patch.payMode !== undefined) ensure(['mock', 'wechat'].includes(patch.payMode), '支付模式不正确');
     if (patch.blacklist !== undefined) ensure(Array.isArray(patch.blacklist) && patch.blacklist.every(item => typeof item === 'string'), '黑名单格式不正确');
     if (patch.adminOpenids !== undefined) ensure(Array.isArray(patch.adminOpenids) && patch.adminOpenids.every(item => typeof item === 'string'), '管理员列表格式不正确');
+    if (patch.features) {
+      const nextFeatures = { ...(current.features || {}), ...patch.features };
+      validateFeatures(nextFeatures);
+      const communities = await server.all('communities', {});
+      for (const community of communities) validateFeatures({ ...nextFeatures, ...(community.features || {}) });
+    }
     patch.updatedAt = new Date();
     await db.collection('config').doc('global').update({ data: patch });
     return { updated: Object.keys(patch).filter(key => key !== 'updatedAt') };
+  }
+
+  async function getFeatures(event, { user }) {
+    requireRole(user, ['admin']);
+    const [config, community] = await Promise.all([server.config(), get('communities', event.communityId || user.communityId)]);
+    return { global: config.features || {}, community: community && community.features || {},
+      communityId: community && community._id };
   }
 
   async function genPoster(event, { user }) {
@@ -149,7 +167,7 @@ function createAdminDashboard(cloud, server) {
     return { fileId: file.fileID, tempFileURL: fresh.fileList[0].tempFileURL, scene };
   }
 
-  return { dashboard, updateCommunity, upsertBuilding, updateConfig, genPoster };
+  return { dashboard, updateCommunity, upsertBuilding, updateConfig, getFeatures, genPoster };
 }
 
 module.exports = { createAdminDashboard };

@@ -41,9 +41,11 @@ function adminProviderActions(cloud, server) {
     }
     ensure(provider.status === 'pending', '该申请已处理，请刷新', 'E_CONFLICT');
     if (event.approved) integer(event.level, '审核等级', 1, 2);
+    const certs = event.certs === undefined ? provider.certs || [] : event.certs;
+    ensure(Array.isArray(certs) && certs.every(cert => ['escort','pet'].includes(cert)), '服务员证书列表不正确');
     const note = event.note === undefined ? '' : event.note;
     ensure(typeof note === 'string' && [...note].length <= 200, '审核备注不能超过 200 字');
-    const patch = { status, level: event.approved ? event.level : provider.level, onDuty: false,
+    const patch = { status, level: event.approved ? event.level : provider.level, certs, onDuty: false,
       reviewNote: note, updatedAt: new Date() };
     const result = await db.collection('providers').where({ _id: provider._id, status: 'pending' }).update({ data: patch });
     ensure(result.stats.updated === 1, '该申请已处理，请刷新', 'E_CONFLICT');
@@ -71,6 +73,17 @@ function adminProviderActions(cloud, server) {
       ...(until <= new Date() ? { onDuty: false, dutySince: null } : {}), updatedAt: new Date() } });
     return { insuranceUntil: until };
   }
-  return { listProviders, reviewProvider, suspendProvider, setInsurance, cleanupProviderKyc };
+  async function setCerts(event, { user }) {
+    const provider = await getProvider(event, user);
+    ensure(provider.status === 'approved', '仅可配置已通过审核的服务员证书', 'E_BAD_STATE');
+    const certs = event.certs;
+    ensure(Array.isArray(certs) && certs.every(cert => ['escort', 'pet'].includes(cert)), '服务员证书列表不正确');
+    const nextCerts = [...new Set(certs)];
+    const result = await db.collection('providers').where({ _id: provider._id, status: 'approved' })
+      .update({ data: { certs: nextCerts, updatedAt: new Date() } });
+    ensure(result.stats.updated === 1, '服务员状态已变化，请刷新', 'E_CONFLICT');
+    return { providerId: provider._id, certs: nextCerts };
+  }
+  return { listProviders, reviewProvider, suspendProvider, setInsurance, setCerts, cleanupProviderKyc };
 }
 module.exports = { adminProviderActions };
