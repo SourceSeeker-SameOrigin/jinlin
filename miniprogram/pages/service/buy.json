@@ -2,6 +2,7 @@
   "navigationBarTitleText": "周边代买",
   "usingComponents": {
     "price-bar": "/components/price-bar/index",
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "discount-selector": "/components/discount-selector/index"
   }
 }

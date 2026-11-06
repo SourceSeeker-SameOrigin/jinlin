@@ -4,6 +4,7 @@ const { parseScene } = require('./lib/shared/profile');
 const { nextDutyWindow } = require('./lib/shared/time');
 const { ensure, text, integer } = require('./lib/shared/validate');
 const { publicTemplates } = require('./lib/shared/notificationData');
+const { KEYS, isEnabled } = require('./lib/shared/features');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -25,7 +26,7 @@ async function getCommunity(event) {
   const duty = await db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
     insuranceUntil: server.command.gt(new Date()) }).count();
   const config = await server.config();
-  return { ...community, buildings, onDutyCount: duty.total,
+  return { ...community, buildings, enabledFeatures: Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)])), onDutyCount: duty.total,
     nextDutyWindow: nextDutyWindow(community.dutyWindows, new Date()), hotline: config.hotline, templateIds: publicTemplates(config) };
 }
 

@@ -7,6 +7,7 @@
     <navigator class="card" url="/pages/membership/index">我的月卡 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.board}}" class="card" url="/board/list/list">需求广场 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.chat}}" class="card" url="/chat/list/list">站内消息<text wx:if="{{unreadTotal}}"> · {{unreadTotal}} 条未读</text> ›</navigator>
+    <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/mine/mine">我的优惠券 ›</navigator>
     <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
     <navigator wx:else class="card" url="/provider/apply/apply">{{provider ? '查看服务员申请' : '成为邻居帮手'}} ›</navigator>
     <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>

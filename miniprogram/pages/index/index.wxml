@@ -7,6 +7,7 @@
     <view class="services"><service-tile wx:for="{{services}}" wx:key="code" code="{{item.code}}" name="{{item.name}}" icon="{{item.icon}}"/></view>
     <navigator class="card" url="/pages/membership/index"><view class="section-title">经常需要帮忙？看看月卡</view><view class="muted">快递月卡 · 垃圾月卡 ›</view></navigator>
     <navigator wx:if="{{community.enabledFeatures.board}}" class="card" url="/board/list/list"><view class="section-title">需求广场 ›</view><view class="muted">看看邻居的求助和出行帮带</view></navigator>
+    <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/center/center"><view class="section-title">优惠券中心 ›</view></navigator>
     <button bindtap="callHotline">不会用？打电话下单</button>
   </block>
 </view>

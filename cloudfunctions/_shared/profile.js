@@ -12,6 +12,7 @@ function parseScene(scene) {
 function publicUser(user) {
   return {
     _id: user._id, phone: maskPhone(user.phone), hasPhone: Boolean(user.phone), roles: user.roles,
+    pointsBalance: user.pointsBalance || 0,
     communityId: user.communityId || null, buildingId: user.buildingId || null,
     buildingName: user.buildingName || '',
     unit: user.unit || '', room: user.room || '', firstPaidAt: user.firstPaidAt || null,

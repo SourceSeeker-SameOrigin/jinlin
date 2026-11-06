@@ -179,3 +179,54 @@ test('允许 SPEC 的最大件数、大件数、袋数、块数与文本长度',
   help.detail.desc = '文'.repeat(200);
   expect(quote(help).listPrice).toBe(8000);
 });
+
+test.each([
+  [{ kind: 'amount_off', value: 200, maxOff: 500 }, 200],
+  [{ kind: 'percent_off', value: 20, maxOff: 1000 }, 70],
+  [{ kind: 'free', value: 0, maxOff: 9999 }, 349]
+])('优惠券类型计算且封顶有效 %p', (coupon, discount) => {
+  const data = input();
+  data.coupons = [{ couponId: 'c1', template: { ...coupon, threshold: 0, services: ['all'],
+    communityIds: 'all', status: 'active' } }];
+  data.communityId = 'c';
+  expect(quote(data)).toMatchObject({ couponId: 'c1', couponDiscount: discount,
+    payAmount: 350 - discount });
+});
+
+test('首单优惠与优惠券择优，代买商品款不参与抵扣', () => {
+  const data = input('buy');
+  data.user.firstPaidAt = null;
+  data.communityId = 'c';
+  data.coupons = [{ couponId: 'small', template: { kind: 'amount_off', value: 50, maxOff: 50,
+    threshold: 0, services: ['all'], communityIds: 'all', status: 'active' } }];
+  expect(quote(data)).toMatchObject({ payAmount: 100, couponId: null, couponDiscount: 0, goodsCap: 5000 });
+  data.coupons[0].template.value = 350;
+  data.coupons[0].template.maxOff = 350;
+  expect(quote(data)).toMatchObject({ payAmount: 50, couponId: 'small', couponDiscount: 350, goodsCap: 5000 });
+});
+
+test('自动报价选更优优惠，用户手选时按所选优惠券计价', () => {
+  const data = input('buy');
+  data.user.firstPaidAt = null;
+  data.communityId = 'c';
+  data.coupons = [{ couponId: 'small', template: { kind: 'amount_off', value: 50, maxOff: 50,
+    threshold: 0, services: ['all'], communityIds: 'all', status: 'active' } }];
+  expect(quote(data)).toMatchObject({ payAmount: 100, couponId: null, reason: '首单优惠' });
+  data.couponId = 'small';
+  expect(quote(data)).toMatchObject({ payAmount: 350, couponId: 'small', couponDiscount: 50, reason: '优惠券' });
+});
+
+test('积分 100 点兑 1 元，最多抵扣五成，且实付至少 1 分', () => {
+  const data = input();
+  data.coupons = [];
+  data.pointsBalance = 500;
+  data.pointsEnabled = true;
+  data.pointsToUse = 175;
+  expect(quote(data)).toMatchObject({ payAmount: 175, pointsRedeemed: 175 });
+  data.pointsToUse = 176;
+  expect(() => quote(data)).toThrow('50%');
+  data.pointsBalance = 1000;
+  data.pointsToUse = 0;
+  data.coupons = [{ couponId: 'free', discount: 349 }];
+  expect(quote(data).payAmount).toBe(1);
+});

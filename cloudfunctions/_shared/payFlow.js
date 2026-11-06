@@ -7,6 +7,7 @@ const { SERVICE_NAMES, transitionPatch } = require('./orderData');
 const { ensure } = require('./validate');
 const { activateMembership } = require('./membershipFlow');
 const { createNotifier } = require('./notify');
+const { markCouponUsed, releaseOrderDiscounts, finalizeRefundDiscounts } = require('./couponFlow');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
@@ -30,6 +31,7 @@ function createPayFlow(cloud, server) {
       if (paidCount && paidCount.secondEvent) await insert(transaction, 'events', paidCount.secondEvent);
       const membership = current.kind === 'membership_purchase' ? await activateMembership(transaction, current, currentUser, now) : null;
       if (membership) Object.assign(patch, membership.orderPatch);
+      await markCouponUsed(transaction, current, now);
       await transaction.collection('users').doc(user._id).update({ data: {
         ...(first ? first.user : {}), ...(paidCount ? paidCount.user : {}), ...(membership ? membership.userPatch : {}),
         orderRevision: (currentUser.orderRevision || 0) + 1 } });
@@ -73,6 +75,7 @@ function createPayFlow(cloud, server) {
       const refunds = refundResult(order, refund.outRefundNo, refund.amount, status).map(item =>
         item.outRefundNo === refund.outRefundNo && dispatched ? { ...item, dispatchedAt: new Date() } : item);
       await transaction.collection('orders').doc(orderId).update({ data: { refunds, updatedAt: new Date() } });
+      if (status === 'success') await finalizeRefundDiscounts(transaction, order, refunds, new Date());
       return { ...order, refunds };
     });
   }
@@ -107,6 +110,7 @@ function createPayFlow(cloud, server) {
       await transaction.collection('orders').doc(order._id).update({ data: patch });
       const resultingOrder = { ...current, ...patch };
       if (options.afterWrite) await options.afterWrite(transaction, resultingOrder);
+      await finalizeRefundDiscounts(transaction, resultingOrder, reserved.refunds, new Date());
       return { order: resultingOrder, refund: reserved.refund };
     });
     await dispatchRefund(result.order, result.refund);
@@ -130,9 +134,16 @@ function createPayFlow(cloud, server) {
           '微信订单状态待确认，请稍后刷新', 'E_PAYMENT');
       }
     }
-    const result = await db.collection('orders').where({ _id: order._id, status: 'pending_pay' })
-      .update({ data: transitionPatch(order, 'closed', actor, new Date()) });
-    ensure(result.stats.updated === 1, '订单状态已变化，请刷新后重试', 'E_CONFLICT');
+    await atomic(db, async transaction => {
+      const current = await read(transaction, 'orders', order._id);
+      ensure(current, '订单不存在');
+      if (current.status === 'closed') return;
+      ensure(current.status === 'pending_pay', '订单状态已变化，请刷新后重试', 'E_CONFLICT');
+      const user = await read(transaction, 'users', current.userId);
+      ensure(user, '订单用户不存在', 'E_CONFIG');
+      await releaseOrderDiscounts(transaction, current, user, new Date());
+      await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, new Date()) });
+    });
   }
 
   return { onPaid, prepare, verifyPaid, requestRefund, dispatchRefund, verifyRefund, setRefundResult, closeUnpaid };

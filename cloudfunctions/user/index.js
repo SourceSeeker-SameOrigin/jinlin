@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const { createServer } = require('./lib/shared/server');
 const { publicUser, providerSummary, parseScene, validateAddress } = require('./lib/shared/profile');
 const { ensure, text } = require('./lib/shared/validate');
+const { issueAutomatic } = require('./lib/shared/couponFlow');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -11,15 +12,18 @@ const { db, command, one, get } = server;
 
 async function login(_, { openid }) {
   let user = await one('users', { openid });
+  let created = false;
   if (!user) {
     const id = 'u_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 32);
     const now = new Date();
     const document = { _id: id, openid, phone: '', roles: ['resident'], communityId: null,
       buildingId: null, unit: '', room: '', source: null, firstPaidAt: null, blocked: false,
-      paidOrderCount: 0, firstPaidOrderId: null, addresses: [], mutedUntil: null, moderationNotices: [], createdAt: now, updatedAt: now };
+      paidOrderCount: 0, firstPaidOrderId: null, addresses: [], pointsBalance: 0, couponCounts: {},
+      mutedUntil: null, moderationNotices: [], createdAt: now, updatedAt: now };
     try {
       await db.collection('users').add({ data: document });
       user = document;
+      created = true;
     } catch (error) {
       // 并发首次登录只创建一条；其余数据库异常保留给边界处理。
       user = await one('users', { openid });
@@ -27,6 +31,10 @@ async function login(_, { openid }) {
     }
   }
   ensure(!user.blocked, '账号暂不可用，请联系管理员', 'E_FORBIDDEN');
+  if (created) {
+    try { await server.feature('coupons', user.communityId); await issueAutomatic(server, openid, user.communityId || ''); }
+    catch (error) { if (error.code !== 'E_FEATURE_OFF') throw error; }
+  }
   const provider = await one('providers', { openid });
   const community = await get('communities', user.communityId);
   const building = await get('buildings', user.buildingId);
@@ -63,6 +71,8 @@ async function setAddress(event, { openid }) {
   await db.collection('events').add({ data: { type: 'bind', openid, scene: user.source && user.source.scene || '',
     buildingId: address.buildingId, communityId: address.communityId,
     referrerProviderId: user.source && user.source.referrerProviderId || null, at: new Date() } });
+  try { await server.feature('coupons', address.communityId); await issueAutomatic(server, openid, address.communityId); }
+  catch (error) { if (error.code !== 'E_FEATURE_OFF') throw error; }
   return publicUser({ ...user, ...address, addresses: nextAddresses, buildingName: building.name });
 }
 
