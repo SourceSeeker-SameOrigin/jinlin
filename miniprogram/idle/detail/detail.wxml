@@ -1,0 +1,25 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button></view>
+  <block wx:if="{{item}}">
+    <view class="card">
+      <view wx:if="{{item.sourceCommunityName}}" class="muted">来自 {{item.sourceCommunityName}}</view>
+      <view class="page-title">{{item.title}}</view><view class="price">¥{{item.priceText}}<text wx:if="{{item.negotiable}}" class="muted"> · 可议价</text></view>
+      <view class="muted">{{item.conditionText}} · {{item.timeText}}</view><view class="muted">{{item.category}}</view>
+      <view class="desc">{{item.desc}}</view>
+      <image wx:for="{{item.images}}" wx:key="*this" src="{{item}}" class="photo" mode="aspectFill" data-url="{{item}}" bindtap="preview"/>
+      <view wx:if="{{item.tradeMode === 'escrow'}}" class="notice">担保交易 · 支付由平台暂存，确认收货后结算给卖家</view>
+      <view wx:if="{{item.status !== 'on_sale'}}" class="notice">{{item.status === 'sold' ? '已售出' : item.status === 'reserved' ? '担保交易进行中' : item.status === 'removed' ? '已下架' : '暂不可交易'}}</view>
+    </view>
+    <view wx:if="{{item.seller && item.status === 'on_sale'}}" class="card">
+      <button bindtap="edit">编辑闲置</button><button wx:if="{{item.tradeMode === 'offline'}}" bindtap="markSold">标记已售</button><button wx:if="{{item.tradeMode === 'escrow'}}" bindtap="sales">查看担保订单</button><button bindtap="remove">下架</button>
+    </view>
+    <view wx:elif="{{!item.seller && item.status === 'on_sale'}}" class="card">
+      <view wx:if="{{item.sellerPhone}}" class="muted">卖家电话：{{item.sellerPhone}}</view>
+      <button wx:if="{{item.tradeMode === 'escrow' && item.status === 'on_sale'}}" type="primary" bindtap="buy" loading="{{busy}}">立即购买 · 担保交易</button>
+      <button wx:if="{{item.sellerPhone}}" type="primary" bindtap="contact">拨打卖家电话</button>
+      <button wx:elif="{{item.tradeMode === 'offline'}}" type="primary" bindtap="want" loading="{{busy}}">我想要 · 联系卖家</button>
+      <button bindtap="carry">一键帮搬</button><button bindtap="report">举报</button>
+    </view>
+  </block>
+  <view wx:if="{{loading}}" class="muted">正在加载…</view>
+</view>

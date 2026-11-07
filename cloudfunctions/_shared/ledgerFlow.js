@@ -15,9 +15,11 @@ function createLedgerFlow(server) {
     const now = new Date();
     if (!order.bookedAmounts || Object.values(delta).some(value => value !== 0)) {
       await insert(transaction, 'ledger', { _id: 'order_' + order._id + '_' + version,
-        refType: 'order', refId: order._id, communityId: order.communityId, providerId: order.providerId,
-        amounts: delta, settled: { provider: false, property: false },
-        settlementIds: { provider: null, property: null }, createdAt: now });
+        refType: order.kind === 'idle_purchase' ? 'idle_sale' : 'order', refId: order._id,
+        communityId: order.communityId, providerId: order.providerId || null,
+        sellerOpenid: order.sellerOpenid || null, sellerUserId: order.sellerUserId || null,
+        amounts: delta, settled: { provider: false, property: false, seller: false },
+        settlementIds: { provider: null, property: null, seller: null }, createdAt: now });
     }
     await transaction.collection('orders').doc(order._id).update({ data: { bookedAmounts: target, ledgerVersion: version } });
   }
@@ -32,6 +34,12 @@ function createLedgerFlow(server) {
       const now = new Date();
       const patch = { ...transitionPatch(current, 'completed', actor, now), completedAt: current.completedAt || now };
       await book(transaction, current);
+      if (current.kind === 'idle_purchase') {
+        const item = await read(transaction, 'idleItems', current.idleItemId);
+        ensure(item && item.sellerOpenid === current.sellerOpenid && item.purchaseOrderId === current._id &&
+          item.status === 'reserved', '闲置商品预留状态不一致，无法结算', 'E_CONFLICT');
+        await transaction.collection('idleItems').doc(item._id).update({ data: { status: 'sold', updatedAt: now } });
+      }
       const user = current.userId ? await read(transaction, 'users', current.userId) : null;
       if (user && user.source && user.source.referrerProviderId) {
         const referrer = await read(transaction, 'providers', user.source.referrerProviderId);

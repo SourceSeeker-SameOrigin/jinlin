@@ -1,6 +1,7 @@
 const { atomic, read, insert } = require('./transaction');
 const { ensure, text, integer } = require('./validate');
-const { newOrderConversation, orderConversationId, readOnly, messageView, checkSendRate } = require('./chatData');
+const { newOrderConversation, orderConversationId, idleConversationId, newIdleConversation, idleReadOnly,
+  readOnly, messageView, checkSendRate } = require('./chatData');
 const { isEnabled } = require('./features');
 
 async function ensureOrderConversation(server, order) {
@@ -39,6 +40,41 @@ function createChatFlow(cloud, server) {
     ensure(['accepted', 'in_service', 'delivered', 'disputed', 'completed'].includes(order.status), '当前订单状态不能发送消息', 'E_BAD_STATE');
   }
 
+  async function idleForMember(conversation, openid) {
+    ensure(conversation && conversation.type === 'idle' && conversation.members.includes(openid), '无权访问此会话', 'E_FORBIDDEN');
+    const item = await server.get('idleItems', conversation.refId);
+    ensure(item && conversation.members.includes(item.sellerOpenid), '已不再参与此闲置会话', 'E_FORBIDDEN');
+    await ensureIdleAccess(item, openid);
+    return item;
+  }
+
+  async function ensureIdleAccess(item, buyerOpenid, cache = null) {
+    const config = cache && cache.config || await server.config();
+    const buyer = cache && cache.buyer || await server.one('users', { openid: buyerOpenid });
+    async function community(id) {
+      if (cache && cache.communities.has(id)) return cache.communities.get(id);
+      const value = await server.get('communities', id);
+      if (cache) cache.communities.set(id, value);
+      return value;
+    }
+    const buyerCommunity = buyer && await community(buyer.communityId);
+    const sellerCommunity = await community(item.communityId);
+    ensure(buyerCommunity && sellerCommunity && buyerCommunity.status === 'active' && sellerCommunity.status === 'active',
+      '小区暂不可用', 'E_FORBIDDEN');
+    const sameCommunity = buyerCommunity._id === sellerCommunity._id;
+    const federation = item.scope === 'federation' && buyerCommunity.federationGroupId &&
+      buyerCommunity.federationGroupId === sellerCommunity.federationGroupId &&
+      isEnabled('federation', config, buyerCommunity) && isEnabled('federation', config, sellerCommunity);
+    ensure(sameCommunity || federation, '无权访问此闲置会话', 'E_FORBIDDEN');
+    ensure(isEnabled('idle', config, buyerCommunity) && isEnabled('idle', config, sellerCommunity) &&
+      isEnabled('chat', config, buyerCommunity) && isEnabled('chat', config, sellerCommunity),
+      '该功能暂未开放', 'E_FEATURE_OFF');
+  }
+
+  async function ensureIdleWritable(item, conversation) {
+    ensure(!idleReadOnly(item, conversation), '该闲置会话已关闭，只能查看历史消息', 'E_BAD_STATE');
+  }
+
   async function openOrder(event, { openid }) {
     text(event.orderId, '订单');
     const order = await server.get('orders', event.orderId);
@@ -51,9 +87,30 @@ function createChatFlow(cloud, server) {
       unread: conversation.unread && conversation.unread[openid] || 0, enabled: Boolean(community) };
   }
 
-  async function pullMessages(conversation, order, openid, event, config) {
+  async function openIdle(event, { openid }) {
+    text(event.itemId, '闲置商品');
+    const item = await server.get('idleItems', event.itemId);
+    ensure(item && item.sellerOpenid !== openid && !item.moderationHidden, '商品不存在或不能与自己聊天', 'E_FORBIDDEN');
+    await ensureIdleAccess(item, openid);
+    const conversation = await atomic(db, async transaction => {
+      const current = await read(transaction, 'idleItems', item._id);
+      ensure(current && current.sellerOpenid !== openid && current.status === 'on_sale' &&
+        current.tradeMode === 'offline' && !current.moderationHidden,
+        '该闲置当前不可聊天', 'E_BAD_STATE');
+      const id = idleConversationId(current._id, openid);
+      const existing = await read(transaction, 'conversations', id);
+      if (existing) return existing;
+      const value = newIdleConversation(current, openid);
+      await insert(transaction, 'conversations', value);
+      return value;
+    });
+    return { conversationId: conversation._id, readOnly: idleReadOnly(item, conversation),
+      unread: conversation.unread && conversation.unread[openid] || 0, enabled: true };
+  }
+
+  async function pullMessages(conversation, reference, openid, event, config) {
     const now = new Date();
-    const isReadOnly = readOnly(order, conversation, config, now);
+    const isReadOnly = conversation.type === 'idle' ? idleReadOnly(reference, conversation) : readOnly(reference, conversation, config, now);
     if (isReadOnly && !conversation.closedAt) await db.collection('conversations').doc(conversation._id)
       .update({ data: { closedAt: now, updatedAt: now } });
     const afterId = !event.afterId ? '' : text(event.afterId, '消息游标', 100);
@@ -68,19 +125,22 @@ function createChatFlow(cloud, server) {
   async function pull(event, { openid }) {
     text(event.conversationId, '会话');
     const conversation = await server.get('conversations', event.conversationId);
-    const order = await orderForMember(conversation, openid);
-    await server.feature('chat', order.communityId);
-    return pullMessages(conversation, order, openid, event, await server.config());
+    const reference = conversation && conversation.type === 'idle'
+      ? await idleForMember(conversation, openid) : await orderForMember(conversation, openid);
+    await server.feature('chat', reference.communityId);
+    return pullMessages(conversation, reference, openid, event, await server.config());
   }
 
   async function send(event, { openid }) {
     text(event.conversationId, '会话');
     ensure(['text', 'image'].includes(event.type), '消息类型不正确');
     const conversation = await server.get('conversations', event.conversationId);
-    const order = await orderForMember(conversation, openid);
-    const { settings: config } = await server.feature('chat', order.communityId);
+    const reference = conversation && conversation.type === 'idle'
+      ? await idleForMember(conversation, openid) : await orderForMember(conversation, openid);
+    const { settings: config } = await server.feature('chat', reference.communityId);
     const now = new Date();
-    await ensureWritable(order, conversation, config, now);
+    if (conversation.type === 'idle') await ensureIdleWritable(reference, conversation);
+    else await ensureWritable(reference, conversation, config, now);
     let content = '';
     let fileId = null;
     if (event.type === 'text') {
@@ -96,13 +156,19 @@ function createChatFlow(cloud, server) {
     const message = await atomic(db, async transaction => {
       const current = await read(transaction, 'conversations', conversation._id);
       ensure(current && current.members.includes(openid), '会话已变化，请刷新后重试', 'E_CONFLICT');
-      const currentOrder = await read(transaction, 'orders', current.refId);
-      ensure(currentOrder && currentOrder.providerOpenid && current.members.includes(currentOrder.providerOpenid),
-        '当前订单服务员不在会话中', 'E_FORBIDDEN');
+      const currentReference = current.type === 'idle'
+        ? await read(transaction, 'idleItems', current.refId) : await read(transaction, 'orders', current.refId);
+      ensure(currentReference, '关联内容不存在', 'E_FORBIDDEN');
       const [currentConfig, currentCommunity] = await Promise.all([read(transaction, 'config', 'global'),
-        read(transaction, 'communities', currentOrder.communityId)]);
+        read(transaction, 'communities', currentReference.communityId)]);
       ensure(isEnabled('chat', currentConfig, currentCommunity), '该功能暂未开放', 'E_FEATURE_OFF');
-      await ensureWritable(currentOrder, current, currentConfig, now);
+      if (current.type === 'idle') {
+        ensure(current.members.includes(currentReference.sellerOpenid), '会话卖家已变化', 'E_CONFLICT');
+        await ensureIdleWritable(currentReference, current);
+      } else {
+        ensure(current.members.includes(currentReference.providerOpenid), '当前订单服务员不在会话中', 'E_FORBIDDEN');
+        await ensureWritable(currentReference, current, currentConfig, now);
+      }
       const lastSentAt = current.lastSentAt && current.lastSentAt[openid] ? new Date(current.lastSentAt[openid]) : null;
       checkSendRate(lastSentAt, now);
       const messageSeq = integer(current.messageSeq || 0, '消息序号', 0, Number.MAX_SAFE_INTEGER - 1) + 1;
@@ -120,7 +186,7 @@ function createChatFlow(cloud, server) {
     if (event.type === 'image') {
       const { requestMediaCheck } = require('./ugc');
       try { await requestMediaCheck(cloud, db, { fileId, targetType: 'message', targetId: message._id,
-        authorOpenid: openid, communityId: order.communityId }); }
+        authorOpenid: openid, communityId: reference.communityId }); }
       catch (_) {
         await db.collection('messages').doc(message._id).update({ data: { status: 'blocked', moderationFailedAt: new Date() } });
         await db.collection('conversations').doc(conversation._id).update({ data: { lastMessage: '图片未通过审核', updatedAt: new Date() } });
@@ -134,17 +200,37 @@ function createChatFlow(cloud, server) {
       .orderBy('lastAt', 'desc').limit(100).get();
     const list = [];
     const config = await server.config();
+    const idleCache = { config, buyer: null, communities: new Map() };
     for (const conversation of result.data) {
-      if (conversation.type !== 'order') continue;
-      const order = await server.get('orders', conversation.refId);
-      if (!order || (order.userOpenid !== openid && order.providerOpenid !== openid)) continue;
-      const community = await server.get('communities', order.communityId);
-      if (!isEnabled('chat', config, community)) continue;
-      list.push({ conversationId: conversation._id, type: conversation.type, refId: conversation.refId,
-        serviceName: ({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手' })[order.serviceCode] || '订单',
-        lastMessage: conversation.lastMessage || '', lastAt: conversation.lastAt,
-        unread: conversation.unread && conversation.unread[openid] || 0,
-        readOnly: readOnly(order, conversation, config) });
+      if (conversation.type === 'order') {
+        const order = await server.get('orders', conversation.refId);
+        if (!order || (order.userOpenid !== openid && order.providerOpenid !== openid)) continue;
+        const community = await server.get('communities', order.communityId);
+        if (!isEnabled('chat', config, community)) continue;
+        list.push({ conversationId: conversation._id, type: conversation.type, refId: conversation.refId,
+          serviceName: ({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手' })[order.serviceCode] || '订单',
+          lastMessage: conversation.lastMessage || '', lastAt: conversation.lastAt,
+          unread: conversation.unread && conversation.unread[openid] || 0,
+          readOnly: readOnly(order, conversation, config) });
+      } else if (conversation.type === 'idle') {
+        const item = await server.get('idleItems', conversation.refId);
+        if (!item || !conversation.members.includes(openid)) continue;
+        try {
+          if (!idleCache.buyerLoaded) {
+            idleCache.buyer = await server.one('users', { openid });
+            idleCache.buyerLoaded = true;
+          }
+          await ensureIdleAccess(item, openid, idleCache);
+        }
+        catch (error) {
+          if (['E_FORBIDDEN', 'E_FEATURE_OFF'].includes(error.code)) continue;
+          throw error;
+        }
+        list.push({ conversationId: conversation._id, type: conversation.type, refId: conversation.refId,
+          serviceName: item.title, lastMessage: conversation.lastMessage || '', lastAt: conversation.lastAt,
+          unread: conversation.unread && conversation.unread[openid] || 0,
+          readOnly: idleReadOnly(item, conversation) });
+      }
     }
     return { list, unreadTotal: list.reduce((sum, item) => sum + item.unread, 0) };
   }
@@ -152,8 +238,9 @@ function createChatFlow(cloud, server) {
   async function markRead(event, { openid }) {
     text(event.conversationId, '会话');
     const initial = await server.get('conversations', event.conversationId);
-    const order = await orderForMember(initial, openid);
-    await server.feature('chat', order.communityId);
+    const reference = initial && initial.type === 'idle'
+      ? await idleForMember(initial, openid) : await orderForMember(initial, openid);
+    await server.feature('chat', reference.communityId);
     await atomic(db, async transaction => {
       const conversation = await read(transaction, 'conversations', initial._id);
       ensure(conversation && conversation.members.includes(openid), '无权访问此会话', 'E_FORBIDDEN');
@@ -209,7 +296,7 @@ function createChatFlow(cloud, server) {
       from: senderRows[index] && senderRows[index].from || '' })) };
   }
 
-  return { openOrder, pull, send, list, markRead, adminPull };
+  return { openOrder, openIdle, pull, send, list, markRead, adminPull };
 }
 
 module.exports = { ensureOrderConversation, createChatFlow };

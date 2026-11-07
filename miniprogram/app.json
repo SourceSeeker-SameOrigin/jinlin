@@ -33,6 +33,10 @@
     {
       "root": "board",
       "pages": ["list/list", "detail/detail", "create/create"]
+    },
+    {
+      "root": "idle",
+      "pages": ["list/list", "detail/detail", "create/create", "mine/mine", "sales/sales", "sale/sale", "income/income"]
     }
   ],
   "window": {

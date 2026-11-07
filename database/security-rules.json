@@ -18,5 +18,6 @@
   "couponTemplates": { "read": false, "write": false },
   "coupons": { "read": false, "write": false },
   "pointsLedger": { "read": false, "write": false },
-  "comments": { "read": false, "write": false }
+  "comments": { "read": false, "write": false },
+  "idleItems": { "read": false, "write": false }
 }

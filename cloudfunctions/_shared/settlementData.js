@@ -9,13 +9,19 @@ function period(event) {
   return { from, to, period: { from: event.from, to: event.to } };
 }
 
-function rowsForPayee(ledger, payee, providerId) {
+function rowsForPayee(ledger, payee, payeeId) {
   return ledger.filter(row => row.settled && row.settled[payee] === false &&
-    (payee !== 'provider' || row.providerId === providerId));
+    (payee === 'provider' ? row.providerId === payeeId : payee === 'seller' ? row.sellerOpenid === payeeId : true) &&
+    !(payee === 'seller' && row.payoutId));
+}
+
+function amountForPayee(row, payee) {
+  if (payee !== 'seller') return row.amounts[payee];
+  return Math.max(0, row.amounts.seller - (row.paidAmounts && row.paidAmounts.seller || 0));
 }
 
 function total(rows, payee) {
-  return rows.reduce((sum, row) => sum + row.amounts[payee], 0);
+  return rows.reduce((sum, row) => sum + amountForPayee(row, payee), 0);
 }
 
 function csvCell(value) {
@@ -25,8 +31,8 @@ function csvCell(value) {
 }
 
 function csv(rows) {
-  const header = ['收款对象', '小区ID', '服务员ID', '期间开始', '期间结束', '金额（分）', '状态', '账本条数'];
-  return '\uFEFF' + [header, ...rows.map(item => [item.payee, item.communityId, item.providerId || '', item.from,
+  const header = ['收款对象', '小区ID', '服务员ID', '卖家OpenID', '期间开始', '期间结束', '金额（分）', '状态', '账本条数'];
+  return '\uFEFF' + [header, ...rows.map(item => [item.payee, item.communityId, item.providerId || '', item.sellerOpenid || '', item.from,
     item.to, item.total, item.status, item.ledgerIds.length])].map(row => row.map(csvCell).join(',')).join('\r\n');
 }
 
@@ -35,7 +41,7 @@ function settlementId(payee, communityId, providerId, from, to) {
   return 'st_' + crypto.createHash('sha256').update([payee, communityId, providerId || '', from, to].join(':')).digest('hex').slice(0, 36);
 }
 
-function validatePayee(payee) { ensure(['provider', 'property'].includes(payee), '收款对象不正确'); }
+function validatePayee(payee) { ensure(['provider', 'property', 'seller'].includes(payee), '收款对象不正确'); }
 function validateSettlementNote(note = '') { ensure(typeof note === 'string' && [...note].length <= 200, '备注不能超过 200 字'); return note.trim(); }
 
-module.exports = { period, rowsForPayee, total, csvCell, csv, settlementId, validatePayee, validateSettlementNote };
+module.exports = { period, rowsForPayee, amountForPayee, total, csvCell, csv, settlementId, validatePayee, validateSettlementNote };

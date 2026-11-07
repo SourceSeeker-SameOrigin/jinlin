@@ -2,6 +2,7 @@ const { requireRole, requireCommunityAccess } = require('./auth');
 const { ensure, text } = require('./validate');
 const { period, rowsForPayee, total, csv, settlementId, validatePayee, validateSettlementNote } = require('./settlementData');
 const { atomic, read, insert } = require('./transaction');
+const { isEnabled } = require('./features');
 
 function adminSettlementActions(cloud, server) {
   const { db, command } = server;
@@ -12,14 +13,25 @@ function adminSettlementActions(cloud, server) {
     if (event.payee === 'property' && user.roles.includes('property')) communityId = user.communityId;
     text(communityId, '小区');
     if (event.payee === 'provider') requireRole(user, ['admin']);
+    else if (event.payee === 'seller') requireRole(user, ['admin']);
     else requireRole(user, ['admin', 'property']);
     requireCommunityAccess(user, communityId);
     let provider = null;
+    let seller = null;
     if (event.payee === 'provider') {
       provider = await server.get('providers', event.providerId);
       ensure(provider && provider.communityId === communityId, '服务员不属于该小区');
     }
-    return { ...date, communityId, provider };
+    if (event.payee === 'seller') {
+      const config = await server.config();
+      const community = await server.get('communities', communityId);
+      ensure(!isEnabled('autoPayout', config, community), '自动打款已开启，请由卖家从收入页申请打款', 'E_BAD_STATE');
+      if (event.sellerOpenid) {
+        seller = await server.one('users', { openid: event.sellerOpenid });
+        ensure(seller, '卖家账号不存在');
+      }
+    }
+    return { ...date, communityId, provider, seller };
   }
   async function settlementPreview(event, { user }) {
     const data = await scope(event, user);
@@ -30,12 +42,20 @@ function adminSettlementActions(cloud, server) {
       const eligible = rowsForPayee(ledger, 'property');
       if (eligible.length) rows.push({ payee: 'property', communityId: data.communityId, providerId: null,
         from: event.from, to: event.to, total: total(eligible, 'property'), ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
-    } else {
+    } else if (event.payee === 'provider') {
       const ids = event.providerId ? [event.providerId] : [...new Set(ledger.filter(row => row.providerId && row.settled.provider === false).map(row => row.providerId))];
       for (const id of ids) {
         const eligible = rowsForPayee(ledger, 'provider', id);
         if (eligible.length) rows.push({ payee: 'provider', communityId: data.communityId, providerId: id,
           from: event.from, to: event.to, total: total(eligible, 'provider'), ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
+      }
+    } else {
+      const ids = event.sellerOpenid ? [event.sellerOpenid] : [...new Set(ledger.filter(row => row.sellerOpenid && row.settled.seller === false).map(row => row.sellerOpenid))];
+      for (const id of ids) {
+        const eligible = rowsForPayee(ledger, 'seller', id);
+        if (eligible.length) rows.push({ payee: 'seller', communityId: data.communityId, providerId: null,
+          sellerOpenid: id, from: event.from, to: event.to, total: total(eligible, 'seller'),
+          ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
       }
     }
     return { from: event.from, to: event.to, rows };
@@ -47,7 +67,7 @@ function adminSettlementActions(cloud, server) {
     ensure(preview.rows.length, '该期间没有待结算账目');
     const results = [];
     for (const row of preview.rows) {
-      const id = settlementId(row.payee, row.communityId, row.providerId, event.from, event.to);
+      const id = settlementId(row.payee, row.communityId, row.providerId || row.sellerOpenid, event.from, event.to);
       const settlement = await atomic(db, async transaction => {
         const existing = await read(transaction, 'settlements', id);
         if (existing) return existing;
@@ -55,11 +75,13 @@ function adminSettlementActions(cloud, server) {
         for (const ledgerId of ids) {
           const ledgerRow = await read(transaction, 'ledger', ledgerId);
           ensure(ledgerRow && ledgerRow.settled[row.payee] === false &&
-            (row.payee !== 'provider' || ledgerRow.providerId === row.providerId), '部分账目已结算，请刷新预览', 'E_CONFLICT');
+            (row.payee !== 'provider' || ledgerRow.providerId === row.providerId) &&
+            (row.payee !== 'seller' || ledgerRow.sellerOpenid === row.sellerOpenid) && !ledgerRow.payoutId,
+          '部分账目已结算，请刷新预览', 'E_CONFLICT');
           const settlementIds = { ...(ledgerRow.settlementIds || {}), [row.payee]: id };
-          await transaction.collection('ledger').doc(ledgerId).update({ data: { [row.payee === 'provider' ? 'settlementIds.provider' : 'settlementIds.property']: id } });
+          await transaction.collection('ledger').doc(ledgerId).update({ data: { ['settlementIds.' + row.payee]: id } });
         }
-        const result = { _id: id, payee: row.payee, providerId: row.providerId, communityId: row.communityId,
+        const result = { _id: id, payee: row.payee, providerId: row.providerId, sellerOpenid: row.sellerOpenid || null, communityId: row.communityId,
           period: data.period, ledgerIds: ids, total: row.total, status: 'draft', paidAt: null,
           note: validateSettlementNote(event.note), createdAt: new Date(), createdBy: openid };
         await insert(transaction, 'settlements', result);
@@ -82,7 +104,7 @@ function adminSettlementActions(cloud, server) {
       ensure(current.status === 'draft', '结算单状态不正确', 'E_BAD_STATE');
       for (const ledgerId of current.ledgerIds) {
         const row = await read(transaction, 'ledger', ledgerId);
-        const field = current.payee === 'provider' ? 'provider' : 'property';
+        const field = current.payee;
         const settlementField = field === 'provider' ? 'settlementIds.provider' : 'settlementIds.property';
         ensure(row && row.settled[field] === false && row.settlementIds[field] === current._id,
           '账本与结算单不一致，请联系管理员', 'E_CONFLICT');
@@ -108,9 +130,9 @@ function adminSettlementActions(cloud, server) {
     if (user.roles.includes('property')) { filter.communityId = user.communityId; filter.payee = 'property'; }
     else if (event.communityId) filter.communityId = event.communityId;
     const rows = await server.all('settlements', filter);
-    return { list: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100).map(({ _id, payee, providerId,
+    return { list: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100).map(({ _id, payee, providerId, sellerOpenid,
       communityId, period: range, total: amount, status, paidAt, note }) => ({ _id, payee, providerId, communityId,
-      period: range, total: amount, status, paidAt, note })) };
+      sellerOpenid, period: range, total: amount, status, paidAt, note })) };
   }
   return { settlementPreview, settlementCreate, settlementMarkPaid, exportCsv, listSettlements };
 }
