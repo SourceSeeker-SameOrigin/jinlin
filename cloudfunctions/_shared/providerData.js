@@ -68,7 +68,9 @@ function hallView(order) {
   const amounts = split({ ...order.pricing, rates: order.rateSnapshot, source: order.source,
     membershipTaskPayout: order.membershipTaskPayout });
   return { _id: order._id, serviceCode: order.serviceCode, serviceName: SERVICE_NAMES[order.serviceCode],
-    buildingName: order.address.buildingName, slot: order.slot, estimatedIncome: amounts.provider };
+    buildingName: order.address.buildingName, slot: order.slot, estimatedIncome: amounts.provider,
+    ...(order.serviceCode === 'custom' ? { title: order.detail.title, desc: order.detail.desc,
+      needEnterHome: order.detail.needEnterHome === true } : {}) };
 }
 
 module.exports = { fileInFolder, application, canWork, canTake, delivery, providerView, hallView };

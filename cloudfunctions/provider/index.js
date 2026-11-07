@@ -7,7 +7,7 @@ const { requireApprovedProvider } = require('./lib/shared/auth');
 const { transitionPatch, listView } = require('./lib/shared/orderData');
 const { ensure, integer, text } = require('./lib/shared/validate');
 const { shortCode } = require('./lib/shared/ids');
-const { ymd, parseDate, addDays } = require('./lib/shared/time');
+const { ymd, parseDate, addDays, parseWindow } = require('./lib/shared/time');
 const { createPayFlow } = require('./lib/shared/payFlow');
 const { conditionalTransition } = require('./lib/shared/orderStore');
 const { publicTemplates } = require('./lib/shared/notificationData');
@@ -92,7 +92,19 @@ async function hall(event, { openid }) {
   const result = await db.collection('orders').where({ kind: 'service', communityId: provider.communityId,
     status: 'paid', minLevel: command.lte(provider.level), releasedProviderIds: command.nin([provider._id]) })
     .orderBy('createdAt', 'asc').skip(offset(event)).limit(20).get();
-  return { list: result.data.filter(order => !order.requiredCert || (provider.certs || []).includes(order.requiredCert)).map(hallView), hasMore: result.data.length === 20 };
+  const tasks = result.data.filter(order => order.taskPostId);
+  const posts = tasks.length ? await db.collection('posts').where({ _id: command.in(tasks.map(order => order.taskPostId)) }).get() : { data: [] };
+  const postById = new Map(posts.data.map(post => [post._id, post]));
+  const now = new Date();
+  const visible = result.data.filter(order => {
+    if (order.taskPostId) {
+      const post = postById.get(order.taskPostId);
+      if (!post || post.moderationHidden || post.expireAt <= now || !['open', 'taken'].includes(post.status)) return false;
+      if (!order.slot || parseWindow(order.slot).endAt <= now) return false;
+    }
+    return !order.requiredCert || (provider.certs || []).includes(order.requiredCert);
+  });
+  return { list: visible.map(hallView), hasMore: result.data.length === 20 };
 }
 
 async function assigned(event, openid) {
@@ -107,8 +119,14 @@ async function accept(event, { openid }) {
   text(event.orderId, '订单');
   const [provider, order] = await Promise.all([mine(openid), server.get('orders', event.orderId)]);
   ensure(order, '订单不存在');
-  canTake(order, provider, new Date());
   const now = new Date();
+  canTake(order, provider, now);
+  if (order.taskPostId) {
+    const post = await server.get('posts', order.taskPostId);
+    ensure(post && !post.moderationHidden && post.expireAt > now && post.status === 'open',
+      '悬赏任务已关闭或隐藏，无法接单', 'E_BAD_STATE');
+    ensure(order.slot && parseWindow(order.slot).endAt > now, '悬赏服务时段已结束，无法接单', 'E_BAD_STATE');
+  }
   const result = await conditionalTransition(server, order, 'accepted', openid,
     { providerId: provider._id, providerOpenid: openid, acceptedAt: now },
     { releasedProviderIds: command.nin([provider._id]) }, '手慢了，单已被接走');

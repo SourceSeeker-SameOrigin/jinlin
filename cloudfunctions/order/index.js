@@ -15,6 +15,7 @@ const { complaintAllowed } = require('./lib/shared/orderLifecycle');
 const { createNotifier } = require('./lib/shared/notify');
 const { publicTemplates } = require('./lib/shared/notificationData');
 const { isEnabled } = require('./lib/shared/features');
+const { parseWindow } = require('./lib/shared/time');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -101,6 +102,13 @@ async function retryPayment(event, { openid }) {
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.userOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
+  if (order.taskPostId) {
+    const now = new Date();
+    const post = await server.get('posts', order.taskPostId);
+    ensure(post && !post.moderationHidden && post.status === 'open' && post.expireAt > now,
+      '悬赏任务已关闭或隐藏，无法继续支付', 'E_BAD_STATE');
+    ensure(order.slot && parseWindow(order.slot).endAt > now, '悬赏服务时段已结束，无法继续支付', 'E_BAD_STATE');
+  }
   return payments.prepare(order);
 }
 
