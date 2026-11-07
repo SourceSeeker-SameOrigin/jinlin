@@ -9,7 +9,7 @@ const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCoun
   providerBatchView, providerBatchDetail } = require('./lib/shared/station');
 const { period } = require('./lib/shared/settlementData');
 const { isEnabled } = require('./lib/shared/features');
-const { stationGrant } = require('./lib/shared/stationApplications');
+const { stationGrant, reviewInput } = require('./lib/shared/stationApplications');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
@@ -98,10 +98,7 @@ async function listApplications(event, { user }) {
 
 async function reviewApplication(event, { user, openid }) {
   requireRole(user, ['admin']);
-  const applicationId = text(event.applicationId, '驿站申请');
-  const status = event.status;
-  ensure(['approved', 'rejected'].includes(status), '审核结果不正确');
-  const reviewNote = typeof event.reviewNote === 'string' ? text(event.reviewNote, '审核说明', 300).trim() : '';
+  const { applicationId, status, reviewNote } = reviewInput(event);
   const now = new Date();
   return atomic(db, async transaction => {
     const application = await read(transaction, 'stationApplications', applicationId);
@@ -204,14 +201,13 @@ async function listMyBatches(event, { user }) {
 
 async function exportStatement(event, { user }) {
   let community, stationCode;
-  if (user.roles.includes('station')) ({ community, stationCode } = await stationContext(user));
-  else {
+  if (event.communityId !== undefined || event.stationCode !== undefined || !user.roles.includes('station')) {
     requireRole(user, ['admin']);
     const context = await server.feature('stationDelivery', text(event.communityId, '小区'));
     community = context.community;
     stationCode = text(event.stationCode, '驿站');
     ensure(community && (community.stations || []).some(item => item.code === stationCode), '小区或驿站不存在');
-  }
+  } else ({ community, stationCode } = await stationContext(user));
   const range = period(event);
   const rows = await server.all('deliveryBatches', { communityId: community._id, stationCode, status: 'done',
     completedAt: command.gte(range.from).and(command.lt(range.to)) });

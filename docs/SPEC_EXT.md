@@ -86,7 +86,7 @@ memberships.slot: 'morning' | 'afternoon' | 'evening'                        // 
 | 角色 | 代码 | 用途 |
 | --- | --- | --- |
 | 商家 | `merchant` | E12 商家员工，绑定 `merchantId` |
-| 驿站 | `station` | E10 驿站员工，绑定 `communityId + stationCode` |
+| 驿站 | `station` | E10 驿站员工，审批后绑定 `stationCommunityId + stationCode`，保留居住小区 |
 
 角色由管理员在审核商家、驿站后授予。
 
