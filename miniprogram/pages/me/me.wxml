@@ -5,6 +5,7 @@
     <view wx:for="{{user.moderationNotices}}" wx:key="createdAt" class="card error">{{item.message}}</view>
     <view class="card"><view class="page-title">我的门牌</view><view>{{community.name || '尚未选择小区'}}</view><view>{{user.buildingName}} {{user.unit}} {{user.room}}</view><view>{{user.phone || '尚未绑定手机号'}}</view><navigator url="/pages/bind/bind">修改门牌和手机号 ›</navigator></view>
     <navigator class="card" url="/pages/membership/index">我的月卡 ›</navigator>
+    <navigator wx:if="{{community.enabledFeatures.chat}}" class="card" url="/chat/list/list">站内消息<text wx:if="{{unreadTotal}}"> · {{unreadTotal}} 条未读</text> ›</navigator>
     <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
     <navigator wx:else class="card" url="/provider/apply/apply">{{provider ? '查看服务员申请' : '成为邻居帮手'}} ›</navigator>
     <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>

@@ -28,6 +28,9 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   provider(event) { this.setData({ providerIndex: Number(event.detail.value) }); },
+  openChat() {
+    wx.navigateTo({ url: '/admin/chat/chat?caseType=complaint&orderId=' + encodeURIComponent(this.orderId) });
+  },
   async assign() {
     const provider = this.data.providers[this.data.providerIndex];
     if (!provider) { this.setData({ error: '请选择服务员' }); return; }

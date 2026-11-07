@@ -12,6 +12,9 @@ const { createPayFlow } = require('./lib/shared/payFlow');
 const { conditionalTransition } = require('./lib/shared/orderStore');
 const { publicTemplates } = require('./lib/shared/notificationData');
 const { createNotifier } = require('./lib/shared/notify');
+const { ensureOrderConversation } = require('./lib/shared/chatFlow');
+const { orderConversationId } = require('./lib/shared/chatData');
+const { isEnabled } = require('./lib/shared/features');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const { db, command } = server;
@@ -106,9 +109,14 @@ async function accept(event, { openid }) {
   ensure(order, '订单不存在');
   canTake(order, provider, new Date());
   const now = new Date();
-  return conditionalTransition(server, order, 'accepted', openid,
+  const result = await conditionalTransition(server, order, 'accepted', openid,
     { providerId: provider._id, providerOpenid: openid, acceptedAt: now },
     { releasedProviderIds: command.nin([provider._id]) }, '手慢了，单已被接走');
+  try {
+    await server.feature('chat', order.communityId);
+    await ensureOrderConversation(server, { ...order, status: 'accepted', providerOpenid: openid });
+  } catch (error) { if (error.code !== 'E_FEATURE_OFF') console.error('订单会话创建待重试', order._id, error.code || 'E_INTERNAL'); }
+  return result;
 }
 
 async function release(event, { openid }) {
@@ -117,9 +125,15 @@ async function release(event, { openid }) {
     const current = await read(transaction, 'orders', order._id);
     ensure(current.status === 'accepted' && current.providerId === provider._id, '任务状态已变化，无法放弃', 'E_CONFLICT');
     const worker = await read(transaction, 'providers', provider._id);
+    const [config, community] = await Promise.all([read(transaction, 'config', 'global'),
+      read(transaction, 'communities', current.communityId)]);
+    const conversation = isEnabled('chat', config, community)
+      ? await read(transaction, 'conversations', orderConversationId(current._id, openid)) : null;
     await transaction.collection('orders').doc(order._id).update({ data: {
       ...transitionPatch(current, 'paid', openid, new Date()), providerId: null, providerOpenid: null, acceptedAt: null,
       releasedProviderIds: [...new Set([...(current.releasedProviderIds || []), provider._id])] } });
+    if (conversation && !conversation.closedAt) await transaction.collection('conversations').doc(conversation._id)
+      .update({ data: { closedAt: new Date(), updatedAt: new Date() } });
     await transaction.collection('providers').doc(provider._id).update({ data: { 'stats.released': (worker.stats.released || 0) + 1 } });
   });
   return { orderId: order._id, status: 'paid' };

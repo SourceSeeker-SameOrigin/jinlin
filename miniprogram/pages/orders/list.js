@@ -4,11 +4,18 @@ const { display, slotText } = require('../../utils/time');
 Page({
   data: { groups: [{ code: 'ongoing', name: '进行中' }, { code: 'done', name: '已完成' }, { code: 'aftersale', name: '售后' }],
     group: 'ongoing', orders: [], loading: false, error: '', hasMore: true },
-  onShow() { this.load(true); },
+  onShow() { this.load(true); this.refreshUnread(); },
   onPullDownRefresh() { this.load(true).finally(() => wx.stopPullDownRefresh()); },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
   groupChange(event) { this.setData({ group: event.currentTarget.dataset.group }); this.load(true); },
   retry() { this.load(this.data.orders.length === 0); },
+  async refreshUnread() {
+    try {
+      const result = await api.call('chat', 'list', {}, { loading: false, silent: true });
+      if (result.unreadTotal > 0) wx.setTabBarBadge({ index: 1, text: String(Math.min(result.unreadTotal, 99)) });
+      else wx.removeTabBarBadge({ index: 1 });
+    } catch (_) { wx.removeTabBarBadge({ index: 1 }); }
+  },
   async load(reset = false) {
     const sequence = (this.sequence || 0) + 1;
     this.sequence = sequence;

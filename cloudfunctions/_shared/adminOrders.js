@@ -12,6 +12,7 @@ const { refundTotals } = require('./refundState');
 const { createLedgerFlow } = require('./ledgerFlow');
 const { splitMembershipSale } = require('./split');
 const { ledgerDelta } = require('./orderLifecycle');
+const { ensureOrderConversation } = require('./chatFlow');
 
 function adminOrderActions(cloud, server) {
   const payments = createPayFlow(cloud, server);
@@ -45,8 +46,13 @@ function adminOrderActions(cloud, server) {
     canWork(provider, new Date(), order.minLevel);
     ensure(order.kind === 'service' && provider.communityId === order.communityId, '请选择本小区服务员');
     ensure(order.status === 'paid', '仅待接单订单可指派', 'E_BAD_STATE');
-    return conditionalTransition(server, order, 'accepted', openid, { providerId: provider._id,
+    const result = await conditionalTransition(server, order, 'accepted', openid, { providerId: provider._id,
       providerOpenid: provider.openid, acceptedAt: new Date() });
+    try {
+      await server.feature('chat', order.communityId);
+      await ensureOrderConversation(server, { ...order, status: 'accepted', providerOpenid: provider.openid });
+    } catch (error) { if (error.code !== 'E_FEATURE_OFF') console.error('指派订单会话创建待重试', order._id, error.code || 'E_INTERNAL'); }
+    return result;
   }
   async function forceCancel(event, { user, openid }) {
     const order = await managed(event, user);

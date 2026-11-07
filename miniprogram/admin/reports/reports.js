@@ -14,6 +14,10 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   chooseStatus(event) { this.setData({ status: event.currentTarget.dataset.status }); this.load(true); },
+  openChat(event) {
+    const row = this.data.rows[event.currentTarget.dataset.index];
+    wx.navigateTo({ url: '/admin/chat/chat?caseType=report&reportId=' + encodeURIComponent(row._id) });
+  },
   async resolve(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];
     const status = event.currentTarget.dataset.status;

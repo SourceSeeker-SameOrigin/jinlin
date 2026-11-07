@@ -20,7 +20,11 @@
     },
     {
       "root": "admin",
-      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports"]
+      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat"]
+    },
+    {
+      "root": "chat",
+      "pages": ["list/list", "room/room"]
     }
   ],
   "window": {

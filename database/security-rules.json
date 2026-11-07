@@ -11,5 +11,7 @@
   "config": { "read": false, "write": false },
   "reports": { "read": false, "write": false },
   "auditLogs": { "read": false, "write": false },
-  "mediaChecks": { "read": false, "write": false }
+  "mediaChecks": { "read": false, "write": false },
+  "conversations": { "read": false, "write": false },
+  "messages": { "read": false, "write": false }
 }
