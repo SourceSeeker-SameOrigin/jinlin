@@ -1,4 +1,4 @@
-const { membershipKey, cardPlan, renewCard, taskDue, purchaseOrder } = require('../membershipData');
+const { membershipKey, cardPlan, renewCard, visitAddressFor, taskDue, purchaseOrder } = require('../membershipData');
 const { membershipTaskId } = require('../ids');
 const { splitMembershipSale } = require('../split');
 const { ymd } = require('../time');
@@ -66,4 +66,49 @@ test('拒绝配置错配及首期高于原价', () => {
   expect(cardPlan({ cardPlans: [plan] }, plan.code)).toEqual(plan);
   expect(() => cardPlan({ cardPlans: [{ ...plan, serviceCode: 'express' }] }, plan.code)).toThrow();
   expect(() => cardPlan({ cardPlans: [{ ...plan, firstPeriodPrice: 5000 }] }, plan.code)).toThrow();
+});
+
+describe('独居探访月卡', () => {
+  const visitPlan = { code: 'visit_monthly', name: '独居探访月卡', serviceCode: 'visit', price: 19900,
+    firstPeriodPrice: 19900, days: 30, schedule: { type: 'weekly', weekdays: [2, 5] } };
+  const visitOrder = { ...order, _id: 'visit_o', planCode: visitPlan.code, planSnapshot: visitPlan, detail: { slot: 'morning' },
+    address: { buildingName: '3号楼', unit: '1单元', room: '302', contactName: '李女士', contactPhone: '13900000000' },
+    userPhone: '13900000000', buildingId: 'b2' };
+
+  test('使用每周二、五排期，校验非法日期配置', () => {
+    const community = { cardPlans: [visitPlan] };
+    expect(cardPlan(community, visitPlan.code).schedule.weekdays).toEqual([2, 5]);
+    expect(() => cardPlan({ cardPlans: [{ ...visitPlan, schedule: { type: 'weekly', weekdays: [0] } }] }, visitPlan.code)).toThrow();
+  });
+
+  test('续卡保存为父母预选地址和服务电话', () => {
+    const renewed = renewCard(null, visitOrder, now);
+    expect(renewed).toMatchObject({ serviceCode: 'visit', slot: 'morning', visitAddress: {
+      communityId: 'c', buildingId: 'b2', buildingName: '3号楼', unit: '1单元', room: '302',
+      contactName: '李女士', contactPhone: '13900000000' } });
+  });
+
+  test('续期地址只从新周期生效，不改写本周期任务地址', () => {
+    const current = renewCard(null, visitOrder, now);
+    const nextOrder = { ...visitOrder, _id: 'visit_o2', buildingId: 'b3',
+      address: { buildingName: '5号楼', unit: '2单元', room: '501', contactName: '王女士', contactPhone: '13700000000' },
+      userPhone: '13700000000' };
+    const renewed = renewCard(current, nextOrder, now);
+    const newCycle = current.endAt;
+    expect(visitAddressFor(renewed, new Date(newCycle.getTime() - 1))).toMatchObject({ buildingId: 'b2', room: '302' });
+    expect(visitAddressFor(renewed, newCycle)).toMatchObject({ buildingId: 'b3', room: '501' });
+    expect(renewed.visitAddress).toMatchObject({ buildingId: 'b2', room: '302' });
+  });
+
+  test('购买订单用已保存地址快照并绑定地址 ID', () => {
+    const community = { _id: 'c', status: 'active', rates: { platform: 0.2, property: 0.05 } };
+    const user = { _id: 'u', openid: 'u', communityId: 'c', buildingId: 'b', unit: '2单元', room: '101', phone: '13800000000' };
+    const building = { _id: 'b2', communityId: 'c', name: '3号楼', units: ['1单元'] };
+    const selected = { id: 'addr_parent', communityId: 'c', buildingId: 'b2', buildingName: '3号楼',
+      unit: '1单元', room: '302', contactPhone: '13900000000' };
+    const result = purchaseOrder({ id: 'visit_o', orderNo: 'JL2', user, community, building, plan: visitPlan,
+      first: true, slot: 'morning', now, payMode: 'mock', selectedAddress: selected });
+    expect(result).toMatchObject({ addressId: 'addr_parent', buildingId: 'b2', minLevel: 2,
+      address: { buildingName: '3号楼', unit: '1单元', room: '302' }, userPhone: '13900000000', detail: { slot: 'morning' } });
+  });
 });

@@ -3,7 +3,8 @@ const { uploadPhotos } = require('../../utils/media');
 const { slotText } = require('../../utils/time');
 const { toFen, yuan } = require('../../utils/money');
 Page({
-  data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '' },
+  data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+    visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false },
   onLoad(options) { this.orderId = options.id; },
   onShow() { this.visible = true; this.load(); },
   onHide() { this.visible = false; this.stopLocationTimer(); },
@@ -35,6 +36,13 @@ Page({
     finally { this.locationBusy = false; }
   },
   goods(event) { this.setData({ goodsYuan: event.detail.value }); },
+  visitCheck(event) {
+    const checked = new Set(event.detail.value || []);
+    this.setData({ visitChecks: { mental: checked.has('mental'), diet: checked.has('diet'),
+      utilities: checked.has('utilities'), doors: checked.has('doors'), medical: checked.has('medical') } });
+  },
+  visitNotes(event) { this.setData({ visitNotes: event.detail.value }); },
+  visitAttention(event) { this.setData({ visitAttention: event.detail.value, attentionCallConfirmed: false }); },
   async photo(event) {
     try {
       const receipt = event.currentTarget.dataset.type === 'receipt';
@@ -52,12 +60,15 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await api.call('provider', action, { orderId: this.orderId, photos: this.data.photos,
-        receiptPhoto: this.data.receiptPhoto, goodsActual: toFen(this.data.goodsYuan) });
+        receiptPhoto: this.data.receiptPhoto, goodsActual: toFen(this.data.goodsYuan),
+        visitReport: this.data.order.serviceCode === 'visit' ? { checks: this.data.visitChecks, notes: this.data.visitNotes,
+          attention: this.data.visitAttention, attentionCallConfirmed: this.data.attentionCallConfirmed } : undefined });
       if (action === 'release') wx.redirectTo({ url: '/provider/workbench/workbench' });
       else await this.load();
     } catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  callResident() { if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone }); },
+  callResident() { if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
+    success: () => { if (this.data.order.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
   openChat() { wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
 });

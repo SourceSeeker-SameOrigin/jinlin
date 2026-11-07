@@ -16,6 +16,7 @@ const { createNotifier } = require('./lib/shared/notify');
 const { publicTemplates } = require('./lib/shared/notificationData');
 const { isEnabled } = require('./lib/shared/features');
 const { parseWindow } = require('./lib/shared/time');
+const { atomic, read } = require('./lib/shared/transaction');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -66,6 +67,22 @@ async function quote(event, { user }) {
 async function subscriptionTemplates(event, { user }) {
   requireRole(user, ['resident']);
   return publicTemplates(await server.config());
+}
+
+async function subscribeVisitReport(event, { openid }) {
+  text(event.orderId, '订单');
+  const order = await server.get('orders', event.orderId);
+  ensure(order && order.userOpenid === openid && order.serviceCode === 'visit', '无权操作该探访订单', 'E_FORBIDDEN');
+  await server.feature('elder', order.communityId);
+  return atomic(server.db, async transaction => {
+    const current = await read(transaction, 'orders', order._id);
+    ensure(current && current.userOpenid === openid && current.serviceCode === 'visit', '无权操作该探访订单', 'E_FORBIDDEN');
+    ensure(['paid', 'accepted', 'in_service'].includes(current.status) && !current.visitReport,
+      '该探访任务已完成或状态已变化，请在订单详情查看报告', 'E_BAD_STATE');
+    if (current.visitReportNotifyAuthorizedAt) return { authorized: true, alreadyAuthorized: true };
+    await transaction.collection('orders').doc(current._id).update({ data: { visitReportNotifyAuthorizedAt: new Date() } });
+    return { authorized: true, alreadyAuthorized: false };
+  });
 }
 
 async function listMine(event, { openid }) {
@@ -148,5 +165,5 @@ async function cancel(event, { openid }) {
   return { orderId: order._id, status: patch.status };
 }
 
-exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates,
+exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates, subscribeVisitReport,
   ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property']);

@@ -30,7 +30,8 @@ async function getCommunity(event) {
     insuranceUntil: server.command.gt(new Date()) }).count();
   const config = await server.config();
   const { locationGeo, ...publicCommunity } = community;
-  return { ...publicCommunity, buildings, enabledFeatures: Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)])), onDutyCount: duty.total,
+  return { ...publicCommunity, features: { ...(config.features || {}), ...(community.features || {}) },
+    enabledFeatures: Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)])), buildings, onDutyCount: duty.total,
     nextDutyWindow: nextDutyWindow(community.dutyWindows, new Date()), hotline: config.hotline, templateIds: publicTemplates(config) };
 }
 

@@ -1,5 +1,6 @@
 const { ensure, record, integer, text } = require('./validate');
 const { couponDiscount: calculateCouponDiscount } = require('./couponData');
+const elder = require('./services/elder');
 
 function price(value, label) {
   return integer(value, label, 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
@@ -10,6 +11,17 @@ function price(value, label) {
 function quote(input) {
   record(input, '报价参数');
   const { serviceCode, detail, prices, user, membershipState = null, todayUsedParcels } = input;
+  if (serviceCode === 'meal') {
+    const elderQuote = elder.quote(serviceCode, detail, prices, input.community);
+    const firstOrderPrice = price(prices.firstOrderPrice, '首单价');
+    if (user.firstPaidAt == null && elderQuote.payAmount > firstOrderPrice) {
+      elderQuote.payAmount = firstOrderPrice;
+      elderQuote.discount = elderQuote.listPrice - firstOrderPrice;
+      elderQuote.reason = '首单优惠';
+    }
+    return elderQuote;
+  }
+  if (serviceCode === 'escort') return elder.quote(serviceCode, detail, prices, input.community);
   ensure(['express', 'trash', 'buy', 'help'].includes(serviceCode), '暂不支持该服务');
   record(detail, '服务详情');
   record(prices, '价格配置', 'E_CONFIG');

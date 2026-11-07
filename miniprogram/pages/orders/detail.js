@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
+const subscriptions = require('../../utils/subscriptions');
 const statuses = { pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中', delivered: '待确认',
   completed: '已完成', disputed: '售后处理中', refunded: '已退款', cancelled: '已取消', closed: '已关闭' };
 Page({
@@ -25,8 +26,8 @@ Page({
         } catch (_) { this.chatConversationId = null; }
       }
       const labels = { stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数',
-        sorted: '已分类', shop: '店名', items: '清单', goodsCap: '商品预付', category: '类别', desc: '描述', blocks: '时长块数',
-        title: '悬赏任务', needEnterHome: '需要进入家中' };
+        sorted: '已分类', shop: '店名', canteenName: '合作食堂', items: '清单', goodsCap: '预付金额', category: '类别', desc: '描述', blocks: '时长块数',
+        title: '悬赏任务', needEnterHome: '需要进入家中', hospital: '医院', department: '科室', date: '日期', start: '开始时间', pickup: '需要接送' };
       const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
@@ -59,6 +60,24 @@ Page({
   callProvider() {
     const provider = this.data.order && this.data.order.provider;
     if (provider && provider.canCall) wx.makePhoneCall({ phoneNumber: provider.phone });
+  },
+  async subscribeVisitReport() {
+    if (this.data.busy || !this.data.order || this.data.order.serviceCode !== 'visit' || this.data.order.visitReport ||
+      this.data.order.visitReportNotifyAuthorized) return;
+    this.setData({ busy: true });
+    try {
+      const pendingKey = 'visitReportConsentPending:' + this.orderId;
+      let accepted = wx.getStorageSync(pendingKey) === true;
+      if (!accepted) accepted = (await subscriptions.request(['visitReport'])) > 0;
+      if (accepted) {
+        wx.setStorageSync(pendingKey, true);
+        await api.call('order', 'subscribeVisitReport', { orderId: this.orderId }, { loading: false, silent: true });
+        wx.removeStorageSync(pendingKey);
+        await this.load();
+        wx.showToast({ title: '已订阅本次探访报告', icon: 'success' });
+      } else wx.showToast({ title: '未授权，仍可在此查看报告', icon: 'none' });
+    } catch (error) { this.setData({ error: error.message || '订阅状态保存失败，请重试' }); }
+    finally { this.setData({ busy: false }); }
   },
   openChat() {
     if (this.data.order && this.data.order.canChat) wx.navigateTo({ url: '/chat/room/room?conversationId=' + encodeURIComponent(this.chatConversationId || '') +

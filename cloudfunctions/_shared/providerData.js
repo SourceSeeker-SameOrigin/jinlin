@@ -37,6 +37,7 @@ function canTake(order, provider, now) {
   ensure(order.kind === 'service' && order.communityId === provider.communityId, '无法接取该小区任务', 'E_FORBIDDEN');
   ensure(order.status === 'paid', '手慢了，单已被接走', 'E_CONFLICT');
   ensure(!(order.releasedProviderIds || []).includes(provider._id), '放弃的订单不能再次接取', 'E_FORBIDDEN');
+  ensure(!order.requiredCert || (provider.certs || []).includes(order.requiredCert), '缺少该服务要求的资质', 'E_FORBIDDEN');
 }
 
 function delivery(event, order) {
@@ -44,10 +45,13 @@ function delivery(event, order) {
   ensure(new Set(event.photos).size === event.photos.length, '请勿重复选择同一照片');
   event.photos.forEach(file => fileInFolder(file, 'orders/' + order._id));
   const patch = { photos: event.photos.slice() };
-  if (order.serviceCode === 'buy') {
+  if (['buy','meal'].includes(order.serviceCode)) {
     patch.receiptPhoto = fileInFolder(event.receiptPhoto, 'orders/' + order._id);
     const goodsActual = integer(event.goodsActual, '商品实际金额', 0, order.pricing.goodsCap);
     patch.pricing = { ...order.pricing, goodsActual };
+  }
+  if (order.serviceCode === 'visit') {
+    patch.visitReport = require('./services/elder').cleanVisitReport(event.visitReport);
   }
   return patch;
 }
