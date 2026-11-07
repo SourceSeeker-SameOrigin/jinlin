@@ -58,14 +58,14 @@ Codex 写代码，但下面这些步骤需要登录微信公众平台、微信�
 | `idleEscrow` | 平台代收用户之间的货款，属于电商平台性质，需要对应类目和资质（通常涉及增值电信业务经营许可）；拿到前保持关闭，只用信息模式 |
 | `travelCarry` | 依赖 `board`；服务协议写入境外帮带规则 |
 | `location` | 公众平台"开发管理 → 接口设置"申请 `getLocation`、`chooseLocation`，写清用途；更新用户隐私保护指引；给每个小区设好坐标 |
-| `autoPayout` | 商户平台开通新版“商家转账”、配置转账场景和回调；云函数 `payout` 配好 `MCH_ID`、`MCH_SERIAL_NO`、`MCH_PRIVATE_KEY`、`APIV3_KEY`、`TRANSFER_SCENE_ID`；按新版 API 状态及确认页联调，不使用旧版“商家转账到零钱”接口 |
+| `autoPayout` | 商户平台开通新版“商家转账”、配置佣金报酬场景并充值；云函数 `payout` 和 `timer` 配好 `MCH_ID`、`MCH_SERIAL_NO`、`MCH_PRIVATE_KEY_B64`、`WXPAY_PUBLIC_KEY_B64`、`WXPAY_PUBLIC_KEY_ID`、`MINI_APP_ID`、`TRANSFER_SCENE_ID`、`TRANSFER_JOB_TYPE`、`TRANSFER_REPORT_DESCRIPTION`。卖家单笔上限 ¥1,999.99，超额部分留待分笔申请；服务员达到 ¥2,000 时须有有效实名姓名。保持开关关闭直至商户环境和确认收款页验收完成。 |
 | `elder` | 陪诊服务员参加培训并经管理员核验证书；与合作食堂签约；逐小区配置 `canteens`、`prices.meal.goodsCapMax`（分）、`prices.visit.taskPayout`（分/次）和值班时段；配置 `config.templateIds.visitReport`。必填项缺失时不要开启；必要时添加医疗健康类目。 |
 | `pet` | 服务员宠物照护培训；云函数配好 `SECRET_KEY`（32 字节随机密钥）；服务协议写明钥匙与密码的保管责任 |
 | `recycle`、`points` | 与已备案的正规回收企业签约，回收企业作为商家入驻；逐小区配置分类积分单价、企业收购价、品类对应回收企业及服务员报酬；积分向下取整，企业金额四舍五入到分；缺项时不得开放回收 |
 | `merchants` | 商家入驻协议（佣金、责任、执照公示）；报价制待报价不自动过期，住户可主动取消；开锁预约仅记录身份证核验结果，不保存身份证照片；开锁类商家需公安部门备案（按当地要求） |
 | `ads` | 广告审核制度；广告位价格表；广告内容符合广告法 |
 
-联合社区先在每个参与小区配置相同的 `federationGroupId`，再打开 `federation` 开关。跨小区列表还要求对应的 `board`、`idle` 或 `events` 功能开关打开；付费悬赏仍只在本小区展示。广告收入的账本录入时点待业务方确认，确认前只使用广告草稿和展示流程测试，不录入收入。
+联合社区先在每个参与小区配置相同的 `federationGroupId`，再打开 `federation` 开关。跨小区列表还要求对应的 `board`、`idle` 或 `events` 功能开关打开；付费悬赏仍只在本小区展示。广告须由管理员确认已收款后记账；跨小区投放记一笔平台收入，`communityId` 为空并保留投放小区列表。
 
 站内聊天需要在开发云环境创建 `conversations`、`messages` 集合并应用 `security-rules.json` 的禁止客户端读写规则；聊天图片复用 `mediaCallback` 异步审核。
 

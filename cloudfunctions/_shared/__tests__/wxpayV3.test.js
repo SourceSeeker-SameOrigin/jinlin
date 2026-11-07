@@ -65,6 +65,12 @@ test('2000元收款姓名按 RSA-OAEP 加密；发起报备按佣金报酬场景
   expect(payoutBody({ ...item, amount: 199999 }, { realName: '测试服务员' }, config)).not.toHaveProperty('user_name');
 });
 
+test('卖家打款采用商品收入用途且不提交未核验姓名', () => {
+  const body = payoutBody({ _id: 'seller-bill', payeeOpenid: 'seller-openid', payeeType: 'seller', amount: 199999 }, {}, config);
+  expect(body).toMatchObject({ transfer_remark: '闲置商品销售款', user_recv_perception: '商品销售收入' });
+  expect(body).not.toHaveProperty('user_name');
+});
+
 test('新版转账状态与配置缺失保护', () => {
   expect(normalizeState('WAIT_USER_CONFIRM')).toBe('wait_user_confirm');
   expect(normalizeState('SUCCESS')).toBe('success');

@@ -1,5 +1,13 @@
-const { selectRows, payoutState, publicPayout } = require('../payout');
+const { selectRows, payoutState, sellerPayoutSuccess, publicPayout } = require('../payout');
 const { rowsForPayee } = require('../settlementData');
+const { idFor } = require('../payoutFlow');
+const crypto = require('crypto');
+
+test('扩展收款对象后保持服务员既有提现幂等编号', () => {
+  const legacy = 'po_' + crypto.createHash('sha256').update('provider-openid:request-12345678').digest('hex').slice(0, 32);
+  expect(idFor('provider-openid', 'request-12345678')).toBe(legacy);
+  expect(idFor('provider-openid', 'request-12345678', 'seller')).not.toBe(legacy);
+});
 
 function row(id, amount, patch = {}) {
   return { _id: id, createdAt: new Date('2026-11-01T00:00:00Z'), amounts: { provider: amount, goods: 0 },
@@ -17,6 +25,28 @@ test('单次提现最低10元且不超过2000元', () => {
   expect(() => selectRows([row('small', 999)])).toThrow('需达到 ¥10');
   expect(selectRows([row('one', 200000)]).amount).toBe(200000);
   expect(selectRows([row('a', 150000), row('b', 100000)]).amount).toBe(150000);
+});
+
+test('卖家打款单笔不超过 ¥1999.99，超额后留至少 ¥10 供后续申请', () => {
+  const cap = row('cap', 0, { sellerOpenid: 'wx-seller', amounts: { seller: 199999 },
+    settled: { seller: false }, settlementIds: { seller: null } });
+  expect(selectRows([cap], 'seller').amount).toBe(199999);
+  const sale = row('seller', 0, { sellerOpenid: 'wx-seller', amounts: { seller: 200000 },
+    settled: { seller: false }, settlementIds: { seller: null } });
+  const result = selectRows([sale], 'seller');
+  expect(result.amount).toBe(199000);
+  expect(result.allocations).toEqual([{ ledgerId: 'seller', amount: 199000 }]);
+});
+
+test('卖家分笔打款成功只结算已付部分，最后一笔才结清账本', () => {
+  const first = sellerPayoutSuccess({ amounts: { seller: 200000 }, paidAmounts: { seller: 0 },
+    settled: { seller: false }, payoutId: 'p1' }, 199999, new Date('2026-11-07T00:00:00Z'));
+  expect(first).toMatchObject({ paidAmounts: { seller: 199999 }, settled: { seller: false }, payoutId: null });
+  const second = sellerPayoutSuccess({ amounts: { seller: 200000 }, paidAmounts: first.paidAmounts,
+    settled: { seller: false }, payoutId: 'p2' }, 1);
+  expect(second).toMatchObject({ paidAmounts: { seller: 200000 }, settled: { seller: true }, payoutId: null });
+  expect(() => sellerPayoutSuccess({ amounts: { seller: 200000 }, paidAmounts: first.paidAmounts,
+    settled: { seller: false } }, 2)).toThrow('超过账本余额');
 });
 
 test('人工结算筛选跳过提现锁定账本', () => {

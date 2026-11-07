@@ -52,9 +52,11 @@ function encryptUserName(name, publicKey) {
 }
 
 function payoutBody(payout, provider, config) {
+  const seller = payout.payeeType === 'seller';
   const body = { appid: config.appId, out_bill_no: payout._id, transfer_scene_id: config.transferSceneId,
-    openid: payout.payeeOpenid, transfer_amount: payout.amount, transfer_remark: '社区服务报酬',
-    user_recv_perception: '劳务报酬', transfer_scene_report_infos: [
+    openid: payout.payeeOpenid, transfer_amount: payout.amount,
+    transfer_remark: seller ? '闲置商品销售款' : '社区服务报酬',
+    user_recv_perception: seller ? '商品销售收入' : '劳务报酬', transfer_scene_report_infos: [
       { info_type: '岗位类型', info_content: config.jobType },
       { info_type: '报酬说明', info_content: config.reportDescription }
     ] };
