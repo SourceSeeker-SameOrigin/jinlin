@@ -2,7 +2,7 @@ const { checkText: checkBlacklist } = require('./blacklist');
 const { ensure, text } = require('./validate');
 
 const TYPES = Object.freeze(['post','comment','idle','event','message','merchant','notice','ad']);
-const SCENES = Object.freeze({ post: 3, comment: 3, idle: 1, event: 1, message: 4, merchant: 1, notice: 1, ad: 1 });
+const SCENES = Object.freeze({ post: 3, comment: 3, idle: 1, event: 1, message: 4, merchant: 1, merchantService: 1, notice: 1, ad: 1 });
 function validateUgc(value, max = 500) { text(value, '内容', max); return value.trim(); }
 function ensureCanPublish(user, now = new Date()) {
   ensure(user && user.blocked !== true, '账号暂不可用，请联系管理员', 'E_FORBIDDEN');
@@ -66,7 +66,7 @@ function visibleImages(target, viewerOpenid, ownerOpenid) {
   return images.filter(image => approved.has(typeof image === 'string' ? image : image.fileId));
 }
 function report(targetType, targetId, reporterOpenid, reason, content, now = new Date()) {
-  ensure(TYPES.includes(targetType), '举报对象不正确');
+  ensure(TYPES.includes(targetType) && targetType !== 'merchantService', '举报对象不正确');
   text(targetId, '举报内容'); text(reporterOpenid, '举报人'); text(reason, '举报原因', 80);
   ensure(typeof content === 'string' && [...content].length <= 500, '举报说明不能超过 500 字');
   return { targetType, targetId, reporterOpenid, reason: reason.trim(), text: content.trim(), status: 'pending',

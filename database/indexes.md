@@ -58,4 +58,10 @@
 | notices | community_status_pinned_created | communityId 升序、status 升序、pinnedAt 倒序、createdAt 倒序 | 否 |
 | events | community_at_type | communityId 升序、at 升序、type 升序 | 否 |
 
+| orders | merchant_kind_created | merchantId 升序、kind 升序、createdAt 倒序 | 否 |
+| ledger | merchant_settled | merchantId 升序、settled.merchant 升序 | 否 |
+| settlements | merchant_period | merchantId 升序、period.from 升序、period.to 升序 | 否 |
+| merchants | status_created | status 升序、createdAt 倒序 | 否 |
+| merchants | community_status_name | communityIds 升序、status 升序、name 升序 | 否 |
+| merchantServices | merchant_status_title | merchantId 升序、status 升序、title 升序 | 否 |
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。

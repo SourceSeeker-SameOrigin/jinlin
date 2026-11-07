@@ -11,7 +11,7 @@ function period(event) {
 
 function rowsForPayee(ledger, payee, payeeId) {
   return ledger.filter(row => row.settled && row.settled[payee] === false &&
-    (payee === 'provider' ? row.providerId === payeeId : payee === 'seller' ? row.sellerOpenid === payeeId : true) &&
+    (payee === 'provider' ? row.providerId === payeeId : payee === 'seller' ? row.sellerOpenid === payeeId : payee === 'merchant' ? row.merchantId === payeeId : true) &&
     !(payee === 'seller' && row.payoutId));
 }
 
@@ -41,7 +41,7 @@ function settlementId(payee, communityId, providerId, from, to) {
   return 'st_' + crypto.createHash('sha256').update([payee, communityId, providerId || '', from, to].join(':')).digest('hex').slice(0, 36);
 }
 
-function validatePayee(payee) { ensure(['provider', 'property', 'seller'].includes(payee), '收款对象不正确'); }
+function validatePayee(payee) { ensure(['provider', 'property', 'seller', 'merchant'].includes(payee), '收款对象不正确'); }
 function validateSettlementNote(note = '') { ensure(typeof note === 'string' && [...note].length <= 200, '备注不能超过 200 字'); return note.trim(); }
 
 module.exports = { period, rowsForPayee, amountForPayee, total, csvCell, csv, settlementId, validatePayee, validateSettlementNote };

@@ -16,11 +16,11 @@ function createLedgerFlow(server) {
     const now = new Date();
     if (!order.bookedAmounts || Object.values(delta).some(value => value !== 0)) {
       await insert(transaction, 'ledger', { _id: 'order_' + order._id + '_' + version,
-        refType: order.kind === 'idle_purchase' ? 'idle_sale' : 'order', refId: order._id,
-        communityId: order.communityId, providerId: order.providerId || null,
+        refType: order.kind === 'idle_purchase' ? 'idle_sale' : order.kind === 'merchant' ? 'merchant_order' : 'order', refId: order._id,
+        communityId: order.communityId, providerId: order.providerId || null, merchantId: order.merchantId || null,
         sellerOpenid: order.sellerOpenid || null, sellerUserId: order.sellerUserId || null,
-        amounts: delta, settled: { provider: false, property: false, seller: false },
-        settlementIds: { provider: null, property: null, seller: null }, createdAt: now });
+        amounts: delta, settled: { provider: false, property: false, seller: false, merchant: false },
+        settlementIds: { provider: null, property: null, seller: null, merchant: null }, createdAt: now });
     }
     await transaction.collection('orders').doc(order._id).update({ data: { bookedAmounts: target, ledgerVersion: version } });
   }

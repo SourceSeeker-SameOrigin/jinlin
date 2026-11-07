@@ -18,9 +18,15 @@ function adminSettlementActions(cloud, server) {
     requireCommunityAccess(user, communityId);
     let provider = null;
     let seller = null;
+    let merchant = null;
     if (event.payee === 'provider') {
       provider = await server.get('providers', event.providerId);
       ensure(provider && provider.communityId === communityId, '服务员不属于该小区');
+    }
+    if (event.payee === 'merchant') {
+      requireRole(user, ['admin']);
+      merchant = await server.get('merchants', event.merchantId);
+      ensure(merchant && merchant.status === 'approved' && merchant.communityIds.includes(communityId), '商家不属于该小区');
     }
     if (event.payee === 'seller') {
       const config = await server.config();
@@ -31,7 +37,7 @@ function adminSettlementActions(cloud, server) {
         ensure(seller, '卖家账号不存在');
       }
     }
-    return { ...date, communityId, provider, seller };
+    return { ...date, communityId, provider, seller, merchant };
   }
   async function settlementPreview(event, { user }) {
     const data = await scope(event, user);
@@ -49,13 +55,19 @@ function adminSettlementActions(cloud, server) {
         if (eligible.length) rows.push({ payee: 'provider', communityId: data.communityId, providerId: id,
           from: event.from, to: event.to, total: total(eligible, 'provider'), ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
       }
-    } else {
+    } else if (event.payee === 'seller') {
       const ids = event.sellerOpenid ? [event.sellerOpenid] : [...new Set(ledger.filter(row => row.sellerOpenid && row.settled.seller === false).map(row => row.sellerOpenid))];
       for (const id of ids) {
         const eligible = rowsForPayee(ledger, 'seller', id);
         if (eligible.length) rows.push({ payee: 'seller', communityId: data.communityId, providerId: null,
           sellerOpenid: id, from: event.from, to: event.to, total: total(eligible, 'seller'),
           ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
+      }
+    }
+    if (event.payee === 'merchant') {
+      const ids = event.merchantId ? [event.merchantId] : [...new Set(ledger.filter(row => row.merchantId && row.settled.merchant === false).map(row => row.merchantId))];
+      for (const id of ids) { const eligible = rowsForPayee(ledger, 'merchant', id);
+        if (eligible.length) rows.push({ payee: 'merchant', communityId: data.communityId, merchantId: id, from: event.from, to: event.to, total: total(eligible, 'merchant'), ledgerIds: eligible.map(row => row._id), status: 'unsettled' });
       }
     }
     return { from: event.from, to: event.to, rows };
@@ -67,7 +79,7 @@ function adminSettlementActions(cloud, server) {
     ensure(preview.rows.length, '该期间没有待结算账目');
     const results = [];
     for (const row of preview.rows) {
-      const id = settlementId(row.payee, row.communityId, row.providerId || row.sellerOpenid, event.from, event.to);
+      const id = settlementId(row.payee, row.communityId, row.providerId || row.merchantId || row.sellerOpenid, event.from, event.to);
       const settlement = await atomic(db, async transaction => {
         const existing = await read(transaction, 'settlements', id);
         if (existing) return existing;
@@ -76,12 +88,13 @@ function adminSettlementActions(cloud, server) {
           const ledgerRow = await read(transaction, 'ledger', ledgerId);
           ensure(ledgerRow && ledgerRow.settled[row.payee] === false &&
             (row.payee !== 'provider' || ledgerRow.providerId === row.providerId) &&
-            (row.payee !== 'seller' || ledgerRow.sellerOpenid === row.sellerOpenid) && !ledgerRow.payoutId,
+            (row.payee !== 'seller' || ledgerRow.sellerOpenid === row.sellerOpenid) &&
+            (row.payee !== 'merchant' || ledgerRow.merchantId === row.merchantId) && !ledgerRow.payoutId,
           '部分账目已结算，请刷新预览', 'E_CONFLICT');
           const settlementIds = { ...(ledgerRow.settlementIds || {}), [row.payee]: id };
           await transaction.collection('ledger').doc(ledgerId).update({ data: { ['settlementIds.' + row.payee]: id } });
         }
-        const result = { _id: id, payee: row.payee, providerId: row.providerId, sellerOpenid: row.sellerOpenid || null, communityId: row.communityId,
+        const result = { _id: id, payee: row.payee, providerId: row.providerId, merchantId: row.merchantId || null, sellerOpenid: row.sellerOpenid || null, communityId: row.communityId,
           period: data.period, ledgerIds: ids, total: row.total, status: 'draft', paidAt: null,
           note: validateSettlementNote(event.note), createdAt: new Date(), createdBy: openid };
         await insert(transaction, 'settlements', result);
@@ -105,7 +118,7 @@ function adminSettlementActions(cloud, server) {
       for (const ledgerId of current.ledgerIds) {
         const row = await read(transaction, 'ledger', ledgerId);
         const field = current.payee;
-        const settlementField = field === 'provider' ? 'settlementIds.provider' : 'settlementIds.property';
+        const settlementField = 'settlementIds.' + field;
         ensure(row && row.settled[field] === false && row.settlementIds[field] === current._id,
           '账本与结算单不一致，请联系管理员', 'E_CONFLICT');
         await transaction.collection('ledger').doc(row._id).update({ data: { ['settled.' + field]: true,
@@ -130,8 +143,8 @@ function adminSettlementActions(cloud, server) {
     if (user.roles.includes('property')) { filter.communityId = user.communityId; filter.payee = 'property'; }
     else if (event.communityId) filter.communityId = event.communityId;
     const rows = await server.all('settlements', filter);
-    return { list: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100).map(({ _id, payee, providerId, sellerOpenid,
-      communityId, period: range, total: amount, status, paidAt, note }) => ({ _id, payee, providerId, communityId,
+    return { list: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100).map(({ _id, payee, providerId, merchantId, sellerOpenid,
+      communityId, period: range, total: amount, status, paidAt, note }) => ({ _id, payee, providerId, merchantId, communityId,
       sellerOpenid, period: range, total: amount, status, paidAt, note })) };
   }
   return { settlementPreview, settlementCreate, settlementMarkPaid, exportCsv, listSettlements };

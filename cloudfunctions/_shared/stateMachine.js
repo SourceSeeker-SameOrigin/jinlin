@@ -1,6 +1,7 @@
 const { AppError } = require('./errors');
 
 const TRANSITIONS = {
+  pending_quote: ['pending_pay', 'closed'],
   pending_pay: ['paid', 'closed'],
   paid: ['accepted', 'cancelled'],
   accepted: ['in_service', 'paid', 'cancelled'],
@@ -14,7 +15,7 @@ const TRANSITIONS = {
 };
 
 const STATUS_TEXT = Object.freeze({
-  pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中',
+  pending_quote: '待报价', pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中',
   delivered: '待确认', disputed: '售后处理中', completed: '已完成',
   cancelled: '已取消', closed: '已关闭', refunded: '已退款'
 });

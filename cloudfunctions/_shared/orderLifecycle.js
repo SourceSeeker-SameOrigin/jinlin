@@ -28,6 +28,13 @@ function rating(event, order, now) {
 }
 
 function accounting(order, { serviceRefund = 0, goodsRefund = 0, providerLiable = false } = {}) {
+  if (order.kind === 'merchant') {
+    integer(serviceRefund, '服务费退款', 0, order.pricing.payAmount);
+    integer(goodsRefund, '商品款退款', 0, 0);
+    const gross = order.pricing.payAmount - serviceRefund;
+    const allocation = require('./merchant').quoteAmount(gross, order.merchantRateSnapshot, order.rateSnapshot.property);
+    return { gross, provider: 0, property: allocation.property, platform: allocation.platform, goods: 0, merchant: allocation.merchant };
+  }
   integer(serviceRefund, '服务费退款', 0, order.pricing.payAmount);
   integer(goodsRefund, '商品款退款', 0, order.pricing.goodsActual || 0);
   if (order.kind === 'idle_purchase') {
@@ -44,6 +51,7 @@ function accounting(order, { serviceRefund = 0, goodsRefund = 0, providerLiable 
 function ledgerDelta(target, booked) {
   const result = {};
   const keys = ['gross', 'provider', 'property', 'platform', 'goods'];
+  if (Object.prototype.hasOwnProperty.call(target, 'merchant') || booked && Object.prototype.hasOwnProperty.call(booked, 'merchant')) keys.push('merchant');
   if (target.seller !== undefined || booked && booked.seller !== undefined) keys.push('seller');
   for (const key of keys) {
     const current = target[key] === undefined ? 0 : target[key];

@@ -1,8 +1,9 @@
 const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
+function merchantName(merchants, id) { const item = (merchants || []).find(merchant => merchant._id === id); return item ? item.name : ''; }
 Page({
-  data: { loading: true, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0,
-    payees: ['服务员', '物业', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
+  data: { loading: true, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
+    payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
   onLoad() {
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today }); this.load();
@@ -12,31 +13,31 @@ Page({
     try {
       const user = await getApp().ensureSession();
       if (!user.roles.includes('admin')) throw new Error('只有运营管理员可以管理结算');
-      const [communities, providers, settlements] = await Promise.all([
+      const [communities, providers, settlements, merchants] = await Promise.all([
         api.call('catalog', 'listCommunities', {}, { loading: false, silent: true }),
         api.call('admin', 'listProviders', { status: 'approved' }, { loading: false, silent: true }),
-        api.call('admin', 'listSettlements', {}, { loading: false, silent: true })
+        api.call('admin', 'listSettlements', {}, { loading: false, silent: true }), api.call('merchant', 'adminList', { status: 'approved' }, { loading: false, silent: true })
       ]);
       this.setData({ communities: communities.list, providers: providers.list,
-        settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total) })) });
+        merchants: merchants.list, settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(merchants.list, item.merchantId) })) });
     } catch (error) { this.setData({ error: error.message || '加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   select(event) { this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
   request() {
-    const payee = ['provider', 'property', 'seller'][this.data.payeeIndex];
+    const payee = ['provider', 'property', 'merchant', 'seller'][this.data.payeeIndex];
     const community = this.data.communities[this.data.communityIndex];
-    const provider = this.data.providers[this.data.providerIndex];
-    if (!community || payee === 'provider' && !provider) throw new Error('请先配置小区和服务员');
-    return { payee, communityId: community._id, ...(payee === 'provider' ? { providerId: provider._id } : {}),
+    const provider = this.data.providers[this.data.providerIndex]; const merchant = this.data.merchants[this.data.merchantIndex];
+    if (!community || payee === 'provider' && !provider || payee === 'merchant' && !merchant) throw new Error('请先选择小区及收款对象');
+    return { payee, communityId: community._id, ...(payee === 'provider' ? { providerId: provider._id } : {}), ...(payee === 'merchant' ? { merchantId: merchant._id } : {}), ...(payee === 'seller' && this.data.sellerOpenid ? { sellerOpenid: this.data.sellerOpenid.trim() } : {}),
       from: this.data.from, to: this.data.to };
   },
   async preview() {
     try {
       this.setData({ busy: true, error: '' });
       const result = await api.call('admin', 'settlementPreview', this.request());
-      this.setData({ preview: result.rows.map(item => ({ ...item, totalText: yuan(item.total) })) });
+      this.setData({ preview: result.rows.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) })) });
     } catch (error) { this.setData({ error: error.message || '预览失败' }); }
     finally { this.setData({ busy: false }); }
   },

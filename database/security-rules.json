@@ -110,5 +110,13 @@
   "secrets": {
     "read": false,
     "write": false
+  },
+  "merchants": {
+    "read": false,
+    "write": false
+  },
+  "merchantServices": {
+    "read": false,
+    "write": false
   }
 }

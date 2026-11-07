@@ -39,7 +39,8 @@
         "reports/reports",
         "chat/chat",
         "coupons/coupons",
-        "content/content"
+        "content/content",
+        "merchants/merchants"
       ]
     },
     {
@@ -90,6 +91,23 @@
         "order/order",
         "work/work",
         "reports/reports"
+      ]
+    },
+    {
+      "root": "merchant",
+      "pages": [
+        "apply/apply",
+        "workbench/workbench",
+        "services/services",
+        "orders/orders"
+      ]
+    },
+    {
+      "root": "shops",
+      "pages": [
+        "list/list",
+        "detail/detail",
+        "booking/booking"
       ]
     }
   ],

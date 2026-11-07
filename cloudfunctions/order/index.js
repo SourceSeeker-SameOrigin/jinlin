@@ -147,7 +147,19 @@ async function cancel(event, { openid }) {
   ensure(order && order.userOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
   ensure(order.kind !== 'event_signup', '活动报名请在活动详情中取消，以同步更新名额', 'E_FORBIDDEN');
   ensure(order.kind !== 'membership_purchase' || order.status === 'pending_pay', '月卡不支持自行退款，请联系客服', 'E_BAD_STATE');
-  ensure(['pending_pay', 'paid'].includes(order.status), '订单已接单或已结束，无法自行取消', 'E_BAD_STATE');
+  ensure(['pending_quote', 'pending_pay', 'paid'].includes(order.status), '订单已接单或已结束，无法自行取消', 'E_BAD_STATE');
+  if (order.status === 'pending_quote') {
+    const result = await server.db.collection('orders').where({ _id: order._id, kind: 'merchant', status: 'pending_quote' })
+      .update({ data: transitionPatch(order, 'closed', openid, new Date()) });
+    ensure(result.stats.updated === 1, '订单状态已变化，请刷新后重试', 'E_CONFLICT');
+    return { orderId: order._id, status: 'closed' };
+  }
+  if (order.status === 'pending_quote') {
+    const result = await server.db.collection('orders').where({ _id: order._id, kind: 'merchant', status: 'pending_quote' })
+      .update({ data: transitionPatch(order, 'closed', openid, new Date()) });
+    ensure(result.stats.updated === 1, '订单状态已变化，请刷新后重试', 'E_CONFLICT');
+    return { orderId: order._id, status: 'closed' };
+  }
   if (order.status === 'pending_pay') {
     await payments.closeUnpaid(order, openid);
     return { orderId: order._id, status: 'closed' };

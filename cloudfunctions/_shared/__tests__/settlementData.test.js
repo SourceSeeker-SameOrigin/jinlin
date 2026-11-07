@@ -27,6 +27,16 @@ test('个人卖家结算按卖家OpenID筛选并排除打款锁定账目', () =>
   expect(total(rowsForPayee(rows, 'seller', 'wx-b'), 'seller')).toBe(700);
 });
 
+test('商家结算只纳入该商家未结算账目', () => {
+  const rows = [
+    { _id: 'm1', merchantId: 'shop1', settled: { merchant: false }, amounts: { merchant: 900 } },
+    { _id: 'm2', merchantId: 'shop2', settled: { merchant: false }, amounts: { merchant: 800 } },
+    { _id: 'm3', merchantId: 'shop1', settled: { merchant: true }, amounts: { merchant: 500 } }
+  ];
+  expect(rowsForPayee(rows, 'merchant', 'shop1').map(row => row._id)).toEqual(['m1']);
+  expect(total(rowsForPayee(rows, 'merchant', 'shop1'), 'merchant')).toBe(900);
+});
+
 test('CSV 添加 UTF-8 BOM、正确转义并防止公式注入', () => {
   expect(csvCell('A,"B')).toBe('"A,""B"');
   expect(csvCell('=1+1')).toBe("\"'=1+1\"");
