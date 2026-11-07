@@ -1,6 +1,6 @@
 const { KEYS, isEnabled, validateFeatures, allOff, effectiveFeatures } = require('../features');
 const { dueTasks, daysInMonth, monthDates } = require('../schedule');
-const { report, reportOutcome, mediaStatus, localUgc, contentInCommunity, checkText, ensureCanPublish, visibleImages } = require('../ugc');
+const { report, reportOutcome, mediaStatus, mediaCollection, requestMediaCheck, localUgc, contentInCommunity, checkText, ensureCanPublish, visibleImages } = require('../ugc');
 
 test('扩展开关默认全部关闭，小区可覆盖全局', () => {
   const config = { features: { board: true } };
@@ -62,6 +62,22 @@ test('媒体审核前仅作者可见，禁言用户不能发布', () => {
   expect(visibleImages(target, 'neighbor', 'owner')).toEqual(['f1']);
   expect(() => ensureCanPublish({ mutedUntil: new Date('2026-11-08') }, new Date('2026-11-07'))).toThrow('禁言中');
   expect(() => ensureCanPublish({ mutedUntil: new Date('2026-11-06') }, new Date('2026-11-07'))).not.toThrow();
+});
+
+test('商家服务图片审核按 ownerOpenid 归属到 merchantServices', async () => {
+  const target = { _id: 'svc1', communityId: 'c1', ownerOpenid: 'merchant-user', images: ['cloud://img'] };
+  const saved = {};
+  const db = { collection(name) { return { doc(id) { return {
+    async get() { return { data: name === 'merchantServices' ? target : saved[id] }; },
+    async update({ data }) { Object.assign(target, data); },
+    async set({ data }) { saved[id] = data; }
+  }; } }; } };
+  const cloud = { getTempFileURL: async () => ({ fileList: [{ tempFileURL: 'https://temp.example/image' }] }),
+    openapi: { security: { mediaCheckAsync: async () => ({ trace_id: 'trace-1' }) } } };
+  await expect(requestMediaCheck(cloud, db, { fileId: 'cloud://img', targetType: 'merchantService',
+    targetId: 'svc1', authorOpenid: 'merchant-user', communityId: 'c1' })).resolves.toMatchObject({ status: 'pending' });
+  expect(target.moderationPendingFileIds).toEqual(['cloud://img']);
+  expect(mediaCollection('merchantService')).toBe('merchantServices');
 });
 
 test('活动社区数组可用于举报与图片审核归属校验', () => {
