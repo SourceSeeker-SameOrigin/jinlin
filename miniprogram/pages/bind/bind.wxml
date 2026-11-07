@@ -4,8 +4,9 @@
   <view wx:if="{{loading}}" class="card">正在加载…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
   <view wx:if="{{!loading && !communities.length}}" class="card">暂时没有可服务的小区</view>
+  <view wx:if="{{locationHint}}" class="muted">{{locationHint}}</view>
   <view wx:if="{{communities.length}}" class="card">
-    <view class="field"><text class="label">小区</text><picker range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="communityChange"><view class="picker">{{communities[communityIndex].name}} ›</view></picker></view>
+    <view class="field"><text class="label">小区</text><picker range="{{communities}}" range-key="displayName" value="{{communityIndex}}" bindchange="communityChange"><view class="picker">{{communities[communityIndex].displayName}} ›</view></picker></view>
     <view class="field"><text class="label">楼栋</text><picker range="{{buildings}}" range-key="name" value="{{buildingIndex}}" bindchange="buildingChange" disabled="{{!buildings.length}}"><view class="picker">{{buildings[buildingIndex].name || '请选择楼栋'}} ›</view></picker></view>
     <view class="field"><text class="label">单元</text><picker range="{{units}}" value="{{unitIndex}}" bindchange="unitChange" disabled="{{!units.length}}"><view class="picker">{{units[unitIndex] || '请选择单元'}} ›</view></picker></view>
     <view class="field"><text class="label">门牌号</text><input placeholder="例如：302" value="{{room}}" bindinput="roomChange" maxlength="30" /></view>

@@ -93,7 +93,7 @@ function createAdminDashboard(cloud, server) {
     text(event.communityId, '小区');
     const current = await server.get('communities', event.communityId);
     ensure(current, '小区不存在');
-    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId'];
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId', 'location'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length > 0, '没有可保存的配置');
@@ -102,6 +102,11 @@ function createAdminDashboard(cloud, server) {
       ensure(patch.federationGroupId === null || typeof patch.federationGroupId === 'string', '联合社区组 ID 格式不正确');
       if (typeof patch.federationGroupId === 'string') patch.federationGroupId = patch.federationGroupId.trim() || null;
       ensure(patch.federationGroupId === null || patch.federationGroupId.length <= 100, '联合社区组 ID 不能超过 100 字');
+    }
+    if (patch.location !== undefined) {
+      const { validatePoint, toGeoPoint } = require('./geo');
+      patch.location = validatePoint(patch.location, '小区');
+      patch.locationGeo = toGeoPoint(db, patch.location);
     }
     if (patch.features) {
       const config = await server.config();

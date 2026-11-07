@@ -14,7 +14,10 @@ const { db, one, get } = server;
 async function listCommunities(event) {
   const offset = event.offset === undefined ? 0 : integer(event.offset, '页码', 0, 10000);
   const result = await db.collection('communities').where({ status: 'active' }).orderBy('_id', 'asc').skip(offset).limit(100).get();
-  return { list: result.data.map(({ _id, name, city, district, address, federationGroupId }) => ({ _id, name, city, district, address, federationGroupId: federationGroupId || null })),
+  const config = await server.config();
+  return { list: result.data.map(({ _id, name, city, district, address, federationGroupId, location, features }) => ({ _id, name, city, district, address,
+    federationGroupId: federationGroupId || null,
+    ...(location && isEnabled('location', config, { features }) ? { location } : {}) })),
     hasMore: result.data.length === 100 };
 }
 
@@ -26,7 +29,8 @@ async function getCommunity(event) {
   const duty = await db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
     insuranceUntil: server.command.gt(new Date()) }).count();
   const config = await server.config();
-  return { ...community, buildings, enabledFeatures: Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)])), onDutyCount: duty.total,
+  const { locationGeo, ...publicCommunity } = community;
+  return { ...publicCommunity, buildings, enabledFeatures: Object.fromEntries(KEYS.map(key => [key, isEnabled(key, config, community)])), onDutyCount: duty.total,
     nextDutyWindow: nextDutyWindow(community.dutyWindows, new Date()), hotline: config.hotline, templateIds: publicTemplates(config) };
 }
 

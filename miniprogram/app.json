@@ -50,6 +50,12 @@
     "navigationBarTextStyle": "white",
     "backgroundColor": "#f7f8f7"
   },
+  "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于附近小区排序、管理员选择小区位置，以及服务员在进行中的订单里向该订单住户共享位置。"
+    }
+  },
   "tabBar": {
     "color": "#777777",
     "selectedColor": "#1F7A5C",

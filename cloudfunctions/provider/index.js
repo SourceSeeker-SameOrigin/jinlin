@@ -15,6 +15,7 @@ const { createNotifier } = require('./lib/shared/notify');
 const { ensureOrderConversation } = require('./lib/shared/chatFlow');
 const { orderConversationId } = require('./lib/shared/chatData');
 const { isEnabled } = require('./lib/shared/features');
+const { validatePoint } = require('./lib/shared/geo');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const { db, command } = server;
@@ -200,4 +201,21 @@ async function earnings(event, { openid }) {
     settled: row.settled.provider, createdAt: row.createdAt })), hasMore: offset(event) + rows.length < ledger.length };
 }
 
-exports.main = server.entry({ apply, myStatus, subscriptionTemplates, referralPoster, setDuty, hall, accept, release, start, deliver, myTasks, earnings }, ['resident', 'admin']);
+async function updateLocation(event, { openid }) {
+  text(event.orderId, '订单');
+  const point = validatePoint({ lat: event.lat, lng: event.lng });
+  const provider = await mine(openid);
+  requireApprovedProvider(provider, 1);
+  const order = await server.get('orders', event.orderId);
+  ensure(order && order.providerId === provider._id && ['accepted','in_service'].includes(order.status), '当前订单不允许共享位置', 'E_FORBIDDEN');
+  await server.feature('location', order.communityId);
+  const now = new Date();
+  const previous = provider.lastLocation;
+  const previousAt = previous && new Date(previous.at).getTime();
+  ensure(!previous || previous.orderId !== order._id || !Number.isFinite(previousAt) || now.getTime() - previousAt >= 25000,
+    '位置更新太频繁，请稍后重试', 'E_RATE_LIMIT');
+  await db.collection('providers').doc(provider._id).update({ data: { lastLocation: { ...point, at: now, orderId: order._id } } });
+  return { updatedAt: now };
+}
+
+exports.main = server.entry({ apply, myStatus, subscriptionTemplates, referralPoster, setDuty, hall, accept, release, start, deliver, myTasks, earnings, updateLocation }, ['resident', 'admin']);

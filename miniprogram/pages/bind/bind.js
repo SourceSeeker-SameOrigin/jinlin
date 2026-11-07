@@ -1,8 +1,9 @@
 const api = require('../../utils/api');
+const { nearby } = require('../../utils/geo');
 
 Page({
   data: { loading: true, saving: false, error: '', communities: [], buildings: [], units: [],
-    communityIndex: 0, buildingIndex: 0, unitIndex: 0, room: '', phone: '', contactName: '', contactPhone: '', agreed: false },
+    communityIndex: 0, buildingIndex: 0, unitIndex: 0, room: '', phone: '', contactName: '', contactPhone: '', agreed: false, locationHint: '' },
   onLoad() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -14,6 +15,16 @@ Page({
         page = await api.call('catalog', 'listCommunities', { offset: communities.length }, { loading: false, silent: true });
         communities.push(...page.list);
       } while (page.hasMore);
+      const explicitCommunity = Boolean(user.communityId || wx.getStorageSync('scene'));
+      if (!explicitCommunity && communities.some(item => item.location)) {
+        try {
+          const current = await new Promise((resolve, reject) => wx.getLocation({ type: 'gcj02', success: resolve, fail: reject }));
+          const candidates = nearby(communities, { lat: current.latitude, lng: current.longitude }, 3);
+          if (candidates.length) communities.splice(0, communities.length, ...candidates);
+          else this.setData({ locationHint: '附近 3 公里内暂未找到已配置定位的小区，可在完整列表中选择' });
+        } catch (_) { this.setData({ locationHint: '未授权定位，已显示小区列表，可手动选择' }); }
+      }
+      communities.forEach(item => { item.displayName = Number.isFinite(item.distanceKm) ? `${item.name} · ${item.distanceKm.toFixed(1)} 公里` : item.name; });
       let selected = { communityId: user.communityId, buildingId: user.buildingId };
       const scene = wx.getStorageSync('scene');
       if (!user.communityId && scene) {

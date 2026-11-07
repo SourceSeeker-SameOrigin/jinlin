@@ -14,6 +14,7 @@
 | providers | openid_unique | openid 升序 | 是 |
 | providers | community_status_duty | communityId 升序、status 升序、onDuty 升序 | 否 |
 | providers | referralCode_unique | referralCode 升序 | 是 |
+| communities | locationGeo_geo | `locationGeo` 地理位置索引 | 否 |
 | buildings | shortCode_unique | shortCode 升序 | 是 |
 | buildings | community | communityId 升序 | 否 |
 | memberships | user_status | userOpenid 升序、status 升序 | 否 |
