@@ -229,6 +229,8 @@ coupons: { _id, templateId, openid, status: 'unused' | 'locked' | 'used' | 'expi
 pointsLedger: { _id, openid, delta, reason: 'recycle' | 'redeem' | 'refund' | 'admin', refId, balanceAfter, createdAt }
 ```
 
+积分流水查询使用 `pointsLedger.user_created` 索引（`openid` 升序、`createdAt` 倒序）。2026-11-07 用户确认去除同字段同顺序的重复 `openid_created` 索引，具体清单以 `database/indexes.md` 为准。
+
 定价顺序（扩展 SPEC §6.1，`_shared/pricing.js` 同步扩展并补单测）：
 
 1. 月卡免费（不变）。
