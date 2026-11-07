@@ -1,6 +1,11 @@
 const { application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView,
   locksmithStartCheck, requireLocksmithCheck } = require('../merchant');
 
+test('商家分成按整数万分比计算，避免 100 分乘 29% 因浮点误差少计一分', () => {
+  expect(quoteAmount(100, 0.29, 0.05)).toEqual({ gross: 100, merchant: 71, property: 1, platform: 28, commission: 29 });
+  expect(quoteAmount(100, 1, 0.29)).toEqual({ gross: 100, merchant: 0, property: 29, platform: 71, commission: 100 });
+});
+
 test('开锁开始前必须明确核验一致，仅保存结果和服务端审计字段', () => {
   const order = { detail: { category: 'locksmith' } };
   for (const confirmed of [undefined, false, 1, 'true']) expect(() => locksmithStartCheck(order, confirmed, 'staff')).toThrow();

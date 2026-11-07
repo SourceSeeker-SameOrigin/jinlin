@@ -43,8 +43,8 @@ function quoteAmount(payAmount, commissionRate, propertyRate) {
   ensure(Number.isFinite(commissionRate) && commissionRate >= 0 && commissionRate <= 1, '商家佣金比例配置不正确', 'E_CONFIG');
   ensure(Number.isFinite(propertyRate) && propertyRate >= 0 && propertyRate <= 1, '物业分成比例配置不正确', 'E_CONFIG');
   ensure(commissionRate * propertyRate <= 1, '分成比例配置不正确', 'E_CONFIG');
-  const commission = Math.floor(payAmount * commissionRate);
-  const property = Math.floor(commission * propertyRate);
+  const commission = Math.floor(payAmount * Math.round(commissionRate * 10000) / 10000);
+  const property = Math.floor(commission * Math.round(propertyRate * 10000) / 10000);
   return { gross: payAmount, merchant: payAmount - commission, property, platform: commission - property, commission };
 }
 
