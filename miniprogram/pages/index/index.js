@@ -12,7 +12,7 @@ Page({
       if (!user.communityId || !user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
       const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
       app.globalData.community = community;
-      this.setData({ community, firstOrder: !user.firstPaidAt });
+      this.setData({ community, firstOrder: !user.firstPaidAt, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
   },

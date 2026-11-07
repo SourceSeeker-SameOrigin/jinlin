@@ -49,7 +49,7 @@ test('三栋楼两单元，短码无易混字符，关联到同一小区', () =>
 test('全局配置默认 mock、禁用推荐奖励且不含真实凭据', () => {
   expect(readSeed('config')).toEqual([{
     _id: 'global', hotline: '400-000-0000', payMode: 'mock',
-    templateIds: { newTask: '', accepted: '', delivered: '', unaccepted: '' }, adminOpenids: [],
+    templateIds: { newTask: '', accepted: '', delivered: '', unaccepted: '', eventReminder: '' }, adminOpenids: [],
     blacklist: ['香烟', '卷烟', '烟草', '电子烟', '烟弹', '雪茄', '烟丝', '处方药', '银行卡', '电话卡', '手机卡', 'U盾', '代收现金'],
     idleBlacklist: ['烟草', '酒类', '药品', '医疗器械', '活体动物', '管制刀具', '自制食品', '贴身衣物', '虚拟账号'],
     idleCommissionRate: 0, autoConfirmHours: 24, acceptAlertMinutes: 10, payTimeoutMinutes: 15, complaintWindowHours: 24,
@@ -59,7 +59,7 @@ test('全局配置默认 mock、禁用推荐奖励且不含真实凭据', () => 
 
 test('仅两个公共集合前端可读，所有集合前端不可写', () => {
   const rules = JSON.parse(fs.readFileSync(path.join(root, 'security-rules.json'), 'utf8'));
-  expect(Object.keys(rules).sort()).toEqual(['users', 'communities', 'buildings', 'providers', 'orders', 'memberships', 'ledger', 'settlements', 'events', 'config', 'reports', 'auditLogs', 'mediaChecks', 'conversations', 'messages', 'posts', 'comments', 'couponTemplates', 'coupons', 'pointsLedger', 'idleItems'].sort());
+  expect(Object.keys(rules).sort()).toEqual(['users', 'communities', 'buildings', 'providers', 'orders', 'memberships', 'ledger', 'settlements', 'events', 'signups', 'eventCancelJobs', 'eventCancelTasks', 'config', 'reports', 'auditLogs', 'mediaChecks', 'conversations', 'messages', 'posts', 'comments', 'couponTemplates', 'coupons', 'pointsLedger', 'idleItems'].sort());
   for (const [collection, rule] of Object.entries(rules)) {
     expect(rule).toEqual({ read: ['communities', 'buildings'].includes(collection), write: false });
   }

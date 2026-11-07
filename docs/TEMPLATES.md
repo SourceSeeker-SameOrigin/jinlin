@@ -8,6 +8,7 @@
 | `accepted` | 下单住户 | 同上 | `pages/orders/detail` |
 | `delivered` | 下单住户 | 同上 | `pages/orders/detail` |
 | `unaccepted` | `config.adminOpenids` 中的管理员 | 同上 | `admin/order/order` |
+| `eventReminder` | 已报名且同意订阅的住户 | 活动 `thing1`、地点 `thing2`、开始时间 `time3` | `events/detail/detail` |
 
 默认字段类型必须和模板实际字段类型匹配。可在 `config.templateFields` 按模板键覆盖字段名，例如 `{"accepted":{"orderNo":"character_string1","service":"thing2","status":"phrase3","time":"time4"}}`。模板文本会按微信字段长度截短。
 

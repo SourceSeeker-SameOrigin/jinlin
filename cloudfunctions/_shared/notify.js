@@ -1,4 +1,4 @@
-const { notificationData } = require('./notificationData');
+const { notificationData, eventReminderData, EVENT_REMINDER_FIELDS } = require('./notificationData');
 
 function createNotifier(cloud, server) {
   async function send(openid, templateKey, data, page, suppliedConfig) {
@@ -51,6 +51,12 @@ function createNotifier(cloud, server) {
       }
     } catch (error) { console.error('未接单告警未发送', error.code || 'E_NOTIFY'); }
   }
-  return { send, newTask, resident, unaccepted };
+  async function eventReminder(openid, event) {
+    const config = await server.config();
+    if (!config.templateIds || !config.templateIds.eventReminder) return { skipped: true };
+    const fields = config.templateFields && config.templateFields.eventReminder || EVENT_REMINDER_FIELDS;
+    return send(openid, 'eventReminder', eventReminderData(event, fields), 'events/detail/detail?id=' + event._id, config);
+  }
+  return { send, newTask, resident, unaccepted, eventReminder };
 }
 module.exports = { createNotifier };

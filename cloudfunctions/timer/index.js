@@ -4,12 +4,14 @@ const { createPayFlow } = require('./lib/shared/payFlow');
 const { createLedgerFlow } = require('./lib/shared/ledgerFlow');
 const { ensure, integer } = require('./lib/shared/validate');
 const { createMembershipTasks } = require('./lib/shared/membershipFlow');
+const { createEventCancellationWorker } = require('./lib/shared/eventCancellation');
 const { createNotifier } = require('./lib/shared/notify');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const payments = createPayFlow(cloud, server);
 const ledger = createLedgerFlow(server);
 const notify = createNotifier(cloud, server);
+const eventCancellation = createEventCancellationWorker(server, payments);
 const { db, command } = server;
 
 exports.main = async (event = {}) => {
@@ -80,6 +82,40 @@ exports.main = async (event = {}) => {
       catch (error) { results.membershipTasks.failed++; console.error('月卡任务生成失败', card._id, error.code || 'E_INTERNAL'); }
     }
   } catch (error) { results.membershipTasks = { failed: true }; console.error('月卡任务查询失败', error.code || 'E_INTERNAL'); }
+  try {
+    results.endEvents = await db.collection('events').where({ status: 'published', endAt: command.lte(now) })
+      .update({ data: { status: 'ended', updatedAt: now } });
+  } catch (error) { results.endEvents = { failed: true }; console.error('活动结束状态更新失败', error.code || 'E_INTERNAL'); }
+  try {
+    await eventCancellation.run(now);
+    results.eventCancellation = { ok: true };
+  } catch (error) {
+    results.eventCancellation = { failed: true };
+    console.error('活动取消退款任务扫描失败', error.code || 'E_INTERNAL');
+  }
+  try {
+    const from = new Date(now.getTime() + 115 * 60000), to = new Date(now.getTime() + 125 * 60000);
+    const upcoming = await server.all('events', { status: 'published', startAt: command.gte(from).and(command.lt(to)) });
+    results.eventReminders = { sent: 0, failed: 0 };
+    for (const activity of upcoming) {
+      try { await server.feature('events', activity.communityIds[0]); }
+      catch (error) {
+        if (error.code === 'E_FEATURE_OFF') continue;
+        throw error;
+      }
+      const signups = await server.all('signups', { eventId: activity._id, status: 'signed', reminderSentAt: null });
+      for (const signup of signups) {
+        try {
+          const result = await notify.eventReminder(signup.openid, activity);
+          if (result.sent) {
+            const updated = await db.collection('signups').where({ _id: signup._id, reminderSentAt: null })
+              .update({ data: { reminderSentAt: now } });
+            if (updated.stats.updated) results.eventReminders.sent++;
+          } else results.eventReminders.failed++;
+        } catch (error) { results.eventReminders.failed++; console.error('活动提醒发送失败', signup._id, error.code || 'E_NOTIFY'); }
+      }
+    }
+  } catch (error) { results.eventReminders = { failed: true }; console.error('活动提醒扫描失败', error.code || 'E_INTERNAL'); }
   try {
     results.expireMemberships = await db.collection('memberships').where({ status: 'active', endAt: command.lte(now) })
       .update({ data: { status: 'expired' } });

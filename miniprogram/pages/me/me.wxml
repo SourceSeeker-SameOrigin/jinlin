@@ -9,6 +9,7 @@
     <navigator wx:if="{{community.enabledFeatures.idle}}" class="card" url="/idle/mine/mine">我的闲置 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.chat}}" class="card" url="/chat/list/list">站内消息<text wx:if="{{unreadTotal}}"> · {{unreadTotal}} 条未读</text> ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/mine/mine">我的优惠券 ›</navigator>
+    <navigator wx:if="{{community.enabledFeatures.events && canManageEvents}}" class="card" url="/events/manage/manage">活动管理 ›</navigator>
     <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
     <navigator wx:else class="card" url="/provider/apply/apply">{{provider ? '查看服务员申请' : '成为邻居帮手'}} ›</navigator>
     <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>

@@ -171,14 +171,13 @@ events: {
   status: 'draft' | 'published' | 'ended' | 'cancelled',
   createdAt, updatedAt
 }
-signups: { _id, eventId, openid, people: 1, orderId, status: 'signed' | 'cancelled' | 'checked_in' | 'refunded', checkinCode, createdAt }
-eventCancelJobs: { _id, eventId, status: 'pending'|'processing'|'retry'|'done', totalCount, refundedCount, failedCount, createdAt, updatedAt }
-eventCancelTasks: { _id, jobId, signupId, orderId, status: 'pending'|'processing'|'retry'|'done', attempts, nextAttemptAt, lastErrorCode, updatedAt }
+signups: { _id, eventId, openid, people: 1, orderId, status: 'pending_pay'|'signed'|'cancelled'|'checked_in'|'refunded', checkinCode, createdAt }
+eventCancelJobs: { _id, eventId, status: 'queued'|'processing'|'completed'|'attention', scanCursor, scanComplete, totalCount, completedCount, failedCount, retryCount, leaseUntil, createdAt, updatedAt }
+eventCancelTasks: { _id, jobId, signupId, orderId, status: 'pending'|'processing'|'waiting'|'retry'|'completed'|'failed', attempts, nextAt, leaseUntil, lastErrorCode, updatedAt }
 ```
 
 - 公益活动：住户免费报名；组织费来自赞助（`sponsors`），由管理员录入，写账本 `refType='sponsorship'`。
-- 兴趣活动：报名即支付（复用支付），订单 `kind='event_signup'`；截止前可取消全额退款，截止后不可退；活动取消全额退款。账本 `refType='event'`，物业分成按 `rates.property`。
-- 活动取消退款按任务分批异步处理，任务可重试；管理端显示总数、成功数、失败数，不能因一次云函数超时丢失剩余退款。
+- 兴趣活动：报名即支付（复用支付），订单 `kind='event_signup'`；截止前可取消全额退款，截止后不可退；活动取消全额退款。取消后的退款由每 5 分钟 timer 按游标分页创建、分批处理，单项使用稳定退款键保证幂等；失败任务退避重试，超时租约任务可恢复，管理员可重试终止失败项。管理端显示总数、成功数、失败数和待重试数。账本 `refType='event'`，物业分成按 `rates.property`。
 - 签到：报名成功生成签到码（`checkinCode` 的小程序码或二维码图片），组织者在活动管理页用 `wx.scanCode` 扫码签到。
 - 组织者：管理员可发布任何活动；物业可为本小区发布活动（需管理员审核后发布）；商家可发布兴趣活动（需审核）。
 - 订阅消息：活动开始前 2 小时提醒（新模板 `eventReminder`，报名时请求订阅）。
