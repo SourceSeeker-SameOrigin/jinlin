@@ -16,7 +16,9 @@ Page({
       const result = await api.call('admin', 'listProviders', { status: ['pending', 'approved', 'rejected', 'suspended', ''][this.data.statusIndex],
         offset: reset ? 0 : this.data.rows.length }, { loading: false, silent: true });
       if (sequence !== this.sequence) return;
-      const rows = result.list.map(row => ({ ...row, insuranceText: display(row.insuranceUntil).slice(0, 10), note: '' }));
+      const rows = result.list.map(row => { const certs = row.certs || []; return { ...row, certs,
+        escortCert: certs.includes('escort'), petCert: certs.includes('pet'),
+        insuranceText: display(row.insuranceUntil).slice(0, 10), note: '' }; });
       this.setData({ rows: reset ? rows : [...this.data.rows, ...rows], hasMore: result.hasMore });
     } catch (error) { if (sequence === this.sequence) this.setData({ error: error.message || '审核列表加载失败' }); }
     finally { if (sequence === this.sequence) this.setData({ loading: false }); }
@@ -25,13 +27,21 @@ Page({
   async review(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];
     const level = Number(event.currentTarget.dataset.level);
-    await this.perform('reviewProvider', { providerId: row._id, approved: level > 0, level, note: row.note });
+    await this.perform('reviewProvider', { providerId: row._id, approved: level > 0, level, note: row.note, certs: row.certs });
   },
   async suspend(event) {
     const answer = await new Promise(resolve => wx.showModal({ title: '停用服务员', content: '停用后不能上线或接单，已有任务请到订单管理处理。', success: resolve }));
     if (answer.confirm) await this.perform('suspendProvider', { providerId: event.currentTarget.dataset.id });
   },
   insurance(event) { this.perform('setInsurance', { providerId: event.currentTarget.dataset.id, until: event.detail.value }); },
+  certs(event) {
+    const index = event.currentTarget.dataset.index;
+    const row = this.data.rows[index];
+    const certs = event.detail.value;
+    this.setData({ ['rows[' + index + '].certs']: certs, ['rows[' + index + '].escortCert']: certs.includes('escort'),
+      ['rows[' + index + '].petCert']: certs.includes('pet') });
+    if (row.status === 'approved') this.perform('setCerts', { providerId: row._id, certs });
+  },
   cleanup(event) { this.perform('cleanupProviderKyc', { providerId: event.currentTarget.dataset.id }); },
   async perform(action, data) {
     if (this.data.busy) return;

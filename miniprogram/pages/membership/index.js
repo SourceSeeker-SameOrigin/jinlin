@@ -3,7 +3,7 @@ const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
 Page({
-  data: { loading: true, busy: false, error: '', plans: [], cards: [], slots: ['早班', '晚班'], slotIndex: 1 },
+  data: { loading: true, busy: false, error: '', plans: [], cards: [], slots: ['早班', '中班', '晚班'], slotIndex: 2 },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -22,7 +22,7 @@ Page({
   async buy(event) {
     if (this.data.busy) return;
     const planCode = event.currentTarget.dataset.code;
-    const slot = this.data.slotIndex === 0 ? 'morning' : 'evening';
+    const slot = ['morning', 'afternoon', 'evening'][this.data.slotIndex];
     this.setData({ busy: true, error: '' });
     try {
       if (!this.request || this.request.planCode !== planCode || this.request.slot !== slot) this.request = {

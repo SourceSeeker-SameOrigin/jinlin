@@ -29,7 +29,7 @@ async function mine(event, { openid }) {
   const today = ymd(new Date());
   return { list: rows.sort((a, b) => b.endAt - a.endAt).map(card => ({ _id: card._id, communityId: card.communityId,
     name: card.planCode === 'trash_monthly' ? '垃圾月卡' : '快递月卡', planCode: card.planCode,
-    serviceCode: card.serviceCode, slot: card.slot, startAt: card.startAt, endAt: card.endAt,
+    serviceCode: card.serviceCode, slot: card.slot, slotText: { morning: '早班', afternoon: '中班', evening: '晚班' }[card.slot] || '', startAt: card.startAt, endAt: card.endAt,
     status: card.status === 'active' && card.endAt <= new Date() ? 'expired' : card.status,
     skippedToday: card.skipDates.includes(today), purchaseOrderId: card.purchaseOrderId })) };
 }
@@ -43,7 +43,9 @@ async function buy(event, { user, openid }) {
   ]);
   addressSnapshot(user, community, building);
   const plan = cardPlan(community, event.planCode);
-  ensure(plan.serviceCode !== 'trash' || ['morning', 'evening'].includes(event.slot), '请选择早班或晚班');
+  ensure(plan.serviceCode !== 'trash' || ['morning', 'afternoon', 'evening'].includes(event.slot), '请选择上门时段');
+  ensure(event.slot !== 'afternoon' || (Array.isArray(community.dutyWindows) && community.dutyWindows.length >= 3),
+    '中班需要先配置三段上门时段', 'E_CONFIG');
   const first = !history.some(card => card.planCode === plan.code);
   if ((first ? plan.firstPeriodPrice : plan.price) > 0) payConfig(config.payMode);
   const id = 'mp_' + crypto.createHash('sha256').update(openid + ':' + event.requestId).digest('hex').slice(0, 40);

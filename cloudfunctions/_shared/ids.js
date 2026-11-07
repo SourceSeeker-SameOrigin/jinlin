@@ -18,7 +18,7 @@ function membershipTaskId(membershipId, date, slot) {
   text(membershipId, '月卡标识');
   // 复用真实日历校验，防止 2 月 30 日等输入形成错误幂等键。
   parseDate(date);
-  ensure(['morning', 'evening'].includes(slot), '月卡时段不正确');
+  ensure(['morning', 'afternoon', 'evening'].includes(slot), '月卡时段不正确');
   return 'm_' + membershipId + '_' + date.replace(/-/g, '') + '_' + slot;
 }
 

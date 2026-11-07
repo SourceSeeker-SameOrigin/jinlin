@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { allOff } = require('../features');
 
 const root = path.resolve(__dirname, '../../../database');
 function readSeed(name) {
@@ -51,13 +52,13 @@ test('全局配置默认 mock、禁用推荐奖励且不含真实凭据', () => 
     templateIds: { newTask: '', accepted: '', delivered: '', unaccepted: '' }, adminOpenids: [],
     blacklist: ['香烟', '卷烟', '烟草', '电子烟', '烟弹', '雪茄', '烟丝', '处方药', '银行卡', '电话卡', '手机卡', 'U盾', '代收现金'],
     autoConfirmHours: 24, acceptAlertMinutes: 10, payTimeoutMinutes: 15, complaintWindowHours: 24,
-    phoneVisibleHoursAfterDone: 24, referralBonus: 0
+    phoneVisibleHoursAfterDone: 24, referralBonus: 0, features: allOff()
   }]);
 });
 
 test('仅两个公共集合前端可读，所有集合前端不可写', () => {
   const rules = JSON.parse(fs.readFileSync(path.join(root, 'security-rules.json'), 'utf8'));
-  expect(Object.keys(rules).sort()).toEqual(['users', 'communities', 'buildings', 'providers', 'orders', 'memberships', 'ledger', 'settlements', 'events', 'config'].sort());
+  expect(Object.keys(rules).sort()).toEqual(['users', 'communities', 'buildings', 'providers', 'orders', 'memberships', 'ledger', 'settlements', 'events', 'config', 'reports', 'auditLogs', 'mediaChecks'].sort());
   for (const [collection, rule] of Object.entries(rules)) {
     expect(rule).toEqual({ read: ['communities', 'buildings'].includes(collection), write: false });
   }

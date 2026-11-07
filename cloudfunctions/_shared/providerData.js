@@ -58,6 +58,7 @@ function providerView(provider, admin = false) {
     communityId: provider.communityId, status: provider.status, appliedLevel: provider.appliedLevel,
     level: provider.level, onDuty: provider.onDuty, insuranceUntil: provider.insuranceUntil,
     avatarFileId: provider.avatarFileId || null, reviewNote: provider.reviewNote, stats: provider.stats,
+    certs: provider.certs || [],
     referralCode: provider.referralCode, cleanupPending: Boolean(provider.kycFileIds && provider.kycFileIds.length && provider.status !== 'pending') };
   if (admin) { result.idLast4 = provider.idLast4; result.kycFileIds = provider.kycFileIds || []; }
   return result;

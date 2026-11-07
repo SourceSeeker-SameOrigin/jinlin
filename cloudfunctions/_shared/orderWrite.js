@@ -13,7 +13,7 @@ function createOrderWriter(server) {
     ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
     const id = 'o_' + crypto.createHash('sha256').update(user.openid + ':' + event.requestId).digest('hex').slice(0, 40);
     const requestHash = crypto.createHash('sha256').update(JSON.stringify({ serviceCode: event.serviceCode,
-      communityId: event.communityId, detail: context.detail, note: context.note, slot: context.slot })).digest('hex');
+      communityId: event.communityId, addressId: event.addressId || null, detail: context.detail, note: context.note, slot: context.slot })).digest('hex');
     let createdNow = false;
     const result = await atomic(db, async transaction => {
       const existing = await read(transaction, 'orders', id);
@@ -22,7 +22,7 @@ function createOrderWriter(server) {
         return existing;
       }
       const currentUser = await read(transaction, 'users', user._id);
-      sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked']);
+      sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses']);
       ensure(!currentUser.blocked, '账号暂不可用', 'E_FORBIDDEN');
       const currentCommunity = await read(transaction, 'communities', context.community._id);
       sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates']);
@@ -36,9 +36,15 @@ function createOrderWriter(server) {
       const now = new Date();
       ensure(ymd(now) === ymd(context.now), '日期已变化，请重新获取报价', 'E_CONFLICT');
       validateSlot(context.slot, currentCommunity.dutyWindows, context.onDutyCount, now);
+      if (event.addressId) {
+        const selected = (currentUser.addresses || []).find(item => item.id === event.addressId);
+        ensure(selected && context.selectedAddress && selected.communityId === context.selectedAddress.communityId &&
+          selected.buildingId === context.selectedAddress.buildingId && selected.room === context.selectedAddress.room &&
+          selected.contactPhone === context.selectedAddress.contactPhone, '上门地址已变化，请重新报价', 'E_CONFLICT');
+      }
       const order = newOrder({ id, orderNo: orderNo(now), user: currentUser, community: currentCommunity,
         building: currentBuilding, serviceCode: event.serviceCode, detail: context.detail, note: context.note,
-        slot: context.slot, pricing: context.pricing, now });
+        slot: context.slot, pricing: context.pricing, now, selectedAddress: context.selectedAddress });
       order.userId = user._id;
       order.requestHash = requestHash;
       order.rateSnapshot = currentCommunity.rates;

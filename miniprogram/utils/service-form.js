@@ -10,7 +10,7 @@ const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, 
 module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
-      community: null, addressText: '', form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
+      community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
     onShow() { this.load(); },
     onHide() { clearTimeout(this.quoteTimer); this.quoteSequence = (this.quoteSequence || 0) + 1; },
@@ -22,9 +22,13 @@ module.exports = function serviceForm(serviceCode) {
         if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
         this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
         this.restoreDraft(user);
-        const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
-        const building = community.buildings.find(item => item._id === user.buildingId);
-        this.setData({ community, addressText: community.name + ' ' + (building ? building.name : '') + ' ' + user.unit + ' ' + user.room });
+        const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
+          buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
+          contactName: '', contactPhone: user.phone, isDefault: true }];
+        const addressIndex = Math.max(0, addresses.findIndex(item => item.isDefault));
+        const address = addresses[addressIndex];
+        const community = await api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true });
+        this.setData({ community, addresses, addressIndex, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
         await this.refreshQuote();
       } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
       finally { if (!this.unloaded) this.setData({ loading: false }); }
@@ -48,6 +52,15 @@ module.exports = function serviceForm(serviceCode) {
         form: this.data.form, slot, request: this.request });
     },
     address() { wx.navigateTo({ url: '/pages/bind/bind' }); },
+    addressChange(event) {
+      const addressIndex = Number(event.detail.value);
+      const address = this.data.addresses[addressIndex];
+      if (!address) return;
+      this.setData({ addressIndex, community: null, quote: null, amount: '--' });
+      api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true })
+        .then(community => { this.setData({ community, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room }); this.queueQuote(); })
+        .catch(error => this.setData({ error: error.message || '地址加载失败' }));
+    },
     change(event) {
       const key = event.currentTarget.dataset.field;
       if (!Object.prototype.hasOwnProperty.call(this.data.form, key)) return;
@@ -72,7 +85,8 @@ module.exports = function serviceForm(serviceCode) {
       if (serviceCode === 'trash') detail = { bags: Number(form.bags), sorted: form.sorted, placement: 'door' };
       if (serviceCode === 'buy') detail = { shop: form.shop, items: form.items, goodsCap: toFen(form.goodsYuan) };
       if (serviceCode === 'help') detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc, blocks: Number(form.blocks) };
-      return { communityId: community._id, serviceCode, detail, note: form.note,
+      const address = this.data.addresses[this.data.addressIndex];
+      return { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
         slot: this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined };
     },
     async refreshQuote() {
