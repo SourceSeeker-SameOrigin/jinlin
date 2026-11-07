@@ -1,5 +1,4 @@
 const api = require('../../utils/api');
-const { yuan } = require('../../utils/money');
 const TYPES = [{ key: 'settlement', name: '人工结算账目' }, { key: 'subsidy', name: '政府养老补贴业务明细' },
   { key: 'recycle', name: '回收企业月度对账' }, { key: 'station', name: '驿站月度对账' }];
 const PAYEES = ['服务员', '物业', '商家', '个人卖家'];
@@ -31,8 +30,10 @@ Page({
   },
   async loadCommunity() {
     const community = this.data.communities[this.data.communityIndex];
-    if (!community) { this.setData({ community: null }); return; }
+    this.setData({ community: null, stationIndex: 0 });
+    if (!community) return;
     const detail = await api.call('catalog', 'getCommunity', { communityId: community._id }, { loading: false, silent: true });
+    if (this.data.communities[this.data.communityIndex]?._id !== community._id) return;
     this.setData({ community: detail, stationIndex: 0 });
   },
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
@@ -71,7 +72,9 @@ Page({
         if (!community) throw new Error('请选择小区');
         if (kind === 'recycle') await this.download(['admin', 'exportRecyclerStatement'], { communityId: community._id, from: this.data.from, to: this.data.to });
         else {
-          const station = community.stations && community.stations[this.data.stationIndex];
+          const detail = this.data.community;
+          if (!detail || detail._id !== community._id) throw new Error('小区资料尚未加载完成，请稍后重试');
+          const station = detail.stations && detail.stations[this.data.stationIndex];
           if (!station) throw new Error('所选小区没有配置驿站');
           await this.download(['station', 'exportStatement'], { communityId: community._id, stationCode: station.code,
             from: this.data.from, to: this.data.to });
