@@ -1,6 +1,7 @@
 const { ensure, integer } = require('./validate');
+const { payoutCommunityAmounts } = require('./payout');
 
-function extensionMetrics(orders, activities, payouts) {
+function extensionMetrics(orders, activities, payouts, communityIds = null) {
   ensure(Array.isArray(orders) && Array.isArray(activities) && Array.isArray(payouts), '看板数据不正确', 'E_CONFIG');
   const modules = new Map();
   let couponRedemptions = 0, pointsIssued = 0, pointsRedeemed = 0;
@@ -20,10 +21,14 @@ function extensionMetrics(orders, activities, payouts) {
   }
   const payoutStatus = {};
   for (const payout of payouts) {
+    const amount = communityIds === null ? integer(payout.amount || 0, '打款金额') :
+      payoutCommunityAmounts(payout).filter(item => communityIds.includes(item.communityId))
+        .reduce((sum, item) => sum + item.amount, 0);
+    if (!amount) continue;
     const status = payout.state || 'unknown';
     const item = payoutStatus[status] || { status, count: 0, amount: 0 };
     item.count++;
-    item.amount += integer(payout.amount || 0, '打款金额');
+    item.amount += amount;
     payoutStatus[status] = item;
   }
   return { modules: [...modules.values()].sort((a, b) => a.code.localeCompare(b.code)),

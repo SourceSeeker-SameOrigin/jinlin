@@ -2,10 +2,10 @@ const https = require('https');
 const crypto = require('crypto');
 const { AppError } = require('./errors');
 const { ensure, integer, text } = require('./validate');
-const { atomic, read, insert } = require('./transaction');
+const { atomic, read, insert, sameSnapshot } = require('./transaction');
 const { ymd, parseDate } = require('./time');
 const wxpay = require('./wxpayV3');
-const { selectRows, payoutState, sellerPayoutSuccess, publicPayout, TERMINAL_STATES } = require('./payout');
+const { selectRows, payoutState, sellerPayoutSuccess, publicPayout, TERMINAL_STATES, communityAllocations } = require('./payout');
 const { requireApprovedProvider } = require('./auth');
 
 const REQUEST_TIMEOUT_MS = 10000;
@@ -158,6 +158,7 @@ function createPayoutFlow(cloud, server) {
       ensure(dailyCount < config.maxDailyCount, '今日提现次数已达上限', 'E_RATE_LIMIT');
       for (const snapshot of selection.rows) {
         const current = await read(transaction, 'ledger', snapshot._id);
+        sameSnapshot(current, snapshot, ['communityId', 'amounts', 'paidAmounts']);
         ensure(current && current.settled[payeeType] === false &&
           (payeeType !== 'provider' || current.providerId === provider._id) &&
           (payeeType !== 'seller' || current.sellerOpenid === openid) &&
@@ -166,9 +167,10 @@ function createPayoutFlow(cloud, server) {
         await transaction.collection('ledger').doc(current._id).update({ data: { payoutId: id } });
       }
       const outBillNo = 'J' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(7).toString('hex').toUpperCase();
-      const payoutCommunityIds = [...new Set(selection.rows.map(row => row.communityId).filter(Boolean))];
+      const communityAmounts = communityAllocations(selection.rows, selection.allocations, selection.amount);
+      const payoutCommunityIds = communityAmounts.map(item => item.communityId);
       const item = { _id: id, outBillNo, payeeType, communityId: payoutCommunityIds.length === 1 ? payoutCommunityIds[0] : null,
-        communityIds: payoutCommunityIds, providerId: provider && provider._id || null,
+        communityIds: payoutCommunityIds, communityAmounts, providerId: provider && provider._id || null,
         sellerOpenid: payeeType === 'seller' ? openid : null, payeeOpenid: openid,
         amount: selection.amount, ledgerIds: selection.rows.map(row => row._id),
         ledgerAmounts: Object.fromEntries(selection.allocations.map(allocation => [allocation.ledgerId, allocation.amount])),

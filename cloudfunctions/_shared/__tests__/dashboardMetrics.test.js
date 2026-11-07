@@ -15,3 +15,17 @@ test('扩展看板按模块汇总订单、优惠券、积分、活动报名和�
   expect(result).toMatchObject({ activitySignups: 7, couponRedemptions: 1, pointsIssued: 14, pointsRedeemed: 5 });
   expect(result.payoutStatus).toEqual([{ status: 'success', count: 2, amount: 600 }, { status: 'processing', count: 1, amount: 700 }]);
 });
+
+test('小区只计本区提现份额，联合社区去重后每笔只计一次', () => {
+  const payouts = [{ _id: 'p1', state: 'success', amount: 199999, communityAmounts: [
+    { communityId: 'A', amount: 120000 }, { communityId: 'B', amount: 79999 }
+  ] }, { _id: 'p2', state: 'processing', amount: 100001, communityAmounts: [{ communityId: 'B', amount: 100001 }] }];
+  expect(extensionMetrics([], [], payouts, ['A']).payoutStatus).toEqual([{ status: 'success', count: 1, amount: 120000 }]);
+  expect(extensionMetrics([], [], payouts, ['B']).payoutStatus).toEqual([
+    { status: 'success', count: 1, amount: 79999 }, { status: 'processing', count: 1, amount: 100001 }
+  ]);
+  expect(extensionMetrics([], [], payouts, ['A', 'B', 'A']).payoutStatus).toEqual([
+    { status: 'success', count: 1, amount: 199999 }, { status: 'processing', count: 1, amount: 100001 }
+  ]);
+  expect(extensionMetrics([], [], payouts, ['C']).payoutStatus).toEqual([]);
+});

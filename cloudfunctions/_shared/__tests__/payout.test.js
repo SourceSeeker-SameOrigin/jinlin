@@ -1,4 +1,4 @@
-const { selectRows, payoutState, sellerPayoutSuccess, publicPayout } = require('../payout');
+const { selectRows, payoutState, sellerPayoutSuccess, publicPayout, communityAllocations, payoutCommunityAmounts } = require('../payout');
 const { rowsForPayee } = require('../settlementData');
 const { idFor } = require('../payoutFlow');
 const crypto = require('crypto');
@@ -52,6 +52,29 @@ test('卖家分笔打款成功只结算已付部分，最后一笔才结清账�
 test('人工结算筛选跳过提现锁定账本', () => {
   const ledger = [row('free', 500, { providerId: 'p1' }), row('locked', 700, { providerId: 'p1', payoutId: 'payout1' })];
   expect(rowsForPayee(ledger, 'provider', 'p1').map(item => item._id)).toEqual(['free']);
+});
+
+test('跨小区分笔提现按本次实际金额归属，不按账本总额重复分摊', () => {
+  const rows = [row('a', 0, { communityId: 'A', amounts: { seller: 120000 }, settled: { seller: false } }),
+    row('b', 0, { communityId: 'B', amounts: { seller: 180000 }, settled: { seller: false } })];
+  const selection = selectRows(rows, 'seller');
+  expect(communityAllocations(selection.rows, selection.allocations, selection.amount)).toEqual([
+    { communityId: 'A', amount: 120000 }, { communityId: 'B', amount: 79999 }
+  ]);
+  const remaining = { ...rows[1], paidAmounts: { seller: 79999 } };
+  const next = selectRows([remaining], 'seller');
+  expect(communityAllocations(next.rows, next.allocations, next.amount)).toEqual([{ communityId: 'B', amount: 100001 }]);
+});
+
+test('旧提现按保留的账本分笔金额重建归属；缺失、重复或合计不一致时拒绝猜测', () => {
+  const old = { amount: 3000, ledgerIds: ['a', 'b'], ledgerAmounts: { a: 1000, b: 2000 } };
+  const rows = [{ _id: 'a', communityId: 'A' }, { _id: 'b', communityId: 'B' }];
+  expect(payoutCommunityAmounts(old, rows)).toEqual([{ communityId: 'A', amount: 1000 }, { communityId: 'B', amount: 2000 }]);
+  expect(payoutCommunityAmounts({ communityId: 'A', amount: 1000 })).toEqual([{ communityId: 'A', amount: 1000 }]);
+  expect(() => payoutCommunityAmounts(old, rows.slice(0, 1))).toThrow('小区归属');
+  expect(() => payoutCommunityAmounts({ amount: 1000 })).toThrow('缺少小区分摊依据');
+  expect(() => payoutCommunityAmounts({ amount: 4000, communityAmounts: [{ communityId: 'A', amount: 3000 }] })).toThrow('合计');
+  expect(() => payoutCommunityAmounts({ amount: 4000, communityAmounts: [{ communityId: 'A', amount: 2000 }, { communityId: 'A', amount: 2000 }] })).toThrow('重复');
 });
 
 test('展示提现状态时不泄漏内部请求体或收款标识', () => {

@@ -4,6 +4,7 @@ const { parseDate, addDays, ymd } = require('./time');
 const { validateFeatures } = require('./features');
 const { visibleCommunityIds } = require('./visibility');
 const { extensionMetrics } = require('./dashboardMetrics');
+const { payoutCommunityAmounts } = require('./payout');
 
 function createAdminDashboard(cloud, server) {
   const { db, command } = server;
@@ -76,9 +77,15 @@ function createAdminDashboard(cloud, server) {
     }
     const funnelRows = map => [...map].map(([id, counts]) => ({ id, scans: counts.scan.size, binds: counts.bind.size,
       firstPaid: counts.first_paid.size, secondPaid: counts.second_paid.size }));
-    const scopedPayouts = payouts.filter(payout => payout.communityId ? communityIds.includes(payout.communityId) :
-      Array.isArray(payout.communityIds) && payout.communityIds.some(id => communityIds.includes(id)));
-    const extensions = extensionMetrics(orders, activities, scopedPayouts);
+    const scopedPayouts = [];
+    for (const payout of payouts) {
+      // Older cross-community records can be reconstructed from their immutable ledger allocations.
+      const ledgerRows = !payout.communityAmounts && !payout.communityId ?
+        await Promise.all((payout.ledgerIds || []).map(id => server.get('ledger', id))) : [];
+      const communityAmounts = payoutCommunityAmounts(payout, ledgerRows.filter(Boolean));
+      if (communityAmounts.some(item => communityIds.includes(item.communityId))) scopedPayouts.push({ ...payout, communityAmounts });
+    }
+    const extensions = extensionMetrics(orders, activities, scopedPayouts, communityIds);
     return { communityId, communityIds, scope: event.scope === 'federation' ? 'federation' : 'community', from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
       totalOrders: orders.length, paidOrders, serviceFeeTurnover: turnover, actualIncome: net,
       residentCount: uniqueResidents.size, newFirstPaidResidents: source.first_paid.size,
