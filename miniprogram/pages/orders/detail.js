@@ -31,6 +31,7 @@ Page({
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
       this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
+        couponDiscountText: yuan(order.pricing.couponDiscount || 0), pointsRedeemed: order.pricing.pointsRedeemed || 0,
         slotText: slotText(order.slot), timeline: order.timeline.map(item => ({ text: statuses[item.status], time: display(item.at) })),
         refunds: order.refunds.map(item => ({ ...item, amountText: yuan(item.amount),
           statusText: { success: '已退款', processing: '退款处理中', failed: '退款失败，请联系客服' }[item.status] })) });

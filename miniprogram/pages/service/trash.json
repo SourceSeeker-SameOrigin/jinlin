@@ -2,6 +2,7 @@
   "navigationBarTitleText": "代扔垃圾",
   "usingComponents": {
     "price-bar": "/components/price-bar/index",
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "discount-selector": "/components/discount-selector/index"
   }
 }

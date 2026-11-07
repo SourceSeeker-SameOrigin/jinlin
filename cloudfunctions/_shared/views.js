@@ -16,9 +16,12 @@ function orderView(order, user, provider, config, now) {
   const withinPhoneWindow = active && !order.completedAt || end && now - new Date(end) >= 0 &&
     now - new Date(end) < config.phoneVisibleHoursAfterDone * 3600000;
   const phoneAllowed = Boolean((active || order.status === 'completed') && withinPhoneWindow);
+  const pricing = { ...order.pricing };
+  if (!owner && !admin) delete pricing.couponId;
   const view = { ...listView(order), note: owner || assigned || admin ? order.note : '', address: owner || assigned || admin ? order.address :
     { buildingName: order.address && order.address.buildingName },
-  pricing: { ...order.pricing }, photos: order.photos, receiptPhoto: order.receiptPhoto || null, rating: order.rating,
+  pricing, photos: order.photos,
+  receiptPhoto: order.receiptPhoto || null, rating: order.rating,
   complaint: order.complaint ? { reason: order.complaint.reason, text: order.complaint.text,
     at: order.complaint.at, resolution: order.complaint.resolution ? {
       refundAmount: order.complaint.resolution.refundAmount,

@@ -1,4 +1,5 @@
 const { ensure, record, integer, text } = require('./validate');
+const { couponDiscount: calculateCouponDiscount } = require('./couponData');
 
 function price(value, label) {
   return integer(value, label, 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
@@ -61,6 +62,9 @@ function quote(input) {
   let payAmount = listPrice;
   let freeByMembership = false;
   let reason = '原价';
+  let couponDiscount = 0;
+  let couponId = null;
+  let pointsRedeemed = 0;
   if (serviceCode === 'express' && membershipState && membershipState.active) {
     const quota = integer(membershipState.dailyParcelQuota, '月卡每日额度', 1, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
     integer(todayUsedParcels, '今日已用快递件数');
@@ -72,14 +76,53 @@ function quote(input) {
     } else {
       reason = '快递月卡额度不足，整单原价';
     }
-  } else if (serviceCode !== 'help') {
-    const firstOrderPrice = price(prices.firstOrderPrice, '首单价');
-    if (user.firstPaidAt == null && listPrice > firstOrderPrice) {
-      payAmount = firstOrderPrice;
+  } else {
+    let firstDiscount = 0;
+    if (serviceCode !== 'help') {
+      const firstOrderPrice = price(prices.firstOrderPrice, '首单价');
+      if (user.firstPaidAt == null && listPrice > firstOrderPrice) firstDiscount = listPrice - firstOrderPrice;
+    }
+    const coupons = Array.isArray(input.coupons) ? input.coupons.map(item => ({ couponId: item.couponId,
+      discount: item.template ? calculateCouponDiscount(item.template, { serviceCode, communityId: input.communityId, listPrice }) : item.discount })) : [];
+    const selectedId = input.couponId === undefined ? null : input.couponId;
+    ensure(selectedId === null || selectedId === '' || typeof selectedId === 'string', '优惠券选择不正确');
+    const candidates = selectedId ? coupons.filter(item => item.couponId === selectedId) :
+      selectedId === '' ? [] : coupons;
+    ensure(!selectedId || candidates.length === 1, '优惠券已失效，请重新选择', 'E_CONFLICT');
+    const selectedCoupon = candidates.filter(item => Number.isSafeInteger(item.discount) && item.discount > 0)
+      .sort((a, b) => b.discount - a.discount)[0];
+    ensure(!selectedId || selectedCoupon, '该优惠券不适用于本服务或未达到使用门槛', 'E_INVALID_PARAM');
+    couponDiscount = selectedCoupon ? Math.min(selectedCoupon.discount, Math.max(0, listPrice - 1)) : 0;
+    couponId = selectedCoupon ? selectedCoupon.couponId : null;
+    if (selectedId && selectedCoupon) {
+      // 用户明确选券时尊重选择；仅自动模式在首单优惠与优惠券之间择优。
+      payAmount = listPrice - couponDiscount;
+      reason = '优惠券';
+    } else if (couponDiscount >= firstDiscount && couponDiscount > 0) {
+      payAmount = listPrice - couponDiscount;
+      reason = '优惠券';
+    } else if (firstDiscount > 0) {
+      payAmount = listPrice - firstDiscount;
+      couponDiscount = 0;
+      couponId = null;
       reason = '首单优惠';
     }
+    payAmount = Math.max(1, payAmount);
+    const pointsBalance = integer(input.pointsBalance === undefined ? 0 : input.pointsBalance, '积分余额');
+    const requestedPoints = integer(input.pointsToUse === undefined ? 0 : input.pointsToUse, '使用积分');
+    ensure(requestedPoints <= pointsBalance, '积分余额不足', 'E_CONFLICT');
+    ensure(input.pointsEnabled !== false || requestedPoints === 0, '环保积分暂未开放', 'E_FEATURE_OFF');
+    const maxPoints = Math.floor(payAmount / 2);
+    ensure(requestedPoints <= maxPoints, '积分最多抵扣服务费的 50%');
+    pointsRedeemed = requestedPoints;
+    payAmount = Math.max(1, payAmount - pointsRedeemed);
+    if (pointsRedeemed) reason += ' + 积分抵扣';
   }
-  return { listPrice, discount: listPrice - payAmount, payAmount, goodsCap, reason, freeByMembership };
+  const result = { listPrice, discount: listPrice - payAmount, payAmount, goodsCap, reason, freeByMembership };
+  if (input.coupons !== undefined || input.couponId !== undefined || input.pointsToUse !== undefined || input.pointsEnabled !== undefined) {
+    Object.assign(result, { couponId, couponDiscount, pointsRedeemed });
+  }
+  return result;
 }
 
 module.exports = { quote };

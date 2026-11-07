@@ -5,6 +5,7 @@
 | 集合 | 索引名称 | 字段顺序 | 唯一 |
 | --- | --- | --- | --- |
 | users | openid_unique | openid 升序 | 是 |
+| users | phone | phone 升序 | 否 |
 | orders | orderNo_unique | orderNo 升序 | 是 |
 | orders | community_status_created | communityId 升序、status 升序、createdAt 倒序 | 否 |
 | orders | user_created | userOpenid 升序、createdAt 倒序 | 否 |
@@ -29,5 +30,9 @@
 | posts | feed | communityId 升序、scope 升序、type 升序、status 升序、expireAt 升序、createdAt 倒序 | 否 |
 | posts | type_status_expireAt | type 升序、status 升序、expireAt 升序 | 否 |
 | comments | post_status_created | postId 升序、status 升序、createdAt 升序 | 否 |
+| couponTemplates | status_issueMode | status 升序、issueMode 升序 | 否 |
+| coupons | user_status_expiry | openid 升序、status 升序、validTo 升序 | 否 |
+| coupons | user_created | openid 升序、createdAt 倒序 | 否 |
+| pointsLedger | user_created | openid 升序、createdAt 倒序 | 否 |
 
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。

@@ -20,11 +20,15 @@
     },
     {
       "root": "admin",
-      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat"]
+      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat", "coupons/coupons"]
     },
     {
       "root": "chat",
       "pages": ["list/list", "room/room"]
+    },
+    {
+      "root": "coupons",
+      "pages": ["center/center", "mine/mine"]
     },
     {
       "root": "board",

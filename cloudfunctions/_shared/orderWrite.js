@@ -5,6 +5,7 @@ const { totalFee } = require('./paymentState');
 const { orderNo } = require('./ids');
 const { ensure, text } = require('./validate');
 const { ymd } = require('./time');
+const { lockOrderDiscounts } = require('./couponFlow');
 
 function createOrderWriter(server) {
   const { db } = server;
@@ -13,7 +14,8 @@ function createOrderWriter(server) {
     ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
     const id = 'o_' + crypto.createHash('sha256').update(user.openid + ':' + event.requestId).digest('hex').slice(0, 40);
     const requestHash = crypto.createHash('sha256').update(JSON.stringify({ serviceCode: event.serviceCode,
-      communityId: event.communityId, addressId: event.addressId || null, detail: context.detail, note: context.note, slot: context.slot })).digest('hex');
+      communityId: event.communityId, addressId: event.addressId || null, detail: context.detail, note: context.note,
+      slot: context.slot, couponId: context.pricing.couponId || null, pointsToUse: context.pricing.pointsRedeemed || 0 })).digest('hex');
     let createdNow = false;
     const result = await atomic(db, async transaction => {
       const existing = await read(transaction, 'orders', id);
@@ -22,10 +24,12 @@ function createOrderWriter(server) {
         return existing;
       }
       const currentUser = await read(transaction, 'users', user._id);
-      sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses']);
+      sameSnapshot(currentUser, user, ['orderRevision', 'firstPaidAt', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses', 'pointsBalance']);
       ensure(!currentUser.blocked, '账号暂不可用', 'E_FORBIDDEN');
       const currentCommunity = await read(transaction, 'communities', context.community._id);
-      sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates']);
+      sameSnapshot(currentCommunity, context.community, ['status', 'prices', 'cardPlans', 'dutyWindows', 'rates', 'features']);
+      const currentConfig = await read(transaction, 'config', 'global');
+      sameSnapshot(currentConfig, context.config, ['features']);
       const currentBuilding = await read(transaction, 'buildings', context.building._id);
       sameSnapshot(currentBuilding, context.building, ['communityId', 'name', 'units']);
       if (context.membership) {
@@ -56,8 +60,10 @@ function createOrderWriter(server) {
         order.payment.paidAt = now;
         order.payment.transactionId = 'free_' + id;
       }
+      const discountPatch = await lockOrderDiscounts(transaction, order, currentUser, now);
       await insert(transaction, 'orders', order);
-      await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1 } });
+      await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1,
+        ...(context.pricing.pointsRedeemed ? { pointsBalance: discountPatch.pointsBalance } : {}) } });
       createdNow = true;
       return order;
     });

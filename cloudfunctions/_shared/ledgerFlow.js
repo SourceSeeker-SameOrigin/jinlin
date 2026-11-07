@@ -5,6 +5,7 @@ const { ensure } = require('./validate');
 const { referralAward } = require('./paymentState');
 const { orderConversationId } = require('./chatData');
 const { isEnabled } = require('./features');
+const { awardReferralCoupons } = require('./couponFlow');
 
 function createLedgerFlow(server) {
   async function book(transaction, order, accountingInput = {}) {
@@ -36,6 +37,8 @@ function createLedgerFlow(server) {
         const referrer = await read(transaction, 'providers', user.source.referrerProviderId);
         const award = referralAward(current, user, referrer, config.referralBonus || 0);
         if (award && !(await read(transaction, 'ledger', award._id))) await insert(transaction, 'ledger', { ...award, createdAt: now });
+        await awardReferralCoupons(transaction, current, user, referrer, now,
+          Boolean(config.features && config.features.coupons));
       }
       if (!current.completedAt && current.providerId) {
         const provider = await read(transaction, 'providers', current.providerId);
