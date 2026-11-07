@@ -36,8 +36,10 @@ Page({
       const vacantLabels = { windows: '门窗检查', utilities: '水电燃气', leakMold: '漏水与霉斑', ventilation: '开窗通风', mail: '代收快递信件', photos: '巡检拍照' };
       const vacantReportRows = Object.entries(order.vacantReport && order.vacantReport.checklist || {}).map(([key, value]) => ({ label: vacantLabels[key] || key, value: value ? '已检查' : '未检查' }));
       const vacantPhotoGroups = Object.entries(order.vacantReport && order.vacantReport.photoByItem || {}).map(([key, photos]) => ({ label: vacantLabels[key] || key, photos }));
+      const visitLabels = { mental: '精神状态', diet: '饮食情况', utilities: '水电燃气', doors: '门窗安全', medical: '用药情况' };
+      const visitReportRows = Object.entries(order.visitReport && order.visitReport.checks || {}).map(([key, value]) => ({ label: visitLabels[key] || key, value: value ? '已检查' : '未检查' }));
       this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
-        vacantReportRows, vacantPhotoGroups,
+        vacantReportRows, vacantPhotoGroups, visitReportRows,
         couponDiscountText: yuan(order.pricing.couponDiscount || 0), pointsRedeemed: order.pricing.pointsRedeemed || 0,
         mapMarkers: order.providerLocation ? [{ id: 1, latitude: order.providerLocation.latitude, longitude: order.providerLocation.longitude,
           title: '服务员', width: 36, height: 36 }] : [],
