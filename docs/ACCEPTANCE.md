@@ -2,6 +2,8 @@
 
 版本：2026-11-08。此清单按 SPEC §17、SPEC_EXT E19 和 TASKS T00–T33 编制，区分本地代码检查与尚未进行的开发云/体验版人工验收。自动化通过不代表云端端到端通过。
 
+本轮真实小程序只读联调结果见第六节；全部配置与待决事项、推荐方案及 T00–T33 覆盖关系集中在 [INTEGRATION_DECISIONS.md](INTEGRATION_DECISIONS.md)。该清单包含未批准方案，不视为规格变更。
+
 当前执行决策 A（2026-11-07）：公众平台页面已明确显示账号类型为“个人”，认证页此前显示“未认证”；用户确认暂无企业或个体工商户资质，选择保持规格并继续其他开发。手机号获取资格尚不满足；不新增测试身份、不直接补写已授权手机号、不跳过绑定校验。下表中的“待开发云/体验版”表示尚未验收，不表示当前账号已具备执行条件。
 
 | 类别 | 当前状态及处理 |
@@ -223,3 +225,40 @@ catalog 部署及基础联调：用户明确授权后，2026-11-07 已上传 `/t
 | Where | 仅 cloud1-d4gbpd8zx89564fb6 开发环境；尚未创建生产环境 |
 | How | 继续核对实际云调用权限、客户端数据库访问权限与扫码；资格相关业务保持阻塞；角色、订阅模板、内容安全回调、支付/退款/打款参数及 SECRET_KEY 分别按授权配置；timer 触发器未启用，批量任务的 3 秒超时适配待验证；station 在线编辑器下载异常及导入临时文件清理仍待处理 |
 | How much | 本轮 45 套 / 487 项 Jest 通过；已部署 21/21，待部署 0；未购买或升级套餐，未执行真实支付/退款/打款；业务验收工时与实际云资源费用尚未核定 |
+
+## 六、2026-11-08 真实小程序上下文只读联调
+
+| 维度 | 执行范围与结论 |
+|---|---|
+| What | 恢复开发工具操作后检查 catalog、33 集合读取、当前住户业务入口、回调拒绝、云存储/网关/套餐与本地完整性 |
+| Why | 补充真实 OPENID 上下文与客户端权限证据，不再只依赖控制台无身份调用 |
+| Who | 代理执行；主体、业务参数、角色、权限和付费决策仍由用户负责 |
+| When | 本轮已完成以下只读检查；依赖用户配置的完整业务流程待条件齐备后继续 |
+| Where | fix/dev-integration；cloud1-d4gbpd8zx89564fb6 开发环境；未切生产 |
+| How | 控制台日志标记 JINLIN_READONLY_CATALOG / JINLIN_SHORT / JINLIN_PUBLIC / JINLIN_DB_PRIVATE / JINLIN_DENIED / JINLIN_GUARD；下面只记录业务摘要，不保存个人身份及凭据。未修改云配置、角色、功能开关、手机号、绑定地址、订单或资金状态 |
+| How much | 33 集合只读核查；本轮 45 套/487 项 Jest 通过；69 页四件套完整，222 JS 语法检查、120 JSON 解析通过；未购买/升级套餐 |
+
+| 检查 | 实际结果 | 边界/待办 |
+|---|---|---|
+| catalog.listCommunities / getCommunity | 1 个 active 小区，3 栋楼；enabledFeatures 全关闭；响应不含 locationGeo | 实际 GeoNear 查询需 D15 |
+| 三个楼栋 scene | A7M2XQ → demo_building_1；B8N3YR → demo_building_2；K3F9QA → demo_building_3，均归 demo_community | 只测解析，未模拟真实扫码来源写入或生成海报码 |
+| 非法 scene / nearbyCommunities | invalid → E_INVALID_PARAM；location 全关闭 → E_FEATURE_OFF | 开启场景未测 |
+| catalog.templates | 六项均为空字符串 | 通知实际到达未验收 |
+| communities / buildings 客户端读取 | 1/3 条；四条 createdAt 的 Object.prototype.toString 均为 [object Date] | 确认已导入日期在客户端恢复为 Date |
+| 其余 31 集合客户端读取 | 与 security-rules.json 对应集合逐一 limit(1)、只投影 _id，全部 -502003 Permission denied | 验证只读拒绝，不等于客户端写权限实测；无写入尝试 |
+| order.listMine / provider.myStatus | 空订单列表；provider=null、todayCount=0、todayIncome=0 | 只代表当前测试账号无业务，不代表接单/履约通过 |
+| membership.plans / board.list / idle.list | E_INVALID_PARAM，要求绑定有效小区/门牌 | D01 阻塞保持，不绕过 |
+| event.list | E_FORBIDDEN，无权查看未绑定的小区活动 | 未验证已绑定用户活动读取或关闭开关路径 |
+| admin.dashboard | E_FORBIDDEN / 暂无权限执行此操作 | 普通住户拒绝符合预期；管理员身份尚未配置 |
+| coupon.center | E_FEATURE_OFF | 关闭路径通过；优惠发放/核销未测 |
+| chat.list | 成功返回 list=[]、unreadTotal=0 | 与关闭接口统一 E_FEATURE_OFF 的规格存在差异，D03 待决 |
+| content.homeContent | notice=null、notices=[]、ads=[] | 核心首页聚合空结果；D03 建议显式记录此接口例外 |
+| merchant.myApplication / station.myApplication | merchant=null / application=null | 未绑定账号未命中 feature 拒绝；D03 一并明确规则；station 客户端调用正常，不等于在线编辑器下载异常已修复 |
+| mediaCallback 客户端空调用 | E_FORBIDDEN / 仅允许平台内容安全回调 | 不代表真实平台来源认证、审核回调/幂等已验收 |
+| payCallback / refundCallback 客户端空调用 | errcode=1，分别支付/退款结果待核实 | 本轮未核云日志的具体拒绝分支；未发生真实交易 |
+| 云存储 | 仅创建者及管理员可读写；临时 communities 1.75KB、buildings 582B 保留 | 订单照片/证件/UGC 的跨用户读取方案 D02；只删两个临时对象 D27 待确认 |
+| HTTP 网关 | 总开关显示开启，路由列表为空、自定义域名列表为空 | 本轮未更改；不能声称总开关关闭，也不能声称函数有 HTTP 路由；D26 待决 |
+| 套餐 | 微信体验版有效期至 2027-05-06；当前周期 2026-11-06～2026-12-06；不支持自动续费；页面 0.84/40000 资源点 | 页面统计非实时本轮账单；支付集成显示在升级能力中，接入前核对 D24/D32，不自动升级 |
+| 本地权限声明 | board/chat 未声明实际调用的内容安全 API；provider 缺少推荐码 API 声明 | D04 最小权限方案待确认，不能声称现有云端权限完整 |
+
+本轮文档纠正：TEMPLATES.md 的 visitReport 原“同上”会误指活动模板，现明确按源码的订单号/服务/状态/时间映射；MANUAL_SETUP.md 明确四个加密函数、按调用链配置支付参数及 timer 尚未授权启用。业务代码与 SPEC 未擅自变更；待决项批准后再同步规格、修复并重新部署。
