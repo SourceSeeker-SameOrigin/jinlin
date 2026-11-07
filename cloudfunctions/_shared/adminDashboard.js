@@ -3,6 +3,7 @@ const { requireRole, requireCommunityAccess } = require('./auth');
 const { parseDate, addDays, ymd } = require('./time');
 const { validateFeatures } = require('./features');
 const { visibleCommunityIds } = require('./visibility');
+const { extensionMetrics } = require('./dashboardMetrics');
 
 function createAdminDashboard(cloud, server) {
   const { db, command } = server;
@@ -27,10 +28,13 @@ function createAdminDashboard(cloud, server) {
     const communityFilter = command.in(communityIds);
     const orders = await server.all('orders', { communityId: communityFilter, createdAt: command.gte(start).and(command.lt(end)) });
     const providers = await server.all('providers', { communityId: communityFilter });
-    const [cards, duty, events] = await Promise.all([
+    const [cards, duty, events, activities, payouts] = await Promise.all([
       server.all('memberships', { communityId: communityFilter, status: 'active', startAt: command.lt(end), endAt: command.gt(start) }),
       db.collection('providers').where({ communityId: communityFilter, status: 'approved', onDuty: true, insuranceUntil: command.gt(new Date()) }).count(),
-      server.all('events', { communityId: communityFilter, at: command.gte(start).and(command.lt(end)) })
+      server.all('events', { communityId: communityFilter, at: command.gte(start).and(command.lt(end)) }),
+      server.all('events', { communityIds: command.in(communityIds), status: command.in(['draft', 'published', 'ended', 'cancelled']),
+        startAt: command.gte(start).and(command.lt(end)) }),
+      user.roles.includes('admin') ? server.all('payouts', { createdAt: command.gte(start).and(command.lt(end)) }) : Promise.resolve([])
     ]);
     const statusCounts = {};
     const uniqueResidents = new Set();
@@ -72,6 +76,9 @@ function createAdminDashboard(cloud, server) {
     }
     const funnelRows = map => [...map].map(([id, counts]) => ({ id, scans: counts.scan.size, binds: counts.bind.size,
       firstPaid: counts.first_paid.size, secondPaid: counts.second_paid.size }));
+    const scopedPayouts = payouts.filter(payout => payout.communityId ? communityIds.includes(payout.communityId) :
+      Array.isArray(payout.communityIds) && payout.communityIds.some(id => communityIds.includes(id)));
+    const extensions = extensionMetrics(orders, activities, scopedPayouts);
     return { communityId, communityIds, scope: event.scope === 'federation' ? 'federation' : 'community', from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
       totalOrders: orders.length, paidOrders, serviceFeeTurnover: turnover, actualIncome: net,
       residentCount: uniqueResidents.size, newFirstPaidResidents: source.first_paid.size,
@@ -85,7 +92,7 @@ function createAdminDashboard(cloud, server) {
       providerStats: providers.map(provider => ({ id: provider._id, name: provider.realName, completed: provider.stats.completed,
         averageRating: provider.stats.ratingCount ? (provider.stats.ratingSum / provider.stats.ratingCount).toFixed(1) : '暂无' })),
       funnel: { scans: source.scan.size, binds: source.bind.size, firstPaid: source.first_paid.size, secondPaid: source.second_paid.size },
-      funnelByBuilding: funnelRows(byBuilding), funnelByProvider: funnelRows(byProvider), adStats };
+      funnelByBuilding: funnelRows(byBuilding), funnelByProvider: funnelRows(byProvider), adStats, extensions };
   }
 
   async function updateCommunity(event, { user }) {

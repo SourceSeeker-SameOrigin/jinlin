@@ -166,7 +166,9 @@ function createPayoutFlow(cloud, server) {
         await transaction.collection('ledger').doc(current._id).update({ data: { payoutId: id } });
       }
       const outBillNo = 'J' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(7).toString('hex').toUpperCase();
-      const item = { _id: id, outBillNo, payeeType, providerId: provider && provider._id || null,
+      const payoutCommunityIds = [...new Set(selection.rows.map(row => row.communityId).filter(Boolean))];
+      const item = { _id: id, outBillNo, payeeType, communityId: payoutCommunityIds.length === 1 ? payoutCommunityIds[0] : null,
+        communityIds: payoutCommunityIds, providerId: provider && provider._id || null,
         sellerOpenid: payeeType === 'seller' ? openid : null, payeeOpenid: openid,
         amount: selection.amount, ledgerIds: selection.rows.map(row => row._id),
         ledgerAmounts: Object.fromEntries(selection.allocations.map(allocation => [allocation.ledgerId, allocation.amount])),

@@ -3,7 +3,7 @@
   <navigator url="/admin/features/features">功能开关</navigator>
   <navigator url="/admin/coupons/coupons">优惠券模板管理</navigator>
   <navigator url="/admin/content/content">公告与广告管理</navigator>
-  <navigator url="/admin/reports/reports">内容举报审核</navigator><navigator url="/admin/merchants/merchants">商家入驻与服务审核</navigator><navigator url="/admin/recycle/recycle">回收企业月度对账</navigator>
+  <navigator url="/admin/reports/reports">内容举报审核</navigator><navigator url="/admin/merchants/merchants">商家入驻与服务审核</navigator><navigator wx:if="{{isAdmin}}" url="/admin/stations/stations">驿站账号审核</navigator><navigator wx:if="{{isAdmin}}" url="/admin/exports/exports">数据导出</navigator><navigator url="/admin/recycle/recycle">回收企业月度对账</navigator>
   <view wx:if="{{loading}}">正在加载数据…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
   <picker wx:if="{{communities.length}}" range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="chooseCommunity">
@@ -32,5 +32,13 @@
     <view class="card"><view class="section-title">楼栋来源</view><view wx:for="{{metrics.funnelByBuilding}}" wx:key="id">{{item.id}}：扫码 {{item.scans}} · 绑定 {{item.binds}} · 首单 {{item.firstPaid}} · 第二单 {{item.secondPaid}}</view></view>
     <view class="card"><view class="section-title">服务员推荐来源</view><view wx:for="{{metrics.funnelByProvider}}" wx:key="id">{{item.id}}：扫码 {{item.scans}} · 绑定 {{item.binds}} · 首单 {{item.firstPaid}} · 第二单 {{item.secondPaid}}</view></view>
     <view class="card"><view class="section-title">服务员</view><view wx:for="{{metrics.providerStats}}" wx:key="id">{{item.name}} · 完成 {{item.completed}} 单 · 评分 {{item.averageRating}}</view></view>
+    <view class="card">
+      <view class="section-title">扩展模块订单</view>
+      <view wx:for="{{metrics.extensionRows}}" wx:key="code">{{item.label}}：{{item.count}} 单 · 已支付 {{item.paidCount}} 单 / ¥{{item.paidAmountYuan}}</view>
+      <view>活动报名（本期举办活动）：{{metrics.extensions.activitySignups}}</view>
+      <view>优惠券核销：{{metrics.extensions.couponRedemptions}} 张 · 环保积分发放：{{metrics.extensions.pointsIssued}} · 抵扣：{{metrics.extensions.pointsRedeemed}}</view>
+      <view>广告曝光：{{metrics.adStats.views}} · 点击：{{metrics.adStats.clicks}}</view>
+    </view>
+    <view class="card" wx:if="{{isAdmin}}"><view class="section-title">自动打款状态</view><view wx:for="{{metrics.payoutRows}}" wx:key="status">{{item.label}}：{{item.count}} 笔 · ¥{{item.amountYuan}}</view></view>
   </block>
 </view>
