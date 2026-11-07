@@ -1,8 +1,8 @@
 const { checkText: checkBlacklist } = require('./blacklist');
 const { ensure, text } = require('./validate');
 
-const TYPES = Object.freeze(['post','comment','idle','event','message','merchant']);
-const SCENES = Object.freeze({ post: 3, comment: 3, idle: 1, event: 1, message: 4, merchant: 1 });
+const TYPES = Object.freeze(['post','comment','idle','event','message','merchant','notice','ad']);
+const SCENES = Object.freeze({ post: 3, comment: 3, idle: 1, event: 1, message: 4, merchant: 1, notice: 1, ad: 1 });
 function validateUgc(value, max = 500) { text(value, '内容', max); return value.trim(); }
 function ensureCanPublish(user, now = new Date()) {
   ensure(user && user.blocked !== true, '账号暂不可用，请联系管理员', 'E_FORBIDDEN');
@@ -35,10 +35,10 @@ async function requestMediaCheck(cloud, db, { fileId, targetType, targetId, auth
   ensure(TYPES.includes(targetType) && targetType !== 'comment', '图片审核对象不正确', 'E_INVALID_PARAM');
   text(fileId, '图片'); text(targetId, '内容'); text(authorOpenid, '作者'); text(communityId, '小区');
   const record = { fileId, targetType, targetId, authorOpenid, communityId, status: 'pending', createdAt: new Date() };
-  const collection = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants' }[targetType];
+  const collection = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants', notice: 'notices', ad: 'ads' }[targetType];
   const targetResult = await db.collection(collection).doc(targetId).get();
   const target = targetResult.data;
-  const owner = target && (target.authorOpenid || target.sellerOpenid || target.ownerOpenid || target.openid || target.from);
+  const owner = target && (target.authorOpenid || target.sellerOpenid || target.ownerOpenid || target.openid || target.from || target.createdBy);
   ensure(target && contentInCommunity(targetType, target, communityId) && owner === authorOpenid, '图片所属内容不存在', 'E_CONFLICT');
   const pending = [...new Set([...(target.moderationPendingFileIds || []), fileId])];
   await db.collection(collection).doc(targetId).update({ data: { moderationPendingFileIds: pending,

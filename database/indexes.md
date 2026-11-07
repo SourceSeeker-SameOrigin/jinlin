@@ -50,5 +50,8 @@
 | pointsLedger | user_created | openid 升序、createdAt 倒序 | 否 |
 | idleItems | feed | communityId 升序、scope 升序、status 升序、createdAt 倒序 | 否 |
 | idleItems | seller_created | sellerOpenid 升序、communityId 升序、createdAt 倒序 | 否 |
+| ads | home_banner_active | status 升序、slot 升序、communityIds 升序、startAt 升序、endAt 升序 | 否 |
+| notices | community_status_pinned_created | communityId 升序、status 升序、pinnedAt 倒序、createdAt 倒序 | 否 |
+| events | community_at_type | communityId 升序、at 升序、type 升序 | 否 |
 
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。

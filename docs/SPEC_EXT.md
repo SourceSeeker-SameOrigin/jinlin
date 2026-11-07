@@ -356,13 +356,13 @@ merchantServices: { _id, merchantId, title, desc, images, priceType: 'fixed' | '
 ## E16. 广告位 `ads`
 
 ```js
-ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId, target: { type: 'merchant' | 'event' | 'page', id, path }, communityIds, startAt, endAt, price, advertiser, status: 'draft' | 'live' | 'ended' }
+ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId, target: { type: 'merchant' | 'event' | 'page', id, path }, communityIds, startAt, endAt, price, advertiser, status: 'draft' | 'live' | 'ended', paymentReceivedAt, revenueLedgerId }
 ```
 
 - 只能由管理员创建；首页轮播最多 3 条。
 - 每条广告右上角固定显示"广告"标识。
 - 链接只能跳到小程序内页面（商家页、活动页）。
-- 管理员确认已收到广告款后，才将广告收入录入账本 `refType='ad'`；创建广告和设为上线均不记收入。
+- 广告收入由管理员确认已收到广告款后，才将收入录入账本 `refType='ad'`；创建广告和设为上线均不记收入。每条广告仅记一笔平台收入，账本 `communityId=null` 并保存 `communityIds` 投放范围；以广告 ID 作为幂等账本 ID。确认收款后广告金额不可修改。
 - 广告位曝光与点击计数写 `events`（`ad_view`、`ad_click`），看板显示。
 
 ## E17. 物业公告 `notices`

@@ -22,5 +22,7 @@
   "coupons": { "read": false, "write": false },
   "pointsLedger": { "read": false, "write": false },
   "comments": { "read": false, "write": false },
-  "idleItems": { "read": false, "write": false }
+  "idleItems": { "read": false, "write": false },
+  "ads": { "read": false, "write": false },
+  "notices": { "read": false, "write": false }
 }

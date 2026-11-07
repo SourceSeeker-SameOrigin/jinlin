@@ -5,7 +5,7 @@ const { atomic, read } = require('./lib/shared/transaction');
 const { ensure } = require('./lib/shared/validate');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database({ throwOnNotFound: false });
-const TARGETS = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants' };
+const TARGETS = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants', notice: 'notices', ad: 'ads' };
 
 exports.main = wrap(async event => {
   const context = cloud.getWXContext();
@@ -19,7 +19,7 @@ exports.main = wrap(async event => {
   const jobStatus = suggest === 'review' ? 'review' : status;
   const claimed = await atomic(db, async transaction => {
     const current = await read(transaction, 'mediaChecks', traceId);
-    if (!current || current.status !== 'pending') return false;
+    if (!current || !['pending', 'review'].includes(current.status)) return false;
     await transaction.collection('mediaChecks').doc(traceId).update({ data: { status: 'processing', result: suggest,
       updatedAt: new Date() } });
     return true;
@@ -42,12 +42,15 @@ exports.main = wrap(async event => {
     if (!currentJob || currentJob.status !== 'processing') return;
     const target = await read(transaction, collection, job.targetId);
     if (target) {
-      const pending = (target.moderationPendingFileIds || []).filter(fileId => fileId !== job.fileId);
+      const pending = status === 'pending' ? target.moderationPendingFileIds || [] :
+        (target.moderationPendingFileIds || []).filter(fileId => fileId !== job.fileId);
       const approved = status === 'ok' ? [...new Set([...(target.moderationApprovedFileIds || []), job.fileId])] : target.moderationApprovedFileIds || [];
       const images = Array.isArray(target.images) ? target.images.filter(image =>
         status !== 'blocked' || (typeof image === 'string' ? image : image.fileId) !== job.fileId) : target.images;
       await transaction.collection(collection).doc(target._id).update({ data: { moderationPendingFileIds: pending,
         moderationApprovedFileIds: approved, ...(images ? { images } : {}),
+        ...(job.targetType === 'notice' && status === 'blocked' && target.imageFileId === job.fileId ? { imageFileId: '' } : {}),
+        ...(job.targetType === 'ad' && status === 'blocked' && target.imageFileId === job.fileId ? { imageFileId: '' } : {}),
         ...(job.targetType === 'message' ? { status } : {}) } });
     }
     await transaction.collection('mediaChecks').doc(traceId).update({ data: { status: jobStatus, updatedAt: new Date() } });
