@@ -15,12 +15,14 @@ const { createNotifier } = require('./lib/shared/notify');
 const { ensureOrderConversation } = require('./lib/shared/chatFlow');
 const { orderConversationId } = require('./lib/shared/chatData');
 const { isEnabled } = require('./lib/shared/features');
+const { createRecycleFlow } = require('./lib/shared/recycleFlow');
 const { validatePoint } = require('./lib/shared/geo');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const { db, command } = server;
 const payments = createPayFlow(cloud, server);
 const notify = createNotifier(cloud, server);
+const recycleFlow = createRecycleFlow(server);
 const mine = openid => server.one('providers', { openid });
 const offset = event => integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
 
@@ -169,6 +171,11 @@ async function deliver(event, { openid }) {
   const { order, provider } = await assigned(event, openid);
   if (order.status === 'delivered') return { orderId: order._id, status: order.status };
   ensure(order.status === 'in_service', '请先开始服务，再提交完成', 'E_BAD_STATE');
+  if (order.serviceCode === 'recycle') {
+    const updated = await recycleFlow.deliver(order, event, openid);
+    await notify.resident('delivered', updated);
+    return { orderId: updated._id, status: updated.status, recycleResult: updated.recycleResult };
+  }
   const patch = { ...delivery(event, order), deliveredAt: new Date(),
     ...(order.serviceCode === 'visit' ? { alertPriority: event.visitReport && event.visitReport.attention ? 2 : 0 } : {}) };
   const refund = ['buy','meal'].includes(order.serviceCode) ? order.pricing.goodsCap - patch.pricing.goodsActual : 0;

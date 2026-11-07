@@ -31,6 +31,7 @@ Page({
       const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
+      if (order.recycleSummary) detailRows.push({ label: '称重和积分', value: order.recycleSummary.breakdown.map(item => item.category + ' ' + item.kg + ' kg / ' + item.points + ' 分').join('；') });
       if (order.quote) detailRows.push({ label: '商家报价', value: '¥' + yuan(order.quote.amount) + (order.quote.detail ? ' · ' + order.quote.detail : '') });
       this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
         couponDiscountText: yuan(order.pricing.couponDiscount || 0), pointsRedeemed: order.pricing.pointsRedeemed || 0,

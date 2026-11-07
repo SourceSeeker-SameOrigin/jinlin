@@ -2,6 +2,7 @@ const { ensure, record, integer, text } = require('./validate');
 const { couponDiscount: calculateCouponDiscount } = require('./couponData');
 const elder = require('./services/elder');
 const pet = require('./pet');
+const recycle = require('./recycle');
 
 function price(value, label) {
   return integer(value, label, 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG');
@@ -23,6 +24,7 @@ function quote(input) {
     return elderQuote;
   }
   if (serviceCode === 'escort') return elder.quote(serviceCode, detail, prices, input.community);
+  if (serviceCode === 'recycle') return recycle.quote();
   if (serviceCode === 'pet') {
     ensure(input.community, '小区配置缺失', 'E_CONFIG');
     return pet.quote(detail, input.community, input.now || new Date());

@@ -15,7 +15,9 @@ Page({
       app.globalData.community = community;
       let homeContent = { notice: null, ads: [] };
       try { homeContent = await api.call('content', 'homeContent', { communityId: community._id }, { loading: false, silent: true }); } catch (_) {}
-      this.setData({ community, firstOrder: !user.firstPaidAt, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
+      const services = [...this.data.services];
+      if (community.features && community.features.recycle) services.push({ code: 'recycle', name: '回收上门', icon: '🌱' });
+      this.setData({ community, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
         notice: homeContent.notice, ads: homeContent.ads || [] });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }

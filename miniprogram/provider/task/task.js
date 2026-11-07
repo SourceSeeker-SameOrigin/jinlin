@@ -4,7 +4,7 @@ const { slotText } = require('../../utils/time');
 const { toFen, yuan } = require('../../utils/money');
 Page({
   data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
-    visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false },
+    weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false },
   onLoad(options) { this.orderId = options.id; },
   onShow() { this.visible = true; this.load(); },
   onHide() { this.visible = false; this.stopLocationTimer(); },
@@ -16,7 +16,8 @@ Page({
     try {
       await getApp().ensureSession();
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
-      this.setData({ order, slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
+      const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
+      this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '' });
       if (order.canShareLocation && this.visible) {
         this.uploadLocation();
@@ -36,9 +37,12 @@ Page({
     finally { this.locationBusy = false; }
   },
   goods(event) { this.setData({ goodsYuan: event.detail.value }); },
+  weight(event) { const v = event.detail.value; const value = /^\d{1,5}(?:\.\d)?$/.test(v) ? Math.round(Number(v) * 10) : 0;
+    this.setData({ ['weightsTenths.' + event.currentTarget.dataset.code]: value,
+      recycleRows: this.data.recycleRows.map(row => row.code === event.currentTarget.dataset.code ? { ...row, value: v } : row) }); },
   visitCheck(event) {
     const checked = new Set(event.detail.value || []);
-    this.setData({ visitChecks: { mental: checked.has('mental'), diet: checked.has('diet'),
+    this.setData({ weightsTenths: {}, visitChecks: { mental: checked.has('mental'), diet: checked.has('diet'),
       utilities: checked.has('utilities'), doors: checked.has('doors'), medical: checked.has('medical') } });
   },
   visitNotes(event) { this.setData({ visitNotes: event.detail.value }); },
@@ -59,10 +63,11 @@ Page({
     }
     this.setData({ busy: true, error: '' });
     try {
-      await api.call('provider', action, { orderId: this.orderId, photos: this.data.photos,
+      const actionData = this.data.order.serviceCode === 'recycle' && action === 'deliver' ? { orderId: this.orderId, weightsTenths: this.data.weightsTenths } : { orderId: this.orderId, photos: this.data.photos,
         receiptPhoto: this.data.receiptPhoto, goodsActual: toFen(this.data.goodsYuan),
         visitReport: this.data.order.serviceCode === 'visit' ? { checks: this.data.visitChecks, notes: this.data.visitNotes,
-          attention: this.data.visitAttention, attentionCallConfirmed: this.data.attentionCallConfirmed } : undefined });
+          attention: this.data.visitAttention, attentionCallConfirmed: this.data.attentionCallConfirmed } : undefined };
+      await api.call('provider', action, actionData);
       if (action === 'release') wx.redirectTo({ url: '/provider/workbench/workbench' });
       else await this.load();
     } catch (error) { this.setData({ error: error.message }); }
