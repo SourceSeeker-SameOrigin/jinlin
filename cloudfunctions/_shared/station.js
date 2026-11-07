@@ -86,4 +86,20 @@ function statementCsv(result) {
   return '\uFEFF' + [header, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
 }
 
-module.exports = { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv };
+function providerBatchView(batch) {
+  const items = (batch.items || []).filter(item => item.consented === true);
+  const pending = items.filter(item => item.status === 'pending').length;
+  return { _id: batch._id, stationCode: batch.stationCode, status: batch.status, createdAt: batch.createdAt,
+    itemCount: items.length, pendingCount: pending, deliveredCount: deliveredCount(items),
+    skippedCount: items.filter(item => item.status === 'skipped').length,
+    estimatedIncome: billing(pending, batch.priceSnapshot || {}).provider };
+}
+
+function providerBatchDetail(batch) {
+  return { ...providerBatchView(batch), startedAt: batch.startedAt || null,
+    items: (batch.items || []).filter(item => item.consented === true).map(({ _id, buildingName, unit, room, status, photoFileId, at, failReason }) =>
+      ({ _id, buildingName, unit, room, status, photoFileId: photoFileId || null, at: at || null, failReason: failReason || '' })) };
+}
+
+module.exports = { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv,
+  providerBatchView, providerBatchDetail };

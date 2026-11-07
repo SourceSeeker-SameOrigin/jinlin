@@ -1,4 +1,5 @@
 const { ensure, integer, record, text } = require('./validate');
+const { listView } = require('./orderData');
 
 const CATEGORIES = Object.freeze(['housekeeping', 'repair', 'laundry', 'locksmith', 'haul', 'canteen', 'recycler', 'other']);
 const CATEGORY_NAMES = Object.freeze({ housekeeping: '家政', repair: '维修', laundry: '洗衣', locksmith: '开锁',
@@ -59,4 +60,19 @@ function visibleService(item, viewerOpenid = '') {
     priceType: item.priceType, price: item.price, unit: item.unit, status: item.status };
 }
 
-module.exports = { CATEGORIES, CATEGORY_NAMES, application, service, quoteAmount, visibleMerchant, visibleService };
+function merchantOrderView(order) {
+  const address = order.address || {};
+  const quote = order.quote || null;
+  const detail = order.detail || {};
+  return { ...listView(order),
+    quote: quote ? { amount: quote.amount, detail: quote.detail, at: quote.at || null } : null,
+    address: { buildingName: address.buildingName, unit: address.unit, room: address.room,
+      ...(address.contactName ? { contactName: address.contactName } : {}),
+      ...(address.contactPhone ? { contactPhone: address.contactPhone } : {}) },
+    note: order.note || '',
+    detail: { title: detail.title, desc: detail.desc, category: detail.category,
+      merchantName: detail.merchantName, serviceId: detail.serviceId, priceType: detail.priceType, unit: detail.unit },
+    photos: Array.isArray(order.photos) ? order.photos.slice(0, 3) : [] };
+}
+
+module.exports = { CATEGORIES, CATEGORY_NAMES, application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView };

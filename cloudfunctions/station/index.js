@@ -5,7 +5,8 @@ const { requireRole, requireApprovedProvider } = require('./lib/shared/auth');
 const { ensure, integer, text } = require('./lib/shared/validate');
 const { atomic, read, insert } = require('./lib/shared/transaction');
 const { canWork } = require('./lib/shared/providerData');
-const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('./lib/shared/station');
+const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv,
+  providerBatchView, providerBatchDetail } = require('./lib/shared/station');
 const { period } = require('./lib/shared/settlementData');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -142,15 +143,6 @@ async function providerFor(openid) {
   return provider;
 }
 
-function providerBatchView(batch) {
-  const items = (batch.items || []).filter(item => item.consented === true);
-  const prices = batch.priceSnapshot || {};
-  return { _id: batch._id, stationCode: batch.stationCode, status: batch.status, createdAt: batch.createdAt,
-    itemCount: items.length, pendingCount: items.filter(item => item.status === 'pending').length, deliveredCount: deliveredCount(items),
-    skippedCount: items.filter(item => item.status === 'skipped').length,
-    estimatedIncome: billing(items.filter(item => item.status === 'pending').length, prices).provider };
-}
-
 async function providerHall(event, { openid }) {
   const provider = await providerFor(openid);
   canWork(provider, new Date(), 1, true);
@@ -191,9 +183,7 @@ async function assignedBatch(batchId, openid) {
 
 async function providerBatch(event, { openid }) {
   const { batch } = await assignedBatch(event.batchId, openid);
-  return { ...providerBatchView(batch), startedAt: batch.startedAt || null,
-    items: (batch.items || []).filter(item => item.consented === true).map(({ _id, buildingName, unit, room, status, photoFileId, at, failReason }) =>
-      ({ _id, buildingName, unit, room, status, photoFileId: photoFileId || null, at: at || null, failReason: failReason || '' })) };
+  return providerBatchDetail(batch);
 }
 
 async function startBatch(event, { openid }) {

@@ -1,11 +1,10 @@
 const cloud = require('wx-server-sdk');
 const { AppError, wrap } = require('./lib/shared/errors');
-const { mediaStatus } = require('./lib/shared/ugc');
+const { mediaStatus, mediaCollection } = require('./lib/shared/ugc');
 const { atomic, read } = require('./lib/shared/transaction');
 const { ensure } = require('./lib/shared/validate');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database({ throwOnNotFound: false });
-const TARGETS = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants', notice: 'notices', ad: 'ads' };
 
 exports.main = wrap(async event => {
   const context = cloud.getWXContext();
@@ -15,8 +14,12 @@ exports.main = wrap(async event => {
   if (typeof traceId !== 'string' || !['pass','risky','review'].includes(suggest)) return { accepted: false };
   const job = await db.collection('mediaChecks').doc(traceId).get().then(result => result.data).catch(() => null);
   if (!job) return { accepted: false };
+  if (suggest === 'review') {
+    await db.collection('mediaChecks').doc(traceId).update({ data: { lastResult: 'review', updatedAt: new Date() } });
+    return { accepted: true, status: 'pending' };
+  }
   const status = mediaStatus(suggest);
-  const jobStatus = suggest === 'review' ? 'review' : status;
+  const jobStatus = status;
   const claimed = await atomic(db, async transaction => {
     const current = await read(transaction, 'mediaChecks', traceId);
     if (!current || !['pending', 'review'].includes(current.status)) return false;
@@ -35,7 +38,7 @@ exports.main = wrap(async event => {
       throw error;
     }
   }
-  const collection = TARGETS[job.targetType];
+  const collection = mediaCollection(job.targetType);
   ensure(collection, '审核对象不正确', 'E_CONFIG');
   await atomic(db, async transaction => {
     const currentJob = await read(transaction, 'mediaChecks', traceId);
