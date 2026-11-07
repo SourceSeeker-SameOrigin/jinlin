@@ -213,7 +213,7 @@
 
 ## T23 地图定位（E5）
 
-- `_shared/geo.js` 与单测；绑定页附近小区；服务员任务详情页前台定时上报；住户订单详情地图；小区坐标设置；`app.json` 的 `requiredPrivateInfos`；隐私文本更新。
+- `_shared/geo.js` 与单测；保留 `location:{lat,lng}`，管理员保存时同步写入 `locationGeo: GeoPoint`；为其建立地理位置索引但不向客户端暴露该内部字段；绑定页附近小区；服务员任务详情页前台定时上报；住户订单详情地图；`app.json` 的 `requiredPrivateInfos`；隐私文本更新。
 
 **验收**：E19 场景 7。
 

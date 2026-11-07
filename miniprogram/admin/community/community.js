@@ -23,7 +23,8 @@ Page({
       federationGroupId: community.federationGroupId || '',
       unitsText: community.buildings.map(building => building.name + ':' + building.units.join(',')).join('\n'),
       stationsText: JSON.stringify(community.stations, null, 2), pricesText: JSON.stringify(community.prices, null, 2),
-      dutyText: JSON.stringify(community.dutyWindows, null, 2) });
+      dutyText: JSON.stringify(community.dutyWindows, null, 2), location: community.location || null,
+      locationText: community.location ? `${community.location.lat}, ${community.location.lng}` : '未设置' });
   },
   chooseCommunity(event) { this.selectCommunity(Number(event.detail.value)).catch(error => this.setData({ error: error.message })); },
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
@@ -35,11 +36,20 @@ Page({
       const prices = JSON.parse(this.data.pricesText);
       const dutyWindows = JSON.parse(this.data.dutyText);
       await api.call('admin', 'updateCommunity', { communityId: this.data.community._id, name: this.data.name,
-        stations, prices, dutyWindows, federationGroupId: this.data.federationGroupId.trim() || null });
+        stations, prices, dutyWindows, federationGroupId: this.data.federationGroupId.trim() || null,
+        ...(this.data.location ? { location: this.data.location } : {}) });
       wx.showToast({ title: '配置已保存', icon: 'success' });
       await this.selectCommunity(this.data.communityIndex);
     } catch (error) { this.setData({ error: error.message || '配置格式不正确，请检查 JSON' }); }
     finally { this.setData({ saving: false }); }
+  },
+  async chooseLocation() {
+    try {
+      const result = await new Promise((resolve, reject) => wx.chooseLocation({ success: resolve, fail: reject }));
+      this.setData({ location: { lat: Number(result.latitude), lng: Number(result.longitude) }, locationText: result.name || `${result.latitude}, ${result.longitude}` });
+    } catch (error) {
+      if (!String(error.errMsg || '').includes('cancel')) this.setData({ error: '无法选择小区位置，请确认定位授权' });
+    }
   },
   async addBuilding() {
     const parts = this.data.unitsText.split('\n').filter(Boolean);

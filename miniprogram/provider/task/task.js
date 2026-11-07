@@ -5,16 +5,34 @@ const { toFen, yuan } = require('../../utils/money');
 Page({
   data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '' },
   onLoad(options) { this.orderId = options.id; },
-  onShow() { this.load(); },
+  onShow() { this.visible = true; this.load(); },
+  onHide() { this.visible = false; this.stopLocationTimer(); },
+  onUnload() { this.visible = false; this.stopLocationTimer(); },
+  stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   async load() {
     this.setData({ loading: true, error: '' });
+    this.stopLocationTimer();
     try {
       await getApp().ensureSession();
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
       this.setData({ order, slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '' });
+      if (order.canShareLocation && this.visible) {
+        this.uploadLocation();
+        this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
+      }
     } catch (error) { this.setData({ error: error.message || '任务加载失败' }); }
     finally { this.setData({ loading: false }); }
+  },
+  async uploadLocation() {
+    const order = this.data.order;
+    if (!order || !order.canShareLocation || !['accepted','in_service'].includes(order.status) || this.locationBusy) return;
+    this.locationBusy = true;
+    try {
+      const point = await new Promise((resolve, reject) => wx.getLocation({ type: 'gcj02', success: resolve, fail: reject }));
+      await api.call('provider', 'updateLocation', { orderId: this.orderId, lat: point.latitude, lng: point.longitude }, { loading: false, silent: true });
+    } catch (_) { /* 用户拒绝定位或定位暂不可用时，不影响订单操作。 */ }
+    finally { this.locationBusy = false; }
   },
   goods(event) { this.setData({ goodsYuan: event.detail.value }); },
   async photo(event) {

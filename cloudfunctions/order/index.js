@@ -93,9 +93,19 @@ async function detail(event, { user }) {
   result.chatEnabled = isEnabled('chat', config, community) && Boolean(order.providerOpenid) &&
     ['accepted', 'in_service', 'delivered', 'disputed', 'completed'].includes(order.status);
   result.canChat = result.chatEnabled && (order.userOpenid === user.openid || order.providerOpenid === user.openid);
+  result.canShareLocation = order.providerOpenid === user.openid && ['accepted', 'in_service'].includes(order.status) &&
+    isEnabled('location', config, community);
   result.canConfirm = order.userOpenid === user.openid && order.status === 'delivered';
   result.canRate = order.userOpenid === user.openid && order.status === 'completed' && !order.rating;
   result.canComplain = order.userOpenid === user.openid && complaintAllowed(order, new Date(), config.complaintWindowHours);
+  if (order.userOpenid === user.openid && ['accepted','in_service'].includes(order.status) && provider &&
+      provider.lastLocation && provider.lastLocation.orderId === order._id && isEnabled('location', config, community)) {
+    const point = provider.lastLocation;
+    if (Number.isFinite(point.lat) && Number.isFinite(point.lng) && point.at) result.providerLocation = {
+      latitude: point.lat, longitude: point.lng, at: point.at,
+      minutesAgo: Math.max(0, Math.floor((Date.now() - new Date(point.at).getTime()) / 60000))
+    };
+  }
   if (result.canPay) result.paymentOptions = { mode: order.payment.mode };
   return result;
 }
