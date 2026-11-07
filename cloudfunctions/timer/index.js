@@ -74,7 +74,7 @@ exports.main = async (event = {}) => {
     }
   } catch (error) { results.closeBoardPosts = { failed: true }; console.error('需求帖到期查询失败', error.code || 'E_INTERNAL'); }
   try {
-    const cards = await server.all('memberships', { status: 'active', serviceCode: command.in(['trash','visit']), startAt: command.lte(now), endAt: command.gt(now) });
+    const cards = await server.all('memberships', { status: 'active', serviceCode: command.in(['trash','visit','vacant']), startAt: command.lte(now), endAt: command.gt(now) });
     results.membershipTasks = { created: 0, failed: 0 };
     const tasks = createMembershipTasks(server);
     for (const card of cards) {
@@ -82,6 +82,18 @@ exports.main = async (event = {}) => {
       catch (error) { results.membershipTasks.failed++; console.error('月卡任务生成失败', card._id, error.code || 'E_INTERNAL'); }
     }
   } catch (error) { results.membershipTasks = { failed: true }; console.error('月卡任务查询失败', error.code || 'E_INTERNAL'); }
+  try {
+    const expiredVacantCards = await server.all('memberships', { status: 'active', serviceCode: 'vacant', endAt: command.lte(now) });
+    results.expireMemberships = await db.collection('memberships').where({ status: 'active', endAt: command.lte(now) })
+      .update({ data: { status: 'expired' } });
+    results.expireVacantSecrets = { removed: 0, failed: 0 };
+    for (const card of expiredVacantCards) {
+      try {
+        const result = await db.collection('secrets').doc('s_' + card._id).remove();
+        if (result.stats && result.stats.removed) results.expireVacantSecrets.removed++;
+      } catch (error) { results.expireVacantSecrets.failed++; console.error('空置房门锁密文清理失败', card._id, error.code || 'E_INTERNAL'); }
+    }
+  } catch (error) { results.expireMemberships = { failed: true }; console.error('月卡到期处理失败', error.code || 'E_INTERNAL'); }
   try {
     results.endEvents = await db.collection('events').where({ status: 'published', endAt: command.lte(now) })
       .update({ data: { status: 'ended', updatedAt: now } });
@@ -116,9 +128,5 @@ exports.main = async (event = {}) => {
       }
     }
   } catch (error) { results.eventReminders = { failed: true }; console.error('活动提醒扫描失败', error.code || 'E_INTERNAL'); }
-  try {
-    results.expireMemberships = await db.collection('memberships').where({ status: 'active', endAt: command.lte(now) })
-      .update({ data: { status: 'expired' } });
-  } catch (error) { results.expireMemberships = { failed: true }; console.error('月卡到期处理失败', error.code || 'E_INTERNAL'); }
   return { ok: true, data: results };
 };

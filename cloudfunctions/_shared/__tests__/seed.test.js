@@ -29,7 +29,9 @@ test('小区字段完整且价格、费率、月卡与 SPEC 一致', () => {
     { code: 'trash_monthly', name: '垃圾月卡', serviceCode: 'trash', price: 4900, firstPeriodPrice: 2500, days: 30 },
     { code: 'express_monthly', name: '快递月卡', serviceCode: 'express', price: 3900, firstPeriodPrice: 1900, days: 30, dailyParcelQuota: 3 },
     { code: 'visit_monthly', name: '独居探访月卡', serviceCode: 'visit', price: 19900, firstPeriodPrice: 19900, days: 30,
-      schedule: { type: 'weekly', weekdays: [2, 5] } }
+      schedule: { type: 'weekly', weekdays: [2, 5] } },
+    { code: 'vacant_monthly', name: '空置房巡检月卡', serviceCode: 'vacant', price: 9900, firstPeriodPrice: 9900, days: 30,
+      schedule: { type: 'monthly', days: [1, 15] } }
   ]);
   expect(Number.isNaN(Date.parse(community.createdAt.$date))).toBe(false);
 });

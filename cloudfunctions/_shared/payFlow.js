@@ -175,6 +175,10 @@ function createPayFlow(cloud, server) {
       }
       if (current.kind === 'idle_purchase') await releaseReservation(transaction, current);
       if (current.serviceCode === 'pet') await removePetSecret(transaction, current);
+      if (current.kind === 'membership_purchase' && current.planCode === 'vacant_monthly') {
+        const secret = await read(transaction, 'secrets', 's_' + current._id);
+        if (secret) await transaction.collection('secrets').doc(secret._id).remove();
+      }
     });
   }
 

@@ -4,7 +4,7 @@ const { SERVICE_NAMES } = require('./orderData');
 const KEYS = ['newTask', 'accepted', 'delivered', 'unaccepted', 'visitReport'];
 const EVENT_REMINDER_FIELDS = Object.freeze({ event: 'thing1', location: 'thing2', time: 'time3' });
 const DEFAULT_FIELDS = Object.freeze({ orderNo: 'character_string1', service: 'thing2', status: 'phrase3', time: 'time4' });
-const MESSAGES = { newTask: '待接单', accepted: '已接单', delivered: '待确认', unaccepted: '待处理', visitReport: '探访报告已提交' };
+const MESSAGES = { newTask: '待接单', accepted: '已接单', delivered: '待确认', unaccepted: '待处理', visitReport: '报告已提交' };
 const truncate = (value, max) => [...String(value)].slice(0, max).join('');
 
 function notificationData(key, order, now, fields = DEFAULT_FIELDS) {

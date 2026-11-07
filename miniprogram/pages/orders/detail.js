@@ -33,7 +33,11 @@ Page({
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
       if (order.recycleSummary) detailRows.push({ label: '称重和积分', value: order.recycleSummary.breakdown.map(item => item.category + ' ' + item.kg + ' kg / ' + item.points + ' 分').join('；') });
       if (order.quote) detailRows.push({ label: '商家报价', value: '¥' + yuan(order.quote.amount) + (order.quote.detail ? ' · ' + order.quote.detail : '') });
+      const vacantLabels = { windows: '门窗检查', utilities: '水电燃气', leakMold: '漏水与霉斑', ventilation: '开窗通风', mail: '代收快递信件', photos: '巡检拍照' };
+      const vacantReportRows = Object.entries(order.vacantReport && order.vacantReport.checklist || {}).map(([key, value]) => ({ label: vacantLabels[key] || key, value: value ? '已检查' : '未检查' }));
+      const vacantPhotoGroups = Object.entries(order.vacantReport && order.vacantReport.photoByItem || {}).map(([key, photos]) => ({ label: vacantLabels[key] || key, photos }));
       this.setData({ order, detailRows, unread, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
+        vacantReportRows, vacantPhotoGroups,
         couponDiscountText: yuan(order.pricing.couponDiscount || 0), pointsRedeemed: order.pricing.pointsRedeemed || 0,
         mapMarkers: order.providerLocation ? [{ id: 1, latitude: order.providerLocation.latitude, longitude: order.providerLocation.longitude,
           title: '服务员', width: 36, height: 36 }] : [],
@@ -81,6 +85,22 @@ Page({
       } else wx.showToast({ title: '未授权，仍可在此查看报告', icon: 'none' });
     } catch (error) { this.setData({ error: error.message || '订阅状态保存失败，请重试' }); }
     finally { this.setData({ busy: false }); }
+  },
+  async subscribeVacantReport() {
+    if (this.data.busy || !this.data.order || this.data.order.serviceCode !== 'vacant' || this.data.order.visitReportNotifyAuthorized) return;
+    this.setData({ busy: true, error: '' });
+    try {
+      const accepted = await subscriptions.request(['visitReport']);
+      if (!accepted) { wx.showToast({ title: '未授权，报告仍可在订单详情查看', icon: 'none' }); return; }
+      await api.call('vacant', 'subscribeReport', { orderId: this.orderId });
+      await this.load();
+    } catch (error) { this.setData({ error: error.message || '订阅未完成，报告仍可在订单详情查看' }); }
+    finally { this.setData({ busy: false }); }
+  },
+  previewVacant(event) {
+    const urls = this.data.vacantPhotoGroups.flatMap(group => group.photos);
+    const current = event.currentTarget.dataset.url;
+    if (urls.includes(current)) wx.previewImage({ current, urls });
   },
   openChat() {
     if (this.data.order && this.data.order.canChat) wx.navigateTo({ url: '/chat/room/room?conversationId=' + encodeURIComponent(this.chatConversationId || '') +
