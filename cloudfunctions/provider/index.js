@@ -163,12 +163,14 @@ async function release(event, { openid }) {
 async function start(event, { openid }) {
   const { provider, order } = await assigned(event, openid);
   canWork(provider, new Date(), order.minLevel);
+  if (order.serviceCode === 'vacant') ensure(order.slot.date === ymd(new Date()), '只能在预约巡检日开始服务', 'E_BAD_STATE');
   ensure(order.status === 'accepted', '请先接单后再开始服务', 'E_BAD_STATE');
   return conditionalTransition(server, order, 'in_service', openid, {}, { providerId: provider._id });
 }
 
 async function deliver(event, { openid }) {
   const { order, provider } = await assigned(event, openid);
+  ensure(order.serviceCode !== 'vacant', '空置房巡检请填写逐项报告后提交', 'E_BAD_STATE');
   if (order.status === 'delivered') return { orderId: order._id, status: order.status };
   ensure(order.status === 'in_service', '请先开始服务，再提交完成', 'E_BAD_STATE');
   if (order.serviceCode === 'recycle') {

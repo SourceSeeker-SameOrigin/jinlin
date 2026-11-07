@@ -2,9 +2,13 @@ const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
 const { slotText } = require('../../utils/time');
 const { toFen, yuan } = require('../../utils/money');
+const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilities', label: '水电燃气' },
+  { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
+  { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
   data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
-    weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false },
+    weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
+    vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
   onLoad(options) { this.orderId = options.id; },
   onShow() { this.visible = true; this.load(); },
   onHide() { this.visible = false; this.stopLocationTimer(); },
@@ -16,9 +20,10 @@ Page({
     try {
       await getApp().ensureSession();
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
+      const entryText = order.detail && ({ password: '门锁密码（点击当天读取）', key_handover: '钥匙交接', property_keybox: '物业钥匙柜' }[order.detail.entry] || '');
       const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
       this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
-        pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '' });
+        pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '', entryText });
       if (order.canShareLocation && this.visible) {
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
@@ -47,6 +52,36 @@ Page({
   },
   visitNotes(event) { this.setData({ visitNotes: event.detail.value }); },
   visitAttention(event) { this.setData({ visitAttention: event.detail.value, attentionCallConfirmed: false }); },
+  checklist(event) { this.setData({ ['checklist.' + event.currentTarget.dataset.key]: Boolean((event.detail.value || []).length) }); },
+  vacantNotes(event) { this.setData({ vacantNotes: event.detail.value }); },
+  vacantAttention(event) { this.setData({ vacantAttention: event.detail.value }); },
+  async vacantPhoto(event) {
+    const key = event.currentTarget.dataset.key;
+    try {
+      const files = await uploadPhotos('vacant/' + this.orderId + '/' + key, 1);
+      this.setData({ ['photoByItem.' + key]: [...(this.data.photoByItem[key] || []), ...files] });
+    } catch (error) { this.setData({ error: error.message || '照片上传失败，请重试' }); }
+  },
+  async revealEntry() {
+    if (this.data.busy) return;
+    this.setData({ busy: true, error: '' });
+    try {
+      const result = await api.call('vacant', 'revealEntry', { orderId: this.orderId });
+      wx.showModal({ title: '门锁密码', content: result.entry, showCancel: false });
+    } catch (error) { this.setData({ error: error.message || '无法读取入户信息' }); }
+    finally { this.setData({ busy: false }); }
+  },
+  async submitVacantReport() {
+    if (this.data.busy) return;
+    this.setData({ busy: true, error: '' });
+    try {
+      await api.call('vacant', 'recordReport', { orderId: this.orderId, checklist: this.data.checklist,
+        photoByItem: this.data.photoByItem, notes: this.data.vacantNotes, attention: this.data.vacantAttention });
+      wx.showToast({ title: this.data.vacantAttention ? '报告已提交，请关注异常' : '巡检报告已提交' });
+      await this.load();
+    } catch (error) { this.setData({ error: error.message || '报告提交失败，请检查清单和照片' }); }
+    finally { this.setData({ busy: false }); }
+  },
   async photo(event) {
     try {
       const receipt = event.currentTarget.dataset.type === 'receipt';

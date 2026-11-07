@@ -2,7 +2,7 @@ const { ensure, record, text } = require('./validate');
 const { ymd, addDays, parseWindow, nextDutyWindow } = require('./time');
 const { STATUS_TEXT, assertTransition } = require('./stateMachine');
 
-const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', idle: '闲置担保交易', meal: '送餐上门', visit: '独居探访', escort: '陪诊', pet: '上门喂宠', recycle: '回收上门' });
+const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', idle: '闲置担保交易', meal: '送餐上门', visit: '独居探访', escort: '陪诊', pet: '上门喂宠', recycle: '回收上门', vacant: '空置房巡检' });
 const STATUS_GROUPS = Object.freeze({ ongoing: ['pending_quote', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered'],
   done: ['completed', 'closed', 'cancelled'], aftersale: ['disputed', 'refunded'] });
 
@@ -40,6 +40,15 @@ function cleanDetail(serviceCode, detail, community) {
   if (serviceCode === 'escort') return require('./services/elder').cleanEscort(detail, community.dutyWindows);
   if (serviceCode === 'pet') return require('./pet').clean(detail, community).detail;
   if (serviceCode === 'recycle') return require('./recycle').clean(detail);
+  if (serviceCode === 'vacant') {
+    const date = text(detail.date, '巡检日期', 10);
+    ensure(/^\d{4}-\d{2}-\d{2}$/.test(date), '巡检日期格式不正确');
+    const [year, month, day] = date.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    ensure(parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day, '巡检日期无效');
+    ensure(['password', 'key_handover', 'property_keybox'].includes(detail.entry), '入户方式不正确');
+    return { date, entry: detail.entry, checklist: ['windows','utilities','leakMold','ventilation','mail','photos'] };
+  }
   if (serviceCode === 'help') return { category: detail.category, desc: detail.desc.trim(), blocks: detail.blocks };
   if (serviceCode === 'custom') return { title: text(detail.title, '任务标题', 100).trim(),
     desc: text(detail.desc, '任务说明', 2000).trim(), needEnterHome: detail.needEnterHome === true };
@@ -75,7 +84,7 @@ function newOrder({ id, orderNo, user, community, building, serviceCode, detail,
     communityId: community._id, buildingId: building._id, address: { ...addressSnapshot(user, community, building, selectedAddress),
       ...(selectedAddress ? { contactName: selectedAddress.contactName || '', contactPhone: selectedAddress.contactPhone } : {}) },
     userOpenid: user.openid, userPhone: selectedAddress ? selectedAddress.contactPhone : user.phone,
-    minLevel: minLevel || (['help','meal','visit','escort','pet'].includes(serviceCode) ? 2 : 1),
+    minLevel: minLevel || (['help','meal','visit','escort','pet','vacant'].includes(serviceCode) ? 2 : 1),
     ...(taskPostId ? { taskPostId } : {}),
     ...(serviceCode === 'escort' ? { requiredCert: 'escort' } : {}),
     ...(serviceCode === 'pet' && (community.requiredCerts || []).includes('pet') ? { requiredCert: 'pet' } : {}),

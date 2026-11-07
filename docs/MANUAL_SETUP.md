@@ -51,7 +51,7 @@ Codex 写代码，但下面这些步骤需要登录微信公众平台、微信�
 
 | 开关 | 打开前要准备的 |
 | --- | --- |
-| `coupons`、`notices`、`federation`、`stationDelivery`、`vacantHome` | 无额外资质。驿站送上门需先与驿站签合作协议；空置房巡检需在服务协议中写明钥匙保管责任 |
+| `coupons`、`notices`、`federation`、`stationDelivery`、`vacantHome` | 无额外资质。驿站送上门需先与驿站签合作协议；启用空置房巡检前，需配置小区单次报酬 `prices.vacantHome.perVisitPayout` 和月卡价格，并在服务协议中写明钥匙保管责任 |
 | `board`、`idle`、`events`、`chat`、`ads`、`notices`、`merchants` | 公众平台添加与发布内容相匹配的类目；在公众平台配置内容安全的消息推送到 `mediaCallback`；指定专人每天处理举报。活动、公告、广告和商家内容的图片在回调通过前不会展示 |
 | `idleEscrow` | 平台代收用户之间的货款，属于电商平台性质，需要对应类目和资质（通常涉及增值电信业务经营许可）；拿到前保持关闭，只用信息模式 |
 | `travelCarry` | 依赖 `board`；服务协议写入境外帮带规则 |

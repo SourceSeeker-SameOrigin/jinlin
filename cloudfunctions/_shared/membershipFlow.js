@@ -17,6 +17,17 @@ async function activateMembership(transaction, order, user, now) {
     const { _id, ...data } = card;
     await transaction.collection('memberships').doc(_id).set({ data });
   } else await insert(transaction, 'memberships', card);
+  if (card.serviceCode === 'vacant') {
+    const previousSecret = await read(transaction, 'secrets', 's_' + order._id);
+    const currentSecret = await read(transaction, 'secrets', 's_' + card._id);
+    if (order.detail.entry === 'password') {
+      ensure(previousSecret, '空置房门锁密码密文不存在', 'E_CONFIG');
+      const secret = { ...previousSecret, _id: 's_' + card._id, orderId: card._id, createdAt: now };
+      if (currentSecret) { const { _id, ...data } = secret; await transaction.collection('secrets').doc(currentSecret._id).set({ data }); }
+      else await insert(transaction, 'secrets', secret);
+    } else if (currentSecret) await transaction.collection('secrets').doc(currentSecret._id).remove();
+    if (previousSecret) await transaction.collection('secrets').doc(previousSecret._id).remove();
+  }
   await insert(transaction, 'ledger', { _id: 'membership_' + order._id, refType: 'membership_sale', refId: order._id,
     communityId: order.communityId, providerId: null, amounts: { gross: order.pricing.payAmount,
       ...splitMembershipSale(order.pricing.payAmount, order.rateSnapshot) },
@@ -27,8 +38,9 @@ async function activateMembership(transaction, order, user, now) {
 function createMembershipTasks(server) {
   async function generate(card, now) {
     const cardCommunity = await server.get('communities', card.communityId);
-    if (!cardCommunity || !['trash','visit'].includes(card.serviceCode)) return false;
+    if (!cardCommunity || !['trash','visit','vacant'].includes(card.serviceCode)) return false;
     if (card.serviceCode === 'visit' && !isEnabled('elder', await server.config(), cardCommunity)) return false;
+    if (card.serviceCode === 'vacant' && !isEnabled('vacantHome', await server.config(), cardCommunity)) return false;
     const plan = cardPlan(cardCommunity, card.planCode);
     if (!taskDue(card, now, plan)) return false;
     const user = await server.one('users', { openid: card.userOpenid });
@@ -42,6 +54,7 @@ function createMembershipTasks(server) {
       const community = await read(transaction, 'communities', current.communityId);
       ensure(!profile.blocked, '住户账号暂不可用', 'E_FORBIDDEN');
       const visit = current.serviceCode === 'visit';
+      const vacant = current.serviceCode === 'vacant';
       const visitAddress = visit ? visitAddressFor(current, now) : null;
       const building = await read(transaction, 'buildings', visit ? visitAddress.buildingId : profile.buildingId);
       if (visit) ensure(visitAddress.communityId === current.communityId, '探访地址不属于服务小区', 'E_CONFIG');
@@ -57,15 +70,19 @@ function createMembershipTasks(server) {
       if (!previous) {
         const visitPayout = visit ? require('./validate').integer(community.prices.visit && community.prices.visit.taskPayout,
           '探访每次服务员计件费', 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG') : community.prices.membershipTaskPayout;
+        const taskPayout = vacant ? require('./validate').integer(community.prices.vacantHome && community.prices.vacantHome.perVisitPayout,
+          '空置房巡检单次报酬', 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG') : visitPayout;
         const selectedAddress = visit ? { ...visitAddress, id: null } : null;
         const order = newOrder({ id, orderNo: orderNo(now), user: profile, community, building,
-          serviceCode: visit ? 'visit' : 'trash', detail: visit ? { membershipId: current._id } : { bags: 1, sorted: true, placement: 'door' },
-          note: visit ? '独居探访月卡上门任务' : '垃圾月卡上门任务',
+          serviceCode: current.serviceCode,
+          detail: visit ? { membershipId: current._id } : vacant ? { entry: current.entry || 'key_handover', date,
+            checklist: ['windows','utilities','leakMold','ventilation','mail','photos'] } : { bags: 1, sorted: true, placement: 'door' },
+          note: vacant ? '空置房月卡巡检任务' : visit ? '独居探访月卡上门任务' : '垃圾月卡上门任务',
           slot: { date, start: window.start, end: window.end }, now, selectedAddress,
-          pricing: { listPrice: visit ? 0 : community.prices.trash.single, discount: visit ? 0 : community.prices.trash.single,
-            payAmount: 0, goodsCap: 0, freeByMembership: false } });
+          pricing: { listPrice: visit || vacant ? 0 : community.prices.trash.single, discount: visit || vacant ? 0 : community.prices.trash.single,
+            payAmount: 0, goodsCap: 0, freeByMembership: false }, detailAlreadyClean: vacant });
         Object.assign(order, transitionPatch(order, 'paid', 'system', now), { source: 'membership', membershipId: current._id,
-          rateSnapshot: community.rates, membershipTaskPayout: visitPayout });
+          rateSnapshot: community.rates, membershipTaskPayout: taskPayout });
         order.payment = { ...order.payment, mode: 'free', paidAt: now, transactionId: 'free_' + id };
         await insert(transaction, 'orders', order);
       }

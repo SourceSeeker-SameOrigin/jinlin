@@ -4,7 +4,7 @@ const { display } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
 Page({
   data: { loading: true, busy: false, error: '', plans: [], cards: [], addresses: [], addressIndex: 0,
-    slots: ['早班', '中班', '晚班'], slotIndex: 2 },
+    slots: ['早班', '中班', '晚班'], slotIndex: 2, entryOptions: ['密码入户', '交接钥匙', '物业钥匙柜'], entry: 'password', entryPassword: '' },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -40,17 +40,22 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   slot(event) { this.setData({ slotIndex: Number(event.detail.value) }); },
+  entry(event) { this.setData({ entry: ['password', 'key_handover', 'property_keybox'][Number(event.detail.value)], entryPassword: '' }); },
+  entryPassword(event) { this.setData({ entryPassword: event.detail.value }); },
   async buy(event) {
     if (this.data.busy) return;
     const planCode = event.currentTarget.dataset.code;
-    const slot = ['morning', 'afternoon', 'evening'][this.data.slotIndex];
+    const slot = planCode === 'vacant_monthly' ? null : ['morning', 'afternoon', 'evening'][this.data.slotIndex];
     const address = this.data.addresses[this.data.addressIndex];
     const addressId = address && address.id || undefined;
     this.setData({ busy: true, error: '' });
     try {
-      if (!this.request || this.request.planCode !== planCode || this.request.slot !== slot || this.request.addressId !== addressId) this.request = {
-        planCode, slot, addressId, requestId: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
-      const created = await api.call('membership', 'buy', this.request);
+      const fields = { planCode, slot, addressId, entry: this.data.entry, entryPassword: this.data.entryPassword };
+      if (!this.request || JSON.stringify(this.request.fields) !== JSON.stringify(fields)) this.request = {
+        fields, requestId: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
+      const requestBody = { planCode, slot, addressId, requestId: this.request.requestId };
+      if (planCode === 'vacant_monthly') Object.assign(requestBody, { entry: this.data.entry, entryPassword: this.data.entryPassword });
+      const created = await api.call('membership', 'buy', requestBody);
       this.request = null;
       try { await pay(created); } catch (error) { wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }
       await this.load();
