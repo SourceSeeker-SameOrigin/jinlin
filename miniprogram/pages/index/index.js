@@ -1,9 +1,10 @@
 const api = require('../../utils/api');
+const CORE_SERVICES = [{ code: 'express', name: '代取快递', icon: '📦' }, { code: 'trash', name: '代扔垃圾', icon: '♻️' },
+  { code: 'buy', name: '周边代买', icon: '🛒' }, { code: 'help', name: '帮把手', icon: '🤝' }];
 Page({
   data: { loading: true, error: '', community: null, firstOrder: false,
     notice: null, ads: [],
-    services: [{ code: 'express', name: '代取快递', icon: '📦' }, { code: 'trash', name: '代扔垃圾', icon: '♻️' },
-      { code: 'buy', name: '周边代买', icon: '🛒' }, { code: 'help', name: '帮把手', icon: '🤝' }] },
+    services: CORE_SERVICES },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -15,8 +16,8 @@ Page({
       app.globalData.community = community;
       let homeContent = { notice: null, ads: [] };
       try { homeContent = await api.call('content', 'homeContent', { communityId: community._id }, { loading: false, silent: true }); } catch (_) {}
-      const services = [...this.data.services];
-      if (community.features && community.features.recycle) services.push({ code: 'recycle', name: '回收上门', icon: '🌱' });
+      const services = [...CORE_SERVICES];
+      if (community.enabledFeatures && community.enabledFeatures.recycle) services.push({ code: 'recycle', name: '回收上门', icon: '🌱', url: '/recycle/order/order' });
       this.setData({ community, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
         notice: homeContent.notice, ads: homeContent.ads || [] });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
@@ -42,5 +43,5 @@ Page({
     else if (ad.target.type === 'event' && ad.target.id) wx.navigateTo({ url: '/events/detail/detail?id=' + encodeURIComponent(ad.target.id) });
     else wx.showToast({ title: '该广告目标暂不可用', icon: 'none' });
   },
-  openNotices() { wx.navigateTo({ url: '/pages/notices/list' }); }
+  openNotices() { wx.navigateTo({ url: '/notices/list/list' }); }
 });

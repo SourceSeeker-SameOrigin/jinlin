@@ -13,6 +13,7 @@
     <navigator wx:if="{{community.enabledFeatures.events && canManageEvents}}" class="card" url="/events/manage/manage">活动管理 ›</navigator>
     <navigator wx:if="{{community.features.merchants && merchant.status === 'approved'}}" class="card" url="/merchant/workbench/workbench">商家工作台 ›</navigator><navigator wx:elif="{{community.features.merchants}}" class="card" url="/merchant/apply/apply">{{merchant ? '查看商家入驻审核' : '申请商家入驻'}} ›</navigator>
     <navigator wx:if="{{isStation}}" class="card" url="/station/workbench/workbench">驿站工作台 ›</navigator>
+    <navigator wx:elif="{{community.features.stationDelivery}}" class="card" url="/station/apply/apply">{{stationApplication ? (stationApplication.status === 'pending' ? '驿站入驻审核中' : stationApplication.status === 'rejected' ? '驿站申请未通过，查看原因' : '申请驿站账号') : '申请驿站账号'}} ›</navigator>
     <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
     <navigator wx:else class="card" url="/provider/apply/apply">{{provider ? '查看服务员申请' : '成为邻居帮手'}} ›</navigator>
     <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>

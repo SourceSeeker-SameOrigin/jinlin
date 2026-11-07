@@ -1,5 +1,4 @@
 const api = require('../../utils/api');
-const { nearby } = require('../../utils/geo');
 
 Page({
   data: { loading: true, saving: false, error: '', communities: [], buildings: [], units: [],
@@ -19,10 +18,19 @@ Page({
       if (!explicitCommunity && communities.some(item => item.location)) {
         try {
           const current = await new Promise((resolve, reject) => wx.getLocation({ type: 'gcj02', success: resolve, fail: reject }));
-          const candidates = nearby(communities, { lat: current.latitude, lng: current.longitude }, 3);
+          const candidates = [];
+          let nearbyPage, offset = 0;
+          do {
+            nearbyPage = await api.call('catalog', 'nearbyCommunities', {
+              location: { lat: current.latitude, lng: current.longitude }, offset
+            }, { loading: false, silent: true });
+            candidates.push(...nearbyPage.list);
+            offset = nearbyPage.nextOffset;
+          } while (nearbyPage.hasMore);
+          candidates.sort((a, b) => a.distanceKm - b.distanceKm);
           if (candidates.length) communities.splice(0, communities.length, ...candidates);
           else this.setData({ locationHint: '附近 3 公里内暂未找到已配置定位的小区，可在完整列表中选择' });
-        } catch (_) { this.setData({ locationHint: '未授权定位，已显示小区列表，可手动选择' }); }
+        } catch (_) { this.setData({ locationHint: '定位或附近查询暂不可用，已显示小区列表，可手动选择' }); }
       }
       communities.forEach(item => { item.displayName = Number.isFinite(item.distanceKm) ? `${item.name} · ${item.distanceKm.toFixed(1)} 公里` : item.name; });
       let selected = { communityId: user.communityId, buildingId: user.buildingId };

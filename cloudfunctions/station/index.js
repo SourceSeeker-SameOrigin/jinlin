@@ -8,6 +8,8 @@ const { canWork } = require('./lib/shared/providerData');
 const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv,
   providerBatchView, providerBatchDetail } = require('./lib/shared/station');
 const { period } = require('./lib/shared/settlementData');
+const { isEnabled } = require('./lib/shared/features');
+const { stationGrant, reviewInput } = require('./lib/shared/stationApplications');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
@@ -33,13 +35,87 @@ async function setDoorDelivery(event, { user }) {
 
 async function stationContext(user) {
   requireRole(user, ['station']);
-  text(user.communityId, '小区');
+  const communityId = text(user.stationCommunityId || user.communityId, '小区');
   text(user.stationCode, '驿站');
-  const { community } = await server.feature('stationDelivery', user.communityId);
+  const { community } = await server.feature('stationDelivery', communityId);
   ensure(community && community.status === 'active' &&
     Array.isArray(community.stations) && community.stations.some(item => item.code === user.stationCode),
   '驿站账号尚未绑定有效小区', 'E_FORBIDDEN');
   return { community, stationCode: user.stationCode };
+}
+
+async function applicationOptions() {
+  const [config, communities] = await Promise.all([server.config(), server.all('communities', { status: 'active' })]);
+  return { list: communities.filter(community => isEnabled('stationDelivery', config, community))
+    .map(community => ({ _id: community._id, name: community.name,
+      stations: (community.stations || []).map(({ code, name }) => ({ code, name })) }))
+    .filter(community => community.stations.length) };
+}
+
+async function myApplication(event, { openid }) {
+  const id = 'station_app_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 32);
+  const application = await server.get('stationApplications', id);
+  return { application: application ? { communityId: application.communityId, stationCode: application.stationCode,
+    stationName: application.stationName, status: application.status, reviewNote: application.reviewNote || '' } : null };
+}
+
+async function apply(event, { user, openid }) {
+  requireRole(user, ['resident']);
+  const communityId = text(event.communityId, '小区');
+  const stationCode = text(event.stationCode, '驿站');
+  const { community } = await server.feature('stationDelivery', communityId);
+  ensure(community && community.status === 'active', '小区暂不可用');
+  const station = (community.stations || []).find(item => item.code === stationCode);
+  ensure(station, '所选驿站不存在');
+  ensure(!user.roles.includes('station'), '驿站账号已绑定，请联系管理员调整');
+  const id = 'station_app_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 32);
+  const now = new Date();
+  const result = await atomic(db, async transaction => {
+    const current = await read(transaction, 'stationApplications', id);
+    ensure(!current || current.status === 'rejected', '驿站申请已提交，请等待管理员审核', 'E_BAD_STATE');
+    const data = { userId: user._id, userOpenid: openid, communityId, stationCode, stationName: station.name,
+      status: 'pending', reviewNote: '', createdAt: current ? current.createdAt : now, updatedAt: now,
+      reviewedAt: null, reviewedBy: null };
+    if (current) await transaction.collection('stationApplications').doc(id).update({ data });
+    else await insert(transaction, 'stationApplications', { _id: id, ...data });
+    return { status: 'pending' };
+  });
+  return result;
+}
+
+async function listApplications(event, { user }) {
+  requireRole(user, ['admin']);
+  const status = event.status || 'pending';
+  ensure(['pending', 'approved', 'rejected'].includes(status), '审核状态不正确');
+  const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
+  const rows = await db.collection('stationApplications').where({ status }).orderBy('createdAt', 'desc').skip(offset).limit(20).get();
+  const users = await Promise.all(rows.data.map(row => server.get('users', row.userId)));
+  return { list: rows.data.map((row, index) => ({ _id: row._id, communityId: row.communityId,
+    stationCode: row.stationCode, stationName: row.stationName, status: row.status, reviewNote: row.reviewNote || '',
+    createdAt: row.createdAt, phone: users[index] && users[index].phone ? users[index].phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '',
+    applicant: users[index] && users[index].nickname || '小程序用户' })), hasMore: rows.data.length === 20 };
+}
+
+async function reviewApplication(event, { user, openid }) {
+  requireRole(user, ['admin']);
+  const { applicationId, status, reviewNote } = reviewInput(event);
+  const now = new Date();
+  return atomic(db, async transaction => {
+    const application = await read(transaction, 'stationApplications', applicationId);
+    ensure(application && application.status === 'pending', '申请已处理或不存在', 'E_CONFLICT');
+    const applicant = await read(transaction, 'users', application.userId);
+    ensure(applicant && applicant.openid === application.userOpenid && !applicant.blocked, '申请人账号状态异常', 'E_CONFLICT');
+    const community = await read(transaction, 'communities', application.communityId);
+    ensure(community && community.status === 'active' && (community.stations || []).some(item => item.code === application.stationCode),
+      '申请对应的小区或驿站配置已失效', 'E_CONFLICT');
+    await transaction.collection('stationApplications').doc(application._id).update({ data: {
+      status, reviewNote, reviewedBy: openid, reviewedAt: now, updatedAt: now
+    } });
+    if (status === 'approved') {
+      await transaction.collection('users').doc(applicant._id).update({ data: stationGrant(applicant, community._id, application.stationCode, now) });
+    }
+    return { status };
+  });
 }
 
 function addressMatches(user, address, buildingId, communityId) {
@@ -124,7 +200,14 @@ async function listMyBatches(event, { user }) {
 }
 
 async function exportStatement(event, { user }) {
-  const { community, stationCode } = await stationContext(user);
+  let community, stationCode;
+  if (event.communityId !== undefined || event.stationCode !== undefined || !user.roles.includes('station')) {
+    requireRole(user, ['admin']);
+    const context = await server.feature('stationDelivery', text(event.communityId, '小区'));
+    community = context.community;
+    stationCode = text(event.stationCode, '驿站');
+    ensure(community && (community.stations || []).some(item => item.code === stationCode), '小区或驿站不存在');
+  } else ({ community, stationCode } = await stationContext(user));
   const range = period(event);
   const rows = await server.all('deliveryBatches', { communityId: community._id, stationCode, status: 'done',
     completedAt: command.gte(range.from).and(command.lt(range.to)) });
@@ -297,4 +380,5 @@ async function recordDelivery(event, { openid }) {
 }
 
 exports.main = server.entry({ setDoorDelivery, listMyBatches, exportStatement, providerHall, acceptBatch, providerBatch,
-  createBatch, startBatch, checkDoorDeliveryConsent, recordDelivery }, ['resident', 'admin', 'station', 'provider']);
+  createBatch, startBatch, checkDoorDeliveryConsent, recordDelivery, applicationOptions, myApplication, apply,
+  listApplications, reviewApplication }, ['resident', 'admin', 'station', 'provider']);

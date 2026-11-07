@@ -126,5 +126,9 @@
   "deliveryBatches": {
     "read": false,
     "write": false
+  },
+  "stationApplications": {
+    "read": false,
+    "write": false
   }
 }

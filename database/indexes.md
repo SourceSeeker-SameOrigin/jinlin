@@ -30,6 +30,8 @@
 | settlements | seller_period | sellerOpenid 升序、period.from 升序、period.to 升序 | 否 |
 | payouts | payee_created | payeeOpenid 升序、createdAt 倒序 | 否 |
 | payouts | state_id | state 升序、_id 升序 | 否 |
+| payouts | community_created | communityId 升序、createdAt 倒序 | 否 |
+| payouts | createdAt | createdAt 倒序 | 否 |
 | events | community_status_start | communityIds 升序、status 升序、startAt 升序 | 否 |
 | events | community_status_hidden_start | communityIds 升序、status 升序、moderationHidden 升序、startAt 升序 | 否 |
 | events | status_end | status 升序、endAt 升序 | 否 |
@@ -74,4 +76,6 @@
 | deliveryBatches | community_station_created | communityId 升序、stationCode 升序、createdAt 倒序 | 否 |
 | deliveryBatches | community_station_status_completed | communityId 升序、stationCode 升序、status 升序、completedAt 升序 | 否 |
 | deliveryBatches | provider_status_created | providerId 升序、status 升序、createdAt 倒序 | 否 |
+| stationApplications | status_created | status 升序、createdAt 倒序 | 否 |
+| stationApplications | user_openid_unique | userOpenid 升序 | 是 |
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。

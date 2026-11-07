@@ -6,14 +6,12 @@
     "pages/service/trash",
     "pages/service/buy",
     "pages/service/help",
-    "pages/service/recycle",
     "pages/orders/list",
     "pages/orders/detail",
     "pages/membership/index",
     "pages/me/me",
     "pages/legal/privacy",
-    "pages/legal/terms",
-    "pages/notices/list"
+    "pages/legal/terms"
   ],
   "subPackages": [
     {
@@ -42,7 +40,9 @@
         "coupons/coupons",
         "content/content",
         "merchants/merchants",
-        "recycle/recycle"
+        "recycle/recycle",
+        "exports/exports",
+        "stations/stations"
       ]
     },
     {
@@ -90,9 +90,9 @@
     {
       "root": "pet",
       "pages": [
-        "order/order",
-        "work/work",
-        "reports/reports"
+        "order",
+        "work",
+        "reports"
       ]
     },
     {
@@ -115,10 +115,30 @@
     {
       "root": "station",
       "pages": [
+        "apply/apply",
         "workbench/workbench",
         "create/create",
         "worker/worker",
         "batch/batch"
+      ]
+    },
+    {
+      "root": "elder",
+      "pages": [
+        "meal",
+        "escort"
+      ]
+    },
+    {
+      "root": "recycle",
+      "pages": [
+        "order/order"
+      ]
+    },
+    {
+      "root": "notices",
+      "pages": [
+        "list/list"
       ]
     }
   ],

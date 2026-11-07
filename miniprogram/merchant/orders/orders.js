@@ -17,7 +17,18 @@ Page({
     this.setData({ quoteId: '' }); await this.load();
   } catch (error) { this.setData({ error: error.message || '报价失败' }); } finally { this.setData({ busy: false }); } },
   async transition(event) { const actionName = event.currentTarget.dataset.action; const orderId = event.currentTarget.dataset.id;
-    this.setData({ busy: true, error: '' }); try { await api.call('merchant', 'merchantTransition', { orderId, actionName }); await this.load(); }
+    if (this.data.busy) return;
+    this.setData({ busy: true, error: '' }); try {
+      const order = this.data.list.find(item => item._id === orderId);
+      let identityConfirmed = false;
+      if (actionName === 'start' && order?.detail?.category === 'locksmith') {
+        const result = await new Promise((resolve, reject) => wx.showModal({ title: '开锁前当面核验',
+          content: '请当面核验下单人身份证与门牌一致。不得拍摄或上传身份证照片；完成凭证只拍门锁或服务过程。',
+          confirmText: '已核验一致', cancelText: '暂不开始', success: resolve, fail: reject }));
+        if (!result.confirm) return;
+        identityConfirmed = true;
+      }
+      await api.call('merchant', 'merchantTransition', { orderId, actionName, identityConfirmed }); await this.load(); }
     catch (error) { this.setData({ error: error.message || '操作失败' }); } finally { this.setData({ busy: false }); } },
   async complete(event) { const orderId = event.currentTarget.dataset.id; this.setData({ busy: true, error: '' }); try {
     const photos = await uploadPhotos('merchant-orders/' + orderId, 3);

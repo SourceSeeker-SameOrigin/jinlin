@@ -11,7 +11,7 @@
 | How much | 5 条示例文档；初始化云端资源可能使用已有套餐额度 |
 
 1. 打开微信开发者工具的云开发控制台，确认当前是开发环境。
-2. 创建 `users`、`communities`、`buildings`、`providers`、`orders`、`memberships`、`ledger`、`settlements`、`payouts`、`events`、`signups`、`eventCancelJobs`、`eventCancelTasks`、`config`、`reports`、`auditLogs`、`mediaChecks`、`conversations`、`messages`、`visits`、`secrets`、`posts`、`comments`、`couponTemplates`、`coupons`、`pointsLedger`、`idleItems`、`ads`、`notices`、`merchants`、`merchantServices`、`deliveryBatches` 集合。
+2. 创建 `users`、`communities`、`buildings`、`providers`、`orders`、`memberships`、`ledger`、`settlements`、`payouts`、`events`、`signups`、`eventCancelJobs`、`eventCancelTasks`、`config`、`reports`、`auditLogs`、`mediaChecks`、`conversations`、`messages`、`visits`、`secrets`、`posts`、`comments`、`couponTemplates`、`coupons`、`pointsLedger`、`idleItems`、`ads`、`notices`、`merchants`、`merchantServices`、`deliveryBatches`、`stationApplications` 集合。
 3. 在每个集合的权限设置中，选择自定义安全规则，将 `security-rules.json` 中对应集合的规则对象单独粘贴并保存。该文件是集合到规则的清单，不能整个粘贴为单个集合的规则。
 4. 依次进入 `communities`、`buildings`、`config`，使用「导入」选择同名 `seed/*.json`。文件内容为 UTF-8 JSON Lines：每行一个对象，不是数组，也不是格式化的多行 JSON。
 5. 日期使用扩展 JSON 的 `$date` 表示；导入后检查 `createdAt`、`updatedAt` 是 Date 类型，而不是普通对象或字符串。示例时间是固定测试时间，不能代表真实创建时间。

@@ -1,6 +1,6 @@
 const api = require('../../utils/api');
 Page({
-  data: { loading: true, error: '', user: null, community: null, provider: null, merchant: null, manage: false, doorDeliveryBusy: false },
+  data: { loading: true, error: '', user: null, community: null, provider: null, merchant: null, stationApplication: null, manage: false, doorDeliveryBusy: false },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -10,10 +10,14 @@ Page({
       let unreadTotal = 0;
       try { unreadTotal = (await api.call('chat', 'list', {}, { loading: false, silent: true })).unreadTotal || 0; } catch (_) {}
       let merchant = null;
+      let stationApplication = null;
       if (app.globalData.community && app.globalData.community.features.merchants) {
         try { merchant = (await api.call('merchant', 'myApplication', {}, { loading: false, silent: true })).merchant; } catch (_) {}
       }
-      this.setData({ user, community: app.globalData.community, provider: app.globalData.provider, merchant, unreadTotal,
+      if (app.globalData.community && app.globalData.community.features.stationDelivery && !user.roles.includes('station')) {
+        try { stationApplication = (await api.call('station', 'myApplication', {}, { loading: false, silent: true })).application; } catch (_) {}
+      }
+      this.setData({ user, community: app.globalData.community, provider: app.globalData.provider, merchant, stationApplication, unreadTotal,
         doorDelivery: Boolean(user.prefs && user.prefs.doorDelivery), isStation: user.roles.includes('station'),
         manage: user.roles.includes('admin') || user.roles.includes('property'),
         canManageEvents: user.roles.includes('admin') || user.roles.includes('property') || user.roles.includes('merchant') });

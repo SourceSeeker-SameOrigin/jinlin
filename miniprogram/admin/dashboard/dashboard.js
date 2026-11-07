@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 const { STATUS_TEXT } = require('../../utils/status');
+const MODULE_LABELS = { express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', meal: '助老送餐', visit: '独居探访', escort: '陪诊', pet: '上门喂宠', vacant: '空置房巡检', recycle: '回收上门', merchant: '商家预约', event_signup: '活动报名', idle_purchase: '闲置担保成交' };
 Page({
   data: { loading: true, error: '', metrics: null, communities: [], communityIndex: 0, scope: 'community', canFederate: false },
   onShow() { this.load(); },
@@ -12,7 +13,7 @@ Page({
       if (user.roles.includes('admin')) {
         const list = await api.call('catalog', 'listCommunities', {}, { loading: false, silent: true });
         const communityIndex = Math.max(0, list.list.findIndex(item => item._id === user.communityId));
-        this.setData({ communities: list.list, communityIndex, canFederate: Boolean(list.list[communityIndex] && list.list[communityIndex].federationGroupId) });
+      this.setData({ communities: list.list, communityIndex, isAdmin: true, canFederate: Boolean(list.list[communityIndex] && list.list[communityIndex].federationGroupId) });
         const templates = await api.call('admin', 'notificationTemplates', {}, { loading: false, silent: true });
         if (templates.unaccepted) await new Promise(resolve => wx.requestSubscribeMessage({ tmplIds: [templates.unaccepted], success: resolve, fail: resolve }));
       }
@@ -27,6 +28,11 @@ Page({
     const metrics = await api.call('admin', 'dashboard', { communityId, scope: this.data.scope }, { loading: false, silent: true });
     this.setData({ metrics: { ...metrics, turnoverYuan: yuan(metrics.serviceFeeTurnover), actualYuan: yuan(metrics.actualIncome),
       refundYuan: yuan(metrics.refundTotal), acceptRateText: (metrics.acceptRate15m / 100).toFixed(1) + '%',
+      extensionRows: (metrics.extensions.modules || []).map(item => ({ ...item, label: MODULE_LABELS[item.code] || item.code,
+        paidAmountYuan: yuan(item.paidAmount) })),
+      payoutRows: (metrics.extensions.payoutStatus || []).map(item => ({ ...item,
+        label: ({ success: '成功', failed: '失败', cancelled: '已取消', processing: '处理中', wait_user_confirm: '待用户确认', created: '待发起' })[item.status] || item.status,
+        amountYuan: yuan(item.amount) })),
       statusRows: Object.entries(metrics.orders).map(([status, count]) => ({ status, count, label: STATUS_TEXT[status] || status })) } });
   },
   chooseCommunity(event) {
