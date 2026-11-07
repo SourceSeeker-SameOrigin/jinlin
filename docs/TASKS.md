@@ -11,9 +11,9 @@
 ## T00 仓库骨架与工具链
 
 - 按 AGENTS.md 的目录约定建好全部目录和空页面（每个页面 4 个文件，页面先显示标题即可）。
-- `project.config.json`：`miniprogramRoot: "miniprogram/"`，`cloudfunctionRoot: "cloudfunctions/"`，`appid` 用占位符 `YOUR_APPID`。
+- `project.config.json`：`miniprogramRoot: "miniprogram/"`，`cloudfunctionRoot: "cloudfunctions/"`；当前仓库使用用户提供的 AppID `wx2908c7661d0ed153`。
 - `miniprogram/app.json`：注册 SPEC §3 的全部页面；`provider`、`admin` 为分包；tabBar 三项（首页 / 订单 / 我的），图标先用纯色占位 PNG。
-- `miniprogram/config/env.js`：`module.exports = { envId: 'YOUR_ENV_ID' }`；`app.js` 里 `wx.cloud.init({ env: envId, traceUser: true })`。
+- `miniprogram/config/env.js`：当前开发环境为 `cloud1-d4gbpd8zx89564fb6`；正式环境需另行建立、另配生产 ID；`app.js` 里 `wx.cloud.init({ env: envId, traceUser: true })`。
 - 根目录 `package.json`：devDependencies 只有 `jest`；scripts：`test`、`sync`。
 - `scripts/sync-shared.js`：把 `cloudfunctions/_shared/`（不含 `__tests__`）复制到每个云函数的 `lib/shared/`；`.gitignore` 忽略 `cloudfunctions/*/lib/shared/` 和 `node_modules`。
 - 每个云函数目录：`index.js`（按 `event.action` 分发，未知 action 返回 `E_UNKNOWN_ACTION`）、`package.json`（依赖 `wx-server-sdk`）、`config.json`（按 SPEC §14 填权限和触发器）。
@@ -249,7 +249,7 @@
 
 ## T29 驿站批量送上门（E10）
 
-- 云函数 `station`；分包 `station/`：粘贴门牌并创建幂等批次，只纳入明确同意的住户；服务员逐户配送前与提交时双重校验授权，撤回后标记跳过且不计费；住户"快递默认送上门"设置；驿站月度对账导出。
+- 云函数 `station`；分包 `station/`：粘贴门牌并创建幂等批次，只纳入明确同意的住户；服务员逐户配送前与提交时双重校验授权，撤回后标记跳过且不计费；住户"快递默认送上门"设置；驿站人员申请、管理员通过/拒绝并记录结果；驿站月度对账导出。驿站账号使用 `stationCommunityId + stationCode`，不覆盖住户 `communityId`。
 
 **验收**：E19 场景 14。
 

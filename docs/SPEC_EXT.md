@@ -54,8 +54,9 @@ features: {
 - **T26 商家报价制**：订单状态先进入 `pending_quote`，商家报价后进入 `pending_pay`；待报价订单不自动过期，只能商家报价或用户主动取消。开锁服务不保存身份证照片；仅记录核验结果，并保留非身份证类服务/门锁证据。
 - **T27 回收**：重量精度为 0.1 kg。每小区配置分类积分与回收企业收购价；服务员报酬默认每单 300 分、每 kg 20 分，允许小区覆盖；关键配置缺失时不得开放回收。订单由同小区服务员大厅先到先接；每小区按类别指定回收企业，按企业月度汇总对账。
 - **T28 空置房巡检**：巡检任务须落入小区值班时段；月卡有效期为购买日起 30 天，任务仍按每月 1 日、15 日生成；报告沿用 T24 探访报告格式（逐项勾选、补充文字、“需关注”开关）。
-- **T29 驿站送货**：仅将 `doorDelivery=true` 的住户纳入批次，驿站不能覆盖住户同意状态。每户配送前重新读取当前同意状态；如已撤回，则跳过该户并记明原因，继续处理其他住户。
+- **T29 驿站送货**：仅将 `doorDelivery=true` 的住户纳入批次，驿站不能覆盖住户同意状态。每户配送前重新读取当前同意状态；如已撤回，则跳过该户并记明原因，继续处理其他住户。驿站员工先提交申请，管理员通过或拒绝；通过后授予 `station` 角色并保存 `stationCommunityId + stationCode`，不覆盖住户原有的 `communityId`，申请和审核过程可追溯。
 - **T30 自动打款**：使用微信支付新版“商家转账”API 与对应状态机；小程序发起仍使用 `wx.requestMerchantTransfer`。不得按旧版“商家转账到零钱”实现。
+- **T30 卖家打款限额**：担保交易卖家没有已核验的收款真实姓名，自动打款单笔上限为 1,999.99 元；超出部分保留在未结算余额中供后续分笔申请。卖家收款额按人民币分记账，不能因拆分造成重复结算或丢失余额。
 
 ### E0.2 多地址
 
@@ -251,7 +252,7 @@ pointsLedger: { _id, openid, delta, reason: 'recycle' | 'redeem' | 'refund' | 'a
 - 提现流程：服务员或卖家在收入页点“提现”→ `payout.create` 汇总已超过 `complaintWindowHours` 且未结算、未锁定的对应账本余额→ 同一事务锁账本并创建提现记录→ 请求新版发起转账接口→ 前端 `wx.requestMerchantTransfer` 拉起微信确认收款页。前端调起成功只表示页面已展示，不代表到账；须通过查单的终态确认。
 - 服务员规则：单次 10–2000 元、每人每天 1 次；金额达到 2000 元时按微信要求加密发送服务员真实姓名。担保交易卖家未有已核验的收款真实姓名，单笔自动打款上限为 1999.99 元；超出部分留在未结算余额中，可后续分笔申请。人工结算可由管理员按实际对账金额处理。
 - 账本已有人工结算单或提现锁定时不得重复申请；转账中的账本锁定。成功后只结算本批锁定账目，失败/取消才解锁。
-- 状态：`payouts: { _id, payeeType: 'provider'|'seller', providerId, sellerOpenid, payeeOpenid, ledgerIds, ledgerAmounts, amount, outBillNo, state: 'created'|'wait_user_confirm'|'processing'|'success'|'failed'|'cancelled', wxState, transferBillNo, requestBody, packageInfo, failReason, createdAt, updatedAt }`。卖家可拆分单条账本多次支付，成功一笔只累计对应 `ledgerAmounts`，累计全部收清后才标记账本已结算。`timer` 每 5 分钟查询未终结转账；只有微信终态 `SUCCESS` 结算本批金额，`FAIL`/`CANCELLED` 解锁。用户超过 24 小时未确认时继续查单，未确认终态前不解锁。
+- 状态：`payouts: { _id, payeeType: 'provider'|'seller', communityId, communityIds, providerId, sellerOpenid, payeeOpenid, ledgerIds, ledgerAmounts, amount, outBillNo, state: 'created'|'wait_user_confirm'|'processing'|'success'|'failed'|'cancelled', wxState, transferBillNo, requestBody, packageInfo, failReason, createdAt, updatedAt }`。`communityIds` 来自本次锁定账本；只涉及单个小区时同时写该 `communityId`，跨小区时 `communityId=null`。卖家可拆分单条账本多次支付，成功一笔只累计对应 `ledgerAmounts`，累计全部收清后才标记账本已结算。`timer` 每 5 分钟查询未终结转账；只有微信终态 `SUCCESS` 结算本批金额，`FAIL`/`CANCELLED` 解锁。用户超过 24 小时未确认时继续查单，未确认终态前不解锁。
 - 开关关闭时继续使用 SPEC §11 的人工结算。物业分成、商家货款始终走人工结算（B2B 对公转账）。
 
 ## E8. 助老包 `elder`
@@ -297,6 +298,7 @@ detail: {
 - 批次仅为同意住户保存关联和地址快照；服务员处理每户前及提交配送结果时重新核验当前授权。住户撤回授权时将该户记为 `skipped` 并记原因，不上传照片、不计费，其他住户仍可继续配送。
 - 批次 `deliveryBatches: { _id, communityId, stationCode, items: [{ _id, userId, buildingId, buildingName, unit, room, consented: true, status: 'pending'|'delivered'|'failed'|'skipped', failReason, photoFileId, at }], providerId, status: 'open'|'assigned'|'done', priceSnapshot, createdAt }` 发布到任务大厅，作为一个整单由一名服务员接。
 - 计费：每件 `stationDelivery.perPiece`（默认 50 分）向驿站收，服务员每件 `perPiecePayout`（默认 40 分）。账本 `refType='station_delivery'`。驿站按月对公结算（人工）。
+- 驿站账号：住户从“我的”提交账号申请，选择已开放的小区及合作驿站；管理员可通过或拒绝并填写原因。通过后新增 `station` 角色及 `stationCommunityId + stationCode` 绑定，不覆盖用户的居住 `communityId`。申请状态、申请人、审核人、结果和时间写入 `stationApplications`。
 - 管理后台：驿站账号审核、驿站月度对账单导出。
 
 ## E11. 回收上门 `recycle`
@@ -392,7 +394,7 @@ ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId,
 
 `elder`、`pet`、`recycle`、`vacant` 的下单与履约并入现有 `order`、`provider`、`membership` 云函数，按 `serviceCode` 分支，各自的校验与定价放进 `_shared/services/<code>.js`。
 
-新增集合：`posts`、`comments`、`reports`、`idleItems`、`events`、`signups`、`conversations`、`messages`、`couponTemplates`、`coupons`、`pointsLedger`、`payouts`、`merchants`、`merchantServices`、`deliveryBatches`、`visits`、`secrets`、`ads`、`notices`、`auditLogs`。安全规则一律前端不可读写。
+新增集合：`posts`、`comments`、`reports`、`idleItems`、`events`、`signups`、`conversations`、`messages`、`couponTemplates`、`coupons`、`pointsLedger`、`payouts`、`merchants`、`merchantServices`、`deliveryBatches`、`stationApplications`、`visits`、`secrets`、`ads`、`notices`、`auditLogs`。安全规则一律前端不可读写。
 
 分包：`board/`、`idle/`、`events/`、`chat/`、`coupons/`、`elder/`、`pet/`、`shops/`、`merchant/`、`station/`。主包只放 SPEC §3.1 列出的页面（首页、绑定、4 项核心服务、订单列表与详情、月卡、我的、隐私政策、服务协议），保证主包小于 2MB。
 
@@ -410,7 +412,7 @@ ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId,
 6. 订单聊天：发送含手机号的消息出现隐私提示；订单完成 24 小时后会话只读。
 7. 拒绝定位授权时绑定页退回列表；允许时显示附近小区；服务员在任务详情页时住户地图上能看到位置，订单完成后看不到。
 8. 新用户自动发券；首单价与 5 元券同时可用时系统选择更优者；全额退款后券退回。验证推荐券只给推荐人且在被推荐人首笔付费订单完成后触发；积分全额服务费退款恢复全部、部分退款按服务费比例向下取整、商品款退款不恢复，重复退款回调不重复入账。
-10. 自动打款：服务员提现 50 元 → 官方确认页 → 成功后账本标记已结算；单次超过 2000 元被拒。
+10. 自动打款：服务员提现 50 元 → 官方确认页 → 成功后账本标记已结算；服务员单次超过 2000 元被拒。卖家单次最多 1999.99 元，超额余额保留并可后续分笔申请，累计结算金额与卖家账本一致。
 11. 独居探访月卡：子女为父母地址下单（多地址）→ 每周二、五生成任务 → 服务员填写逐项报告、补充文字及“需关注”状态 → 子女收到报告；勾选“需关注”后台标红。修改地址仅影响续期后的新周期；探访服务员报酬按小区配置。政府补贴导出不包含门牌与手机号。送餐预付金额不得超过小区配置上限。
 12. 陪诊：没有 `escort` 证书的服务员在大厅看不到。
 13. 喂宠 3 天每天 2 次：生成 6 个上门任务；服务员只在服务日期内能查看门锁密码，且查看被记录；1 次 missed 自动退该次费用；完成后密文删除。
