@@ -37,6 +37,10 @@
     {
       "root": "idle",
       "pages": ["list/list", "detail/detail", "create/create", "mine/mine", "sales/sales", "sale/sale", "income/income"]
+    },
+    {
+      "root": "events",
+      "pages": ["list/list", "detail/detail", "manage/manage"]
     }
   ],
   "window": {

@@ -13,6 +13,7 @@ const { createLedgerFlow } = require('./ledgerFlow');
 const { splitMembershipSale } = require('./split');
 const { ledgerDelta } = require('./orderLifecycle');
 const { ensureOrderConversation } = require('./chatFlow');
+const { refundEventSignup } = require('./eventFlow');
 
 function adminOrderActions(cloud, server) {
   const payments = createPayFlow(cloud, server);
@@ -60,7 +61,8 @@ function adminOrderActions(cloud, server) {
     ensure(['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status), '当前状态不能强制取消', 'E_BAD_STATE');
     if (order.status === 'pending_pay') { await payments.closeUnpaid(order, openid); return { status: 'closed' }; }
     const amount = totalFee(order) - order.refunds.reduce((sum, item) => sum + item.amount, 0);
-    if (amount > 0) await payments.requestRefund(order, amount, '管理员取消订单', { key: 'admin_cancel', to: 'cancelled', actor: openid });
+    if (amount > 0) await payments.requestRefund(order, amount, '管理员取消订单', { key: 'admin_cancel', to: 'cancelled', actor: openid,
+      ...(order.kind === 'event_signup' ? { afterWrite: (transaction, current) => refundEventSignup(transaction, current, new Date()) } : {}) });
     else await conditionalTransition(server, order, 'cancelled', openid);
     return { status: 'cancelled' };
   }

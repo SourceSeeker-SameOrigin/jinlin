@@ -118,6 +118,7 @@ async function cancel(event, { openid }) {
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.userOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
+  ensure(order.kind !== 'event_signup', '活动报名请在活动详情中取消，以同步更新名额', 'E_FORBIDDEN');
   ensure(order.kind !== 'membership_purchase' || order.status === 'pending_pay', '月卡不支持自行退款，请联系客服', 'E_BAD_STATE');
   ensure(['pending_pay', 'paid'].includes(order.status), '订单已接单或已结束，无法自行取消', 'E_BAD_STATE');
   if (order.status === 'pending_pay') {

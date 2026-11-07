@@ -24,6 +24,17 @@
 | settlements | community_created | communityId 升序、createdAt 倒序 | 否 |
 | settlements | provider_period | providerId 升序、period.from 升序、period.to 升序 | 否 |
 | settlements | seller_period | sellerOpenid 升序、period.from 升序、period.to 升序 | 否 |
+| events | community_status_start | communityIds 升序、status 升序、startAt 升序 | 否 |
+| events | community_status_hidden_start | communityIds 升序、status 升序、moderationHidden 升序、startAt 升序 | 否 |
+| events | status_end | status 升序、endAt 升序 | 否 |
+| signups | event_status_created | eventId 升序、status 升序、createdAt 升序 | 否 |
+| signups | event_status_id | eventId 升序、status 升序、_id 升序 | 否 |
+| signups | openid_created | openid 升序、createdAt 倒序 | 否 |
+| signups | checkinCode_unique | checkinCode 升序 | 是 |
+| eventCancelJobs | status_created | status 升序、createdAt 升序 | 否 |
+| eventCancelTasks | job_status_created | jobId 升序、status 升序、createdAt 升序 | 否 |
+| eventCancelTasks | job_status_next | jobId 升序、status 升序、nextAt 升序 | 否 |
+| eventCancelTasks | job_status_lease | jobId 升序、status 升序、leaseUntil 升序 | 否 |
 | reports | status_created | status 升序、createdAt 倒序 | 否 |
 | reports | target_created | targetType 升序、targetId 升序、createdAt 倒序 | 否 |
 | mediaChecks | status_created | status 升序、createdAt 升序 | 否 |

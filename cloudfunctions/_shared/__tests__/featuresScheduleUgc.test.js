@@ -1,6 +1,6 @@
 const { KEYS, isEnabled, validateFeatures, allOff } = require('../features');
 const { dueTasks, daysInMonth, monthDates } = require('../schedule');
-const { report, reportOutcome, mediaStatus, localUgc, checkText, ensureCanPublish, visibleImages } = require('../ugc');
+const { report, reportOutcome, mediaStatus, localUgc, contentInCommunity, checkText, ensureCanPublish, visibleImages } = require('../ugc');
 
 test('扩展开关默认全部关闭，小区可覆盖全局', () => {
   const config = { features: { board: true } };
@@ -53,4 +53,11 @@ test('媒体审核前仅作者可见，禁言用户不能发布', () => {
   expect(visibleImages(target, 'neighbor', 'owner')).toEqual(['f1']);
   expect(() => ensureCanPublish({ mutedUntil: new Date('2026-11-08') }, new Date('2026-11-07'))).toThrow('禁言中');
   expect(() => ensureCanPublish({ mutedUntil: new Date('2026-11-06') }, new Date('2026-11-07'))).not.toThrow();
+});
+
+test('活动社区数组可用于举报与图片审核归属校验', () => {
+  const event = { communityIds: ['c1', 'c2'], ownerOpenid: 'owner' };
+  expect(contentInCommunity('event', event, 'c2')).toBe(true);
+  expect(contentInCommunity('event', event, 'c3')).toBe(false);
+  expect(contentInCommunity('post', { communityId: 'c1' }, 'c1')).toBe(true);
 });

@@ -9,6 +9,7 @@ const { activateMembership } = require('./membershipFlow');
 const { createNotifier } = require('./notify');
 const { markCouponUsed, releaseOrderDiscounts, finalizeRefundDiscounts } = require('./couponFlow');
 const { releaseReservation } = require('./idleData');
+const { activateEventSignup, releaseEventSignup } = require('./eventFlow');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
@@ -19,6 +20,7 @@ function createPayFlow(cloud, server) {
     const user = await server.one('users', { openid: order.userOpenid });
     ensure(user, '订单用户不存在', 'E_CONFIG');
     let changed = false;
+    let cancelledEventSignup = false;
     const result = await atomic(db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       ensure(current, '订单不存在');
@@ -38,6 +40,8 @@ function createPayFlow(cloud, server) {
       const membership = current.kind === 'membership_purchase' ? await activateMembership(transaction, current, currentUser, now) : null;
       if (membership) Object.assign(patch, membership.orderPatch);
       await markCouponUsed(transaction, current, now);
+      const eventResult = await activateEventSignup(transaction, current, now);
+      cancelledEventSignup = Boolean(eventResult && eventResult.cancelled);
       await transaction.collection('users').doc(user._id).update({ data: {
         ...(first ? first.user : {}), ...(paidCount ? paidCount.user : {}), ...(membership ? membership.userPatch : {}),
         orderRevision: (currentUser.orderRevision || 0) + 1 } });
@@ -45,7 +49,13 @@ function createPayFlow(cloud, server) {
       changed = true;
       return { ...current, ...patch };
     });
-    if (changed) await notify.newTask(result);
+    if (changed && cancelledEventSignup && result.pricing.payAmount + result.pricing.goodsCap > 0) {
+      await requestRefund(result, result.pricing.payAmount + result.pricing.goodsCap, '活动报名已截止或活动已取消', {
+        key: 'event_auto_refund_' + result._id, to: 'cancelled', actor: 'system'
+      });
+      return { ...result, status: 'cancelled' };
+    }
+    if (changed && result.kind === 'service') await notify.newTask(result);
     if (changed && result.kind === 'service') {
       await notify.resident('accepted', result);
       await notify.resident('delivered', result);
@@ -60,7 +70,8 @@ function createPayFlow(cloud, server) {
     ensure(order.payment.mode === config.payMode, '支付模式已变更，请联系客服', 'E_CONFIG');
     const env = payConfig(config.payMode);
     if (config.payMode === 'mock') return { orderId: order._id, mock: true };
-    const response = await cloud.cloudPay.unifiedOrder({ body: '近邻帮-' + (SERVICE_NAMES[order.serviceCode] || '月卡'),
+    const description = order.kind === 'event_signup' ? '活动报名' : SERVICE_NAMES[order.serviceCode] || '月卡';
+    const response = await cloud.cloudPay.unifiedOrder({ body: '近邻帮-' + description,
       outTradeNo: order.orderNo, spbillCreateIp: '127.0.0.1', subMchId: env.subMchId,
       totalFee: totalFee(order), envId: env.envId, functionName: 'payCallback', nonceStr: nonce() });
     ensure(success(response) && response.payment, '支付暂不可用，请到订单页重试', 'E_PAYMENT');
@@ -90,7 +101,11 @@ function createPayFlow(cloud, server) {
   }
 
   async function dispatchRefund(order, refund) {
-    if (refund.status === 'success' || order.payment.mode === 'mock') return;
+    if (refund.status === 'success') return;
+    if (order.payment.mode === 'mock') {
+      await setRefundResult(order._id, refund, 'success');
+      return;
+    }
     const env = payConfig('wechat');
     try {
       const result = await cloud.cloudPay.refund({ outTradeNo: order.orderNo, outRefundNo: refund.outRefundNo,
@@ -144,6 +159,7 @@ function createPayFlow(cloud, server) {
           '微信订单状态待确认，请稍后刷新', 'E_PAYMENT');
       }
     }
+    const now = new Date();
     await atomic(db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
       ensure(current && ['pending_pay', 'closed'].includes(current.status), '订单状态已变化，请刷新后重试', 'E_CONFLICT');
@@ -151,7 +167,8 @@ function createPayFlow(cloud, server) {
         const user = await read(transaction, 'users', current.userId);
         ensure(user, '订单用户不存在', 'E_CONFIG');
         await releaseOrderDiscounts(transaction, current, user, new Date());
-        await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, new Date()) });
+        await releaseEventSignup(transaction, current, 'cancelled', now);
+        await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, now) });
       }
       if (current.kind === 'idle_purchase') await releaseReservation(transaction, current);
     });

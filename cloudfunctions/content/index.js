@@ -1,7 +1,7 @@
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
-const { report: reportData, reportOutcome } = require('./lib/shared/ugc');
+const { report: reportData, reportOutcome, contentInCommunity } = require('./lib/shared/ugc');
 const { atomic, read, insert } = require('./lib/shared/transaction');
 const { requireRole } = require('./lib/shared/auth');
 const { ensure, text, integer } = require('./lib/shared/validate');
@@ -14,8 +14,9 @@ async function report(event, { openid }) {
   ensure(collection, '暂不支持举报该内容');
   text(event.targetId, '举报内容'); text(event.communityId, '小区');
   const target = await server.get(collection, event.targetId);
-  ensure(target && target.communityId === event.communityId, '内容不存在或不属于该小区');
-  ensure(target.authorOpenid !== openid && target.sellerOpenid !== openid && target.openid !== openid, '不能举报自己的内容');
+  ensure(target && contentInCommunity(event.targetType, target, event.communityId), '内容不存在或不属于该小区');
+  ensure(target.authorOpenid !== openid && target.sellerOpenid !== openid && target.ownerOpenid !== openid && target.openid !== openid,
+    '不能举报自己的内容');
   const config = await server.config();
   const id = 'r_' + crypto.createHash('sha256').update(event.targetType + ':' + event.targetId + ':' + openid).digest('hex').slice(0, 36);
   const record = reportData(event.targetType, event.targetId, openid, event.reason, event.text);
@@ -43,7 +44,7 @@ async function listReports(event, { user }) {
   const list = await Promise.all(result.data.map(async item => {
     const collection = COLLECTIONS[item.targetType];
     const target = collection ? await server.get(collection, item.targetId) : null;
-    const authorOpenid = target && (target.authorOpenid || target.sellerOpenid || target.openid || target.from);
+    const authorOpenid = target && (target.authorOpenid || target.sellerOpenid || target.ownerOpenid || target.openid || target.from);
     const author = authorOpenid ? await server.one('users', { openid: authorOpenid }) : null;
     return { _id: item._id, targetType: item.targetType, targetId: item.targetId, communityId: item.communityId,
       reason: item.reason, text: item.text, status: item.status, createdAt: item.createdAt,
@@ -84,7 +85,7 @@ async function moderateContent(event, { user }) {
   text(event.targetId, '内容'); text(event.communityId, '小区');
   return atomic(server.db, async transaction => {
     const target = await read(transaction, collection, event.targetId);
-    ensure(target && target.communityId === event.communityId, '内容不存在或不属于该小区', 'E_CONFLICT');
+    ensure(target && contentInCommunity(event.targetType, target, event.communityId), '内容不存在或不属于该小区', 'E_CONFLICT');
     await transaction.collection(collection).doc(target._id).update({ data: { moderationHidden: event.hidden,
       ...(event.targetType === 'comment' ? { status: event.hidden ? 'hidden' : 'ok' } : {}),
       moderatedAt: new Date() } });

@@ -12,6 +12,11 @@ function localUgc(value, blacklist) {
   ensure(!checkBlacklist(value, blacklist), '内容包含暂不允许发布的信息', 'E_BLOCKED');
   return value;
 }
+function contentInCommunity(targetType, target, communityId) {
+  return targetType === 'event'
+    ? Array.isArray(target && target.communityIds) && target.communityIds.includes(communityId)
+    : Boolean(target && target.communityId === communityId);
+}
 async function checkText(cloud, value, { blacklist, type, scene = SCENES[type], openid }) {
   const content = localUgc(validateUgc(value, 2000), blacklist);
   ensure(TYPES.includes(type) && [1, 2, 3, 4].includes(scene), '内容安全场景不正确', 'E_CONFIG');
@@ -33,8 +38,8 @@ async function requestMediaCheck(cloud, db, { fileId, targetType, targetId, auth
   const collection = { post: 'posts', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants' }[targetType];
   const targetResult = await db.collection(collection).doc(targetId).get();
   const target = targetResult.data;
-  const owner = target && (target.authorOpenid || target.sellerOpenid || target.openid || target.from);
-  ensure(target && target.communityId === communityId && owner === authorOpenid, '图片所属内容不存在', 'E_CONFLICT');
+  const owner = target && (target.authorOpenid || target.sellerOpenid || target.ownerOpenid || target.openid || target.from);
+  ensure(target && contentInCommunity(targetType, target, communityId) && owner === authorOpenid, '图片所属内容不存在', 'E_CONFLICT');
   const pending = [...new Set([...(target.moderationPendingFileIds || []), fileId])];
   await db.collection(collection).doc(targetId).update({ data: { moderationPendingFileIds: pending,
     ...(targetType === 'message' ? { status: 'pending' } : {}) } });
@@ -75,4 +80,4 @@ function mediaStatus(status) {
   ensure(['pass','risky','review'].includes(status), '图片审核结果不正确', 'E_INVALID_PARAM');
   return status === 'pass' ? 'ok' : status === 'risky' ? 'blocked' : 'pending';
 }
-module.exports = { TYPES, SCENES, validateUgc, ensureCanPublish, localUgc, checkText, requestMediaCheck, visibleImages, report, reportOutcome, mediaStatus };
+module.exports = { TYPES, SCENES, validateUgc, ensureCanPublish, localUgc, contentInCommunity, checkText, requestMediaCheck, visibleImages, report, reportOutcome, mediaStatus };

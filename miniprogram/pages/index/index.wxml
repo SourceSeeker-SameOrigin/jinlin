@@ -6,6 +6,7 @@
     <view wx:if="{{firstOrder}}" class="offer">首单服务费低至 1 元<view class="muted">适用于取快递、扔垃圾和代买，商品款另计</view></view>
     <view class="services"><service-tile wx:for="{{services}}" wx:key="code" code="{{item.code}}" name="{{item.name}}" icon="{{item.icon}}"/></view>
     <navigator wx:if="{{community.enabledFeatures.idle}}" class="card" url="/idle/list/list"><view class="section-title">闲置交易 ›</view><view class="muted">看看邻居发布的闲置好物</view></navigator>
+    <navigator wx:if="{{eventsEnabled}}" class="card" url="/events/list/list"><view class="section-title">社区活动</view><view class="muted">看看邻里正在举办的活动 ›</view></navigator>
     <navigator class="card" url="/pages/membership/index"><view class="section-title">经常需要帮忙？看看月卡</view><view class="muted">快递月卡 · 垃圾月卡 ›</view></navigator>
     <navigator wx:if="{{community.enabledFeatures.board}}" class="card" url="/board/list/list"><view class="section-title">需求广场 ›</view><view class="muted">看看邻居的求助和出行帮带</view></navigator>
     <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/center/center"><view class="section-title">优惠券中心 ›</view></navigator>
