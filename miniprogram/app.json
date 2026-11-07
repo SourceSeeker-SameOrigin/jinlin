@@ -17,31 +17,80 @@
   "subPackages": [
     {
       "root": "provider",
-      "pages": ["apply/apply", "workbench/workbench", "hall/hall", "task/task", "earnings/earnings"]
+      "pages": [
+        "apply/apply",
+        "workbench/workbench",
+        "hall/hall",
+        "task/task",
+        "earnings/earnings"
+      ]
     },
     {
       "root": "admin",
-      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat", "coupons/coupons", "content/content"]
+      "pages": [
+        "dashboard/dashboard",
+        "orders/orders",
+        "order/order",
+        "providers/providers",
+        "community/community",
+        "posters/posters",
+        "settlements/settlements",
+        "features/features",
+        "reports/reports",
+        "chat/chat",
+        "coupons/coupons",
+        "content/content"
+      ]
     },
     {
       "root": "chat",
-      "pages": ["list/list", "room/room"]
+      "pages": [
+        "list/list",
+        "room/room"
+      ]
     },
     {
       "root": "coupons",
-      "pages": ["center/center", "mine/mine"]
+      "pages": [
+        "center/center",
+        "mine/mine"
+      ]
     },
     {
       "root": "board",
-      "pages": ["list/list", "detail/detail", "create/create"]
+      "pages": [
+        "list/list",
+        "detail/detail",
+        "create/create"
+      ]
     },
     {
       "root": "idle",
-      "pages": ["list/list", "detail/detail", "create/create", "mine/mine", "sales/sales", "sale/sale", "income/income"]
+      "pages": [
+        "list/list",
+        "detail/detail",
+        "create/create",
+        "mine/mine",
+        "sales/sales",
+        "sale/sale",
+        "income/income"
+      ]
     },
     {
       "root": "events",
-      "pages": ["list/list", "detail/detail", "manage/manage"]
+      "pages": [
+        "list/list",
+        "detail/detail",
+        "manage/manage"
+      ]
+    },
+    {
+      "root": "pet",
+      "pages": [
+        "order/order",
+        "work/work",
+        "reports/reports"
+      ]
     }
   ],
   "window": {
@@ -50,7 +99,10 @@
     "navigationBarTextStyle": "white",
     "backgroundColor": "#f7f8f7"
   },
-  "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
   "permission": {
     "scope.userLocation": {
       "desc": "用于附近小区排序、管理员选择小区位置，以及服务员在进行中的订单里向该订单住户共享位置。"
@@ -61,9 +113,24 @@
     "selectedColor": "#1F7A5C",
     "backgroundColor": "#ffffff",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页", "iconPath": "assets/tab/home.png", "selectedIconPath": "assets/tab/home-selected.png" },
-      { "pagePath": "pages/orders/list", "text": "订单", "iconPath": "assets/tab/orders.png", "selectedIconPath": "assets/tab/orders-selected.png" },
-      { "pagePath": "pages/me/me", "text": "我的", "iconPath": "assets/tab/me.png", "selectedIconPath": "assets/tab/me-selected.png" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/tab/home.png",
+        "selectedIconPath": "assets/tab/home-selected.png"
+      },
+      {
+        "pagePath": "pages/orders/list",
+        "text": "订单",
+        "iconPath": "assets/tab/orders.png",
+        "selectedIconPath": "assets/tab/orders-selected.png"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的",
+        "iconPath": "assets/tab/me.png",
+        "selectedIconPath": "assets/tab/me-selected.png"
+      }
     ]
   }
 }

@@ -1,28 +1,114 @@
 {
-  "users": { "read": false, "write": false },
-  "communities": { "read": true, "write": false },
-  "buildings": { "read": true, "write": false },
-  "providers": { "read": false, "write": false },
-  "orders": { "read": false, "write": false },
-  "memberships": { "read": false, "write": false },
-  "ledger": { "read": false, "write": false },
-  "settlements": { "read": false, "write": false },
-  "events": { "read": false, "write": false },
-  "signups": { "read": false, "write": false },
-  "eventCancelJobs": { "read": false, "write": false },
-  "eventCancelTasks": { "read": false, "write": false },
-  "config": { "read": false, "write": false },
-  "reports": { "read": false, "write": false },
-  "auditLogs": { "read": false, "write": false },
-  "mediaChecks": { "read": false, "write": false },
-  "conversations": { "read": false, "write": false },
-  "messages": { "read": false, "write": false },
-  "posts": { "read": false, "write": false },
-  "couponTemplates": { "read": false, "write": false },
-  "coupons": { "read": false, "write": false },
-  "pointsLedger": { "read": false, "write": false },
-  "comments": { "read": false, "write": false },
-  "idleItems": { "read": false, "write": false },
-  "ads": { "read": false, "write": false },
-  "notices": { "read": false, "write": false }
+  "users": {
+    "read": false,
+    "write": false
+  },
+  "communities": {
+    "read": true,
+    "write": false
+  },
+  "buildings": {
+    "read": true,
+    "write": false
+  },
+  "providers": {
+    "read": false,
+    "write": false
+  },
+  "orders": {
+    "read": false,
+    "write": false
+  },
+  "memberships": {
+    "read": false,
+    "write": false
+  },
+  "ledger": {
+    "read": false,
+    "write": false
+  },
+  "settlements": {
+    "read": false,
+    "write": false
+  },
+  "events": {
+    "read": false,
+    "write": false
+  },
+  "signups": {
+    "read": false,
+    "write": false
+  },
+  "eventCancelJobs": {
+    "read": false,
+    "write": false
+  },
+  "eventCancelTasks": {
+    "read": false,
+    "write": false
+  },
+  "config": {
+    "read": false,
+    "write": false
+  },
+  "reports": {
+    "read": false,
+    "write": false
+  },
+  "auditLogs": {
+    "read": false,
+    "write": false
+  },
+  "mediaChecks": {
+    "read": false,
+    "write": false
+  },
+  "conversations": {
+    "read": false,
+    "write": false
+  },
+  "messages": {
+    "read": false,
+    "write": false
+  },
+  "posts": {
+    "read": false,
+    "write": false
+  },
+  "couponTemplates": {
+    "read": false,
+    "write": false
+  },
+  "coupons": {
+    "read": false,
+    "write": false
+  },
+  "pointsLedger": {
+    "read": false,
+    "write": false
+  },
+  "comments": {
+    "read": false,
+    "write": false
+  },
+  "idleItems": {
+    "read": false,
+    "write": false
+  },
+  "ads": {
+    "read": false,
+    "write": false
+  },
+  "notices": {
+    "read": false,
+    "write": false
+  },
+  "visits": {
+    "read": false,
+    "write": false
+  },
+  "secrets": {
+    "read": false,
+    "write": false
+  }
 }

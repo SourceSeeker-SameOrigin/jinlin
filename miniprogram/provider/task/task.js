@@ -71,4 +71,5 @@ Page({
   callResident() { if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
     success: () => { if (this.data.order.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
   openChat() { wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
+  ,openPetTasks() { wx.navigateTo({ url: '/pet/work?id=' + encodeURIComponent(this.orderId) }); }
 });

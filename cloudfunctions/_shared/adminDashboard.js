@@ -93,7 +93,7 @@ function createAdminDashboard(cloud, server) {
     text(event.communityId, '小区');
     const current = await server.get('communities', event.communityId);
     ensure(current, '小区不存在');
-    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId', 'location', 'canteens'];
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId', 'location', 'canteens', 'requiredCerts'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length > 0, '没有可保存的配置');
@@ -120,6 +120,7 @@ function createAdminDashboard(cloud, server) {
         if (canteen.merchantId !== undefined && canteen.merchantId !== null) text(canteen.merchantId, '食堂商家编号', 100);
       }
     }
+    if (patch.requiredCerts !== undefined) ensure(Array.isArray(patch.requiredCerts) && patch.requiredCerts.every(cert => ['pet','escort'].includes(cert)), '服务资质配置不正确');
     if (patch.features) {
       const config = await server.config();
       validateFeatures({ ...(config.features || {}), ...(current.features || {}), ...patch.features });

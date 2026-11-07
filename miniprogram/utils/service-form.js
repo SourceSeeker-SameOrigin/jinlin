@@ -7,14 +7,18 @@ const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, 
   trash: { bags: '1', sorted: false }, buy: { shop: '就近便利店', items: '', goodsYuan: '50' },
   meal: { canteenIndex: 0, items: '', goodsYuan: '50' },
   escort: { hospital: '', department: '', date: '', start: '09:00', blocks: '1', pickup: false },
-  help: { categoryIndex: 0, desc: '', blocks: '1' } };
+  help: { categoryIndex: 0, desc: '', blocks: '1' },
+  pet: { dates: [], visitsPerDay: '1', catCount: '1', dogCount: '0', otherCount: '0', tasks: ['feed','water'], entryIndex: 1, entryPassword: '' } };
 
 module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
-      pointsToUse: 0, placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
+      pointsToUse: 0, visitsPerDayOptions: [1,2], entryMethods: ['门锁密码','当面交钥匙','物业钥匙盒'],
+      taskChoices: [{ value: 'feed', label: '喂食', checked: true }, { value: 'water', label: '换水', checked: true },
+        { value: 'litter', label: '清理猫砂', checked: false }, { value: 'walk', label: '遛狗', checked: false }, { value: 'play', label: '陪玩', checked: false }],
+      today: new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10), placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
     onLoad(options) {
       if (serviceCode === 'help' && options && options.idleTitle) {
         const title = options.idleTitle;
@@ -93,10 +97,25 @@ module.exports = function serviceForm(serviceCode) {
     change(event) {
       const key = event.currentTarget.dataset.field;
       if (!Object.prototype.hasOwnProperty.call(this.data.form, key)) return;
-      const value = key === 'sorted' ? event.detail.value.includes('sorted') : event.detail.value;
+      const value = key === 'sorted' ? event.detail.value.includes('sorted') :
+        key === 'visitsPerDay' ? String(Number(event.detail.value) + 1) :
+        key === 'entryIndex' ? Number(event.detail.value) : event.detail.value;
       this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '' });
+      if (key === 'tasks') this.setData({ taskChoices: this.data.taskChoices.map(item => ({ ...item, checked: value.includes(item.value) })) });
       this.saveDraft();
       this.queueQuote();
+    },
+    addPetDate(event) {
+      if (serviceCode !== 'pet') return;
+      const date = event.detail.value;
+      if (!date || this.data.form.dates.includes(date)) return;
+      if (this.data.form.dates.length >= 15) { this.setData({ quoteError: '最多选择 15 个服务日期' }); return; }
+      const dates = [...this.data.form.dates, date].sort();
+      this.setData({ 'form.dates': dates, quote: null, amount: '--', quoteError: '' }); this.saveDraft(); this.queueQuote();
+    },
+    removePetDate(event) {
+      const dates = this.data.form.dates.filter(date => date !== event.currentTarget.dataset.date);
+      this.setData({ 'form.dates': dates, quote: null, amount: '--' }); this.saveDraft(); this.queueQuote();
     },
     slotChange(event) { this.setData({ slotIndex: Number(event.detail.value), quote: null, amount: '--' }); this.saveDraft(); this.queueQuote(); },
     queueQuote() {
@@ -117,6 +136,12 @@ module.exports = function serviceForm(serviceCode) {
         items: form.items, goodsCap: toFen(form.goodsYuan) };
       if (serviceCode === 'escort') detail = { hospital: form.hospital, department: form.department, date: form.date,
         start: form.start, blocks: Number(form.blocks), pickup: form.pickup };
+      if (serviceCode === 'pet') {
+        const pets = [{ kind: 'cat', count: Number(form.catCount) }, { kind: 'dog', count: Number(form.dogCount) },
+          { kind: 'other', count: Number(form.otherCount) }].filter(item => item.count > 0);
+        detail = { dates: form.dates, visitsPerDay: Number(form.visitsPerDay), pets, tasks: form.tasks,
+          entry: ['password','key_handover','property_keybox'][Number(form.entryIndex)], entryPassword: form.entryPassword };
+      }
       if (serviceCode === 'help') detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc, blocks: Number(form.blocks) };
       const address = this.data.addresses[this.data.addressIndex];
       const params = { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,

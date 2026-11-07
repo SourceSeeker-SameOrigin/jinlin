@@ -68,6 +68,7 @@ function adminOrderActions(cloud, server) {
     text(event.providerId, '服务员');
     const provider = await server.get('providers', event.providerId);
     canWork(provider, new Date(), order.minLevel);
+    ensure(!order.requiredCert || (provider.certs || []).includes(order.requiredCert), '服务员缺少该任务要求的资质', 'E_FORBIDDEN');
     ensure(order.kind === 'service' && provider.communityId === order.communityId, '请选择本小区服务员');
     ensure(order.status === 'paid', '仅待接单订单可指派', 'E_BAD_STATE');
     const result = await conditionalTransition(server, order, 'accepted', openid, { providerId: provider._id,

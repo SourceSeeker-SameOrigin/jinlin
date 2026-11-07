@@ -24,6 +24,7 @@ function createOrderContext(server) {
     ensure(couponsEnabled || !event.couponId, '优惠券暂未开放', 'E_FEATURE_OFF');
     ensure(pointsEnabled || !event.pointsToUse, '环保积分暂未开放', 'E_FEATURE_OFF');
     if (['meal','visit','escort'].includes(event.serviceCode)) await server.feature('elder', community._id);
+    if (event.serviceCode === 'pet') await server.feature('pet', community._id);
     const [duty, memberships] = await Promise.all([
       db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
         insuranceUntil: command.gt(now) }).count(),
@@ -60,7 +61,8 @@ function createOrderContext(server) {
     try {
       const pricing = quote({ ...event, prices: community.prices, community, user, membershipState, todayUsedParcels,
         communityId: community._id, coupons, pointsBalance, pointsEnabled });
-      const detail = cleanDetail(event.serviceCode, event.detail, community);
+      const petInput = event.serviceCode === 'pet' ? require('./pet').clean(event.detail, community, now) : null;
+      const detail = petInput ? petInput.detail : cleanDetail(event.serviceCode, event.detail, community);
       const note = cleanNote(event.note);
       const slot = event.serviceCode === 'escort' ? escortSlot(detail, community.dutyWindows, now) :
         event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
@@ -71,7 +73,7 @@ function createOrderContext(server) {
           listPrice: pricing.listPrice }), threshold: item.template.threshold, validTo: item.coupon.validTo }))
         .filter(item => item.discount > 0);
       return { ...common, pricing, detail, note, slot, selectedAddress, couponOptions, pointsBalance,
-        couponsEnabled, pointsEnabled };
+        couponsEnabled, pointsEnabled, ...(petInput ? { entryPassword: petInput.entryPassword } : {}) };
     } catch (error) {
       if (!metadata || error.code !== 'E_INVALID_PARAM') throw error;
       return { ...common, pricing: null, validationMessage: error.message };
