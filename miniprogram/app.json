@@ -111,6 +111,15 @@
         "detail/detail",
         "booking/booking"
       ]
+    },
+    {
+      "root": "station",
+      "pages": [
+        "workbench/workbench",
+        "create/create",
+        "worker/worker",
+        "batch/batch"
+      ]
     }
   ],
   "window": {

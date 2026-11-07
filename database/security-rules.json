@@ -118,5 +118,9 @@
   "merchantServices": {
     "read": false,
     "write": false
+  },
+  "deliveryBatches": {
+    "read": false,
+    "write": false
   }
 }

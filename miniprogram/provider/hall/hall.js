@@ -3,7 +3,7 @@ const { yuan } = require('../../utils/money');
 const { slotText } = require('../../utils/time');
 const subscriptions = require('../../utils/subscriptions');
 Page({
-  data: { loading: false, busy: false, error: '', tasks: [], hasMore: true },
+  data: { loading: false, busy: false, error: '', tasks: [], hasMore: true, stationDeliveryEnabled: false },
   onShow() { this.visible = true; this.load(true); this.timer = setInterval(() => { if (!this.data.loading && !this.data.busy) this.load(true); }, 15000); },
   onHide() { this.visible = false; clearInterval(this.timer); },
   onUnload() { this.visible = false; clearInterval(this.timer); },
@@ -14,6 +14,8 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
+      this.setData({ stationDeliveryEnabled: Boolean(getApp().globalData.community &&
+        getApp().globalData.community.features && getApp().globalData.community.features.stationDelivery) });
       const result = await api.call('provider', 'hall', { offset: reset ? 0 : this.data.tasks.length }, { loading: false, silent: true });
       if (!this.visible) return;
       const tasks = result.list.map(item => ({ ...item, income: yuan(item.estimatedIncome), slotText: slotText(item.slot) }));
