@@ -37,7 +37,7 @@
 | T28 | 空置房巡检 | 代码及相关单测通过；报告详情页结构已修正 | 配置月卡/值班/单次报酬，验收 30 天有效期、每月 1/15 排期、报告及通知 |
 | T29 | 驿站批量送上门 | 代码已集成；已新增住户申请、管理员审核、站点绑定和隐私规则 | 验收申请/拒绝/通过、居住小区字段不变、撤回同意跳过、配送和月结 |
 | T30 | 新版商家转账 | APIv3 签名/查单/状态处理及用户确认页代码已集成；卖家上限按用户决策 | 配置新版商家转账商户参数后，验证服务员和卖家确认、成功/失败、分笔及幂等 |
-| T31 | 扩展管理后台 | 功能开关、举报、商家/驿站审核、扩展看板和统一数据导出入口已集成 | 管理员云端验收数据范围、订单/报名/券/积分/广告/打款统计和四类 CSV |
+| T31 | 扩展管理后台 | 功能开关、举报、商家/驿站审核、扩展看板和统一数据导出入口已集成 | 管理员云端验收数据范围、订单/报名/券/积分/广告/打款统计（跨小区提现按实际账本份额分摊）和四类 CSV |
 | T32 | 扩展合规及字段隔离 | 代码和共享逻辑检查已完成；新增驿站账号审计与最小字段返回 | 按不同角色逐项检查内容审核、位置、密钥、广告、陪诊、开锁和公益活动规则 |
 | T33 | 40 个端到端场景 | 未在云端/体验版执行，不标记通过 | 完成下面 15 个核心场景和 25 个扩展场景后逐项记录结果及截图 |
 
@@ -93,11 +93,11 @@
 
 ## 四、本轮本地验证结果
 
-- Jest：**45 套测试、483 项通过**。
+- Jest：**45 套测试、486 项通过**。
 - 微信官方编译器：**76 个 WXML、77 个 WXSS 文件通过**。
-- JavaScript：云函数、小程序、脚本语法检查通过。
-- 项目路由：69 个注册页面文件齐全，静态页面链接无未解析路径。
-- 数据文件：128 个标准 JSON 通过；`database/seed/buildings.json` 按 JSON Lines 逐行通过。
+- JavaScript：云函数、小程序、脚本共 222 个源文件语法检查通过。
+- 项目路由：69 个注册页面的 JS/JSON/WXML/WXSS 四文件逐一存在，静态链接与相对 JS 引用均解析成功；主包严格保留 12 个核心页面。
+- 数据文件：本轮检查 `miniprogram/`、`cloudfunctions/`、`database/` 内 124 个 JSON/JSONL 文件（排除依赖与生成副本），均通过。
 - `npm run sync`：共享逻辑同步到 21 个云函数。
 - `git diff --check`：提交前再次运行。
 
@@ -108,4 +108,46 @@
 3. 执行 `npm run sync` 后部署云函数并配置环境变量；按场景创建住户、管理员、物业、服务员、商家、驿站测试账号。
 4. mock 场景先行；真实支付、退款和新版商家转账须先配置商户环境，真实扣款/打款前由用户另行授权。
 5. 逐项走第二、三节，写入实际结果、日期和截图文件名；只有体验版/云端通过才将状态改为“通过”。
-6. 当前分支 `feat/t19-board` 已推送到 GitHub `origin`（提交 `f42168e`）。本轮未创建 PR；后续如需通过 PR 审核，需先恢复 `gh` 的 GitHub 登录状态。
+6. 最终集成验收分支为 `feat/t33-acceptance`；GitHub 登录已实测有效，T16–T33 共 18 个任务评审分支和草稿 PR 已建立。全部保持未合并；不要直接使用中间快照部署生产。分支、PR 和逐任务本地验证见第六节。
+
+
+## 六、逐任务评审分支与本地验证
+
+每个任务均在其精确提交的隔离目录运行全部 Jest，并执行 `npm run sync`。下表测试数是对应任务快照的结果，最终集成结果为 45 套 / 486 项。PR 依赖按实际提交历史排列（T17 的补充决策晚于 T19，T30 实现在 T32 快照之后），没有改写历史或自动合并。T33 汇总后续集成修复，人工验收统一使用 T33 分支。
+
+| 任务 | 评审分支 | 测试通过数 | 草稿 PR |
+|---|---|---:|---|
+| T16 | `feat/t16-foundation` | 364 | [#3](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/3) |
+| T17 | `review/t17-coupons` | 389 | [#6](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/6) |
+| T18 | `feat/t18-chat` | 368 | [#4](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/4) |
+| T19 | `review/t19-board` | 376 | [#5](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/5) |
+| T20 | `review/t20-idle` | 396 | [#7](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/7) |
+| T21 | `review/t21-events` | 405 | [#8](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/8) |
+| T22 | `review/t22-content` | 408 | [#9](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/9) |
+| T23 | `review/t23-map` | 411 | [#10](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/10) |
+| T24 | `review/t24-elder` | 423 | [#11](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/11) |
+| T25 | `review/t25-pet` | 427 | [#12](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/12) |
+| T26 | `review/t26-merchants` | 436 | [#13](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/13) |
+| T27 | `review/t27-recycle` | 440 | [#14](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/14) |
+| T28 | `review/t28-vacant` | 443 | [#15](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/15) |
+| T29 | `review/t29-station` | 451 | [#16](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/16) |
+| T30 | `review/t30-payout` | 476 | [#19](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/19) |
+| T31 | `review/t31-admin` | 451 | [#17](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/17) |
+| T32 | `review/t32-compliance` | 456 | [#18](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/18) |
+| T33 | `feat/t33-acceptance` | 486 | [#20](https://github.com/SourceSeeker-SameOrigin/jinlin/pull/20) |
+
+
+## 七、T33 集成修复及补充验收
+
+| 修复 | 原因 | 补充验收 |
+|---|---|---|
+| 驿站申请及管理员审核 | 用户选定先申请再审批 | 通过/拒绝/再申请、管理员兼有驿站角色、居住小区不变 |
+| 开锁当面核验 | 旧代码保留了已过期的禁止预约提示 | 未确认不能开始；确认后仅存核验结果、服务端核验人和时间；不能缺记录完工；不上传身份证 |
+| 探访报告标签 | `medical` 曾误显示用药情况 | 显示“是否需要就医”，与报告事项一致 |
+| 回收/公告分包及首页入口 | 扩展页进入主包；反复展示首页会累加回收入口 | 两次进入首页只有一个回收入口；关闭开关即隐藏；新路由可打开 |
+| 附近小区查询 | 客户端引用缺失文件且未走 GeoPoint 查询 | 3 公里内索引查询、开关关闭、拒绝权限、缺索引时列表回退；API 无 GeoPoint 内部字段 |
+| 数据导出 | 驿站详情未加载、对象选择只取前 20 条 | 第 21 个以上服务员/商家可选；切换小区加载驿站；重复进入保留对象选择 |
+| 跨小区提现统计 | 原实现会在每个小区重复显示整笔金额 | A 份额 120000 分、B 份额 79999 分时，A/B 各只显示自己的金额；联合范围一笔共 199999 分；下一笔仅计剩余实际提现额 |
+| 页面模板与路由 | 订单/协议模板结构和喂宠、助老路由不匹配 | 逐次报告、照片、退款、投诉按钮显示正常，喂宠及助老页面可进入 |
+
+提现归属已按用户决定保存 `communityAmounts` 快照，合计严格等于本次提现额。历史记录只按明确账本依据重建；缺少依据时报配置错误，不把全额重复归到多个小区。该统计变更不改变真实打款金额或余额。
