@@ -1,5 +1,6 @@
 const { quote } = require('./pricing');
 const { cleanNote, cleanDetail, addressSnapshot, availableSlots, validateSlot } = require('./orderData');
+const { escortSlot } = require('./services/elder');
 const { ymd, parseDate, addDays } = require('./time');
 const { ensure, integer } = require('./validate');
 const { isEnabled } = require('./features');
@@ -22,6 +23,7 @@ function createOrderContext(server) {
     const pointsEnabled = isEnabled('points', config, community);
     ensure(couponsEnabled || !event.couponId, '优惠券暂未开放', 'E_FEATURE_OFF');
     ensure(pointsEnabled || !event.pointsToUse, '环保积分暂未开放', 'E_FEATURE_OFF');
+    if (['meal','visit','escort'].includes(event.serviceCode)) await server.feature('elder', community._id);
     const [duty, memberships] = await Promise.all([
       db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
         insuranceUntil: command.gt(now) }).count(),
@@ -56,12 +58,14 @@ function createOrderContext(server) {
     }
     const pointsBalance = integer(user.pointsBalance || 0, '积分余额');
     try {
-      const pricing = quote({ ...event, prices: community.prices, user, membershipState, todayUsedParcels,
+      const pricing = quote({ ...event, prices: community.prices, community, user, membershipState, todayUsedParcels,
         communityId: community._id, coupons, pointsBalance, pointsEnabled });
       const detail = cleanDetail(event.serviceCode, event.detail, community);
       const note = cleanNote(event.note);
-      const slot = event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
-      validateSlot(slot, community.dutyWindows, duty.total, now);
+      const slot = event.serviceCode === 'escort' ? escortSlot(detail, community.dutyWindows, now) :
+        event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
+      if (event.serviceCode === 'escort') ensure(slot, '陪诊预约时段必须完整落在小区值班时段内');
+      else validateSlot(slot, community.dutyWindows, duty.total, now);
       const couponOptions = coupons.map(item => ({ couponId: item.couponId, name: item.template.name,
         discount: couponDiscount(item.template, { serviceCode: event.serviceCode, communityId: community._id,
           listPrice: pricing.listPrice }), threshold: item.template.threshold, validTo: item.coupon.validTo }))

@@ -93,7 +93,7 @@ function createAdminDashboard(cloud, server) {
     text(event.communityId, '小区');
     const current = await server.get('communities', event.communityId);
     ensure(current, '小区不存在');
-    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId', 'location'];
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId', 'location', 'canteens'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length > 0, '没有可保存的配置');
@@ -107,6 +107,18 @@ function createAdminDashboard(cloud, server) {
       const { validatePoint, toGeoPoint } = require('./geo');
       patch.location = validatePoint(patch.location, '小区');
       patch.locationGeo = toGeoPoint(db, patch.location);
+    }
+    if (patch.canteens !== undefined) {
+      ensure(Array.isArray(patch.canteens) && patch.canteens.length <= 50, '合作食堂配置必须为最多 50 项的列表');
+      const codes = new Set();
+      for (const canteen of patch.canteens) {
+        ensure(canteen && typeof canteen === 'object', '合作食堂配置不正确');
+        const code = text(canteen.code, '食堂代码', 40).trim();
+        text(canteen.name, '食堂名称', 80);
+        ensure(!codes.has(code), '食堂代码不能重复');
+        codes.add(code);
+        if (canteen.merchantId !== undefined && canteen.merchantId !== null) text(canteen.merchantId, '食堂商家编号', 100);
+      }
     }
     if (patch.features) {
       const config = await server.config();

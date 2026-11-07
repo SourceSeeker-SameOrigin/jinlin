@@ -169,14 +169,16 @@ async function deliver(event, { openid }) {
   const { order, provider } = await assigned(event, openid);
   if (order.status === 'delivered') return { orderId: order._id, status: order.status };
   ensure(order.status === 'in_service', '请先开始服务，再提交完成', 'E_BAD_STATE');
-  const patch = { ...delivery(event, order), deliveredAt: new Date() };
-  const refund = order.serviceCode === 'buy' ? order.pricing.goodsCap - patch.pricing.goodsActual : 0;
-  if (refund > 0) await payments.requestRefund(order, refund, '代买商品退差额', { key: 'goods_difference',
+  const patch = { ...delivery(event, order), deliveredAt: new Date(),
+    ...(order.serviceCode === 'visit' ? { alertPriority: event.visitReport && event.visitReport.attention ? 2 : 0 } : {}) };
+  const refund = ['buy','meal'].includes(order.serviceCode) ? order.pricing.goodsCap - patch.pricing.goodsActual : 0;
+  if (refund > 0) await payments.requestRefund(order, refund, order.serviceCode === 'meal' ? '餐费退差额' : '代买商品退差额', { key: 'goods_difference',
     to: 'delivered', actor: openid, patch });
   else {
     await conditionalTransition(server, order, 'delivered', openid, patch, { providerId: provider._id });
   }
   await notify.resident('delivered', { ...order, ...patch, status: 'delivered', deliveredAt: patch.deliveredAt });
+  if (order.serviceCode === 'visit') await notify.visitReport({ ...order, ...patch, status: 'delivered', deliveredAt: patch.deliveredAt });
   return { orderId: order._id, status: 'delivered' };
 }
 

@@ -11,6 +11,7 @@
 | orders | user_created | userOpenid 升序、createdAt 倒序 | 否 |
 | orders | provider_status | providerOpenid 升序、status 升序 | 否 |
 | orders | seller_kind_created | sellerOpenid 升序、kind 升序、createdAt 倒序 | 否 |
+| orders | service_created | serviceCode 升序、createdAt 升序 | 否 |
 | providers | openid_unique | openid 升序 | 是 |
 | providers | community_status_duty | communityId 升序、status 升序、onDuty 升序 | 否 |
 | providers | referralCode_unique | referralCode 升序 | 是 |

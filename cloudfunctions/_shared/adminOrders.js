@@ -14,6 +14,8 @@ const { splitMembershipSale } = require('./split');
 const { ledgerDelta } = require('./orderLifecycle');
 const { ensureOrderConversation } = require('./chatFlow');
 const { refundEventSignup } = require('./eventFlow');
+const { parseDate, addDays } = require('./time');
+const { subsidyCsv } = require('./subsidyExport');
 
 function adminOrderActions(cloud, server) {
   const payments = createPayFlow(cloud, server);
@@ -37,8 +39,29 @@ function adminOrderActions(cloud, server) {
     }
     const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
     const result = await server.db.collection('orders').where(filter).orderBy('alertPriority', 'desc').orderBy('createdAt', 'desc').skip(offset).limit(20).get();
-    return { list: result.data.map(order => ({ ...listView(order), alerted: Boolean(order.alertedAt && order.status === 'paid') })),
+    return { list: result.data.map(order => ({ ...listView(order), alerted: Boolean(order.alertedAt && order.status === 'paid'),
+      attentionAlert: Boolean(order.serviceCode === 'visit' && order.visitReport && order.visitReport.attention) })),
       hasMore: result.data.length === 20, readOnly: !user.roles.includes('admin') };
+  }
+  async function exportSubsidyOrders(event, { user }) {
+    requireRole(user, ['admin']);
+    const from = parseDate(event.from);
+    const toDay = parseDate(event.to);
+    const to = addDays(toDay, 1);
+    ensure(to > from && to - from <= 366 * 86400000, '导出期间必须在一年以内');
+    const filter = { serviceCode: server.command.in(['meal', 'visit', 'escort']),
+      createdAt: server.command.gte(from).and(server.command.lt(to)) };
+    const rows = [];
+    let page;
+    do {
+      page = await server.db.collection('orders').where(filter).orderBy('createdAt', 'asc')
+        .skip(rows.length).limit(100).get();
+      rows.push(...page.data);
+      ensure(rows.length <= 5000, '记录超过 5000 条，请缩短导出期间');
+    } while (page.data.length === 100);
+    const file = await cloud.uploadFile({ cloudPath: 'exports/subsidy/' + Date.now() + '.csv', fileContent: Buffer.from(subsidyCsv(rows), 'utf8') });
+    const result = await cloud.getTempFileURL({ fileList: [file.fileID] });
+    return { fileId: file.fileID, tempFileURL: result.fileList[0].tempFileURL, count: rows.length };
   }
   async function assign(event, { user, openid }) {
     const order = await managed(event, user);
@@ -148,6 +171,6 @@ function adminOrderActions(cloud, server) {
     });
     return { status: 'cancelled' };
   }
-  return { listOrders, assign, forceCancel, retryRefund, resolveComplaint, voidMembership };
+  return { listOrders, exportSubsidyOrders, assign, forceCancel, retryRefund, resolveComplaint, voidMembership };
 }
 module.exports = { adminOrderActions };

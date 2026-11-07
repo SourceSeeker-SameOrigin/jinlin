@@ -1,11 +1,12 @@
 const { atomic, read, insert } = require('./transaction');
-const { membershipKey, renewCard, taskDue } = require('./membershipData');
+const { membershipKey, renewCard, visitAddressFor, taskDue, cardPlan } = require('./membershipData');
 const { splitMembershipSale } = require('./split');
 const { newOrder, transitionPatch } = require('./orderData');
 const { membershipTaskId, orderNo } = require('./ids');
 const { ymd, nextDutyWindow } = require('./time');
 const { ensure } = require('./validate');
 const { dueTasks } = require('./schedule');
+const { isEnabled } = require('./features');
 
 async function activateMembership(transaction, order, user, now) {
   const key = membershipKey(order.communityId, order.planCode);
@@ -26,17 +27,24 @@ async function activateMembership(transaction, order, user, now) {
 function createMembershipTasks(server) {
   async function generate(card, now) {
     const cardCommunity = await server.get('communities', card.communityId);
-    const plan = cardCommunity && cardCommunity.cardPlans.find(item => item.code === card.planCode);
+    if (!cardCommunity || !['trash','visit'].includes(card.serviceCode)) return false;
+    if (card.serviceCode === 'visit' && !isEnabled('elder', await server.config(), cardCommunity)) return false;
+    const plan = cardPlan(cardCommunity, card.planCode);
     if (!taskDue(card, now, plan)) return false;
     const user = await server.one('users', { openid: card.userOpenid });
-    ensure(user && user.communityId === card.communityId, '月卡门牌需要住户重新确认', 'E_CONFIG');
+    ensure(user && (card.serviceCode === 'visit' || user.communityId === card.communityId), '月卡门牌需要住户重新确认', 'E_CONFIG');
+    if (card.serviceCode === 'visit') ensure(visitAddressFor(card, now) && visitAddressFor(card, now).buildingId && visitAddressFor(card, now).contactPhone,
+      '探访地址资料不完整', 'E_CONFIG');
     return atomic(server.db, async transaction => {
       const current = await read(transaction, 'memberships', card._id);
       if (!current || !taskDue(current, now, plan)) return false;
       const profile = await read(transaction, 'users', user._id);
       const community = await read(transaction, 'communities', current.communityId);
-      const building = await read(transaction, 'buildings', profile.buildingId);
       ensure(!profile.blocked, '住户账号暂不可用', 'E_FORBIDDEN');
+      const visit = current.serviceCode === 'visit';
+      const visitAddress = visit ? visitAddressFor(current, now) : null;
+      const building = await read(transaction, 'buildings', visit ? visitAddress.buildingId : profile.buildingId);
+      if (visit) ensure(visitAddress.communityId === current.communityId, '探访地址不属于服务小区', 'E_CONFIG');
       nextDutyWindow(community.dutyWindows, now);
       const due = dueTasks(current, plan, ymd(now))[0];
       const shift = due.slot === 'evening' && community.dutyWindows.length < 3 ? community.dutyWindows.length - 1 :
@@ -47,13 +55,17 @@ function createMembershipTasks(server) {
       const id = membershipTaskId(current._id, date, current.slot);
       const previous = await read(transaction, 'orders', id);
       if (!previous) {
+        const visitPayout = visit ? require('./validate').integer(community.prices.visit && community.prices.visit.taskPayout,
+          '探访每次服务员计件费', 0, Number.MAX_SAFE_INTEGER, 'E_CONFIG') : community.prices.membershipTaskPayout;
+        const selectedAddress = visit ? { ...visitAddress, id: null } : null;
         const order = newOrder({ id, orderNo: orderNo(now), user: profile, community, building,
-          serviceCode: 'trash', detail: { bags: 1, sorted: true, placement: 'door' }, note: '垃圾月卡上门任务',
-          slot: { date, start: window.start, end: window.end }, now,
-          pricing: { listPrice: community.prices.trash.single, discount: community.prices.trash.single,
+          serviceCode: visit ? 'visit' : 'trash', detail: visit ? { membershipId: current._id } : { bags: 1, sorted: true, placement: 'door' },
+          note: visit ? '独居探访月卡上门任务' : '垃圾月卡上门任务',
+          slot: { date, start: window.start, end: window.end }, now, selectedAddress,
+          pricing: { listPrice: visit ? 0 : community.prices.trash.single, discount: visit ? 0 : community.prices.trash.single,
             payAmount: 0, goodsCap: 0, freeByMembership: false } });
         Object.assign(order, transitionPatch(order, 'paid', 'system', now), { source: 'membership', membershipId: current._id,
-          rateSnapshot: community.rates, membershipTaskPayout: community.prices.membershipTaskPayout });
+          rateSnapshot: community.rates, membershipTaskPayout: visitPayout });
         order.payment = { ...order.payment, mode: 'free', paidAt: now, transactionId: 'free_' + id };
         await insert(transaction, 'orders', order);
       }

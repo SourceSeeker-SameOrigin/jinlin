@@ -23,6 +23,10 @@ function createNotifier(cloud, server) {
         'pages/orders/detail?id=' + order._id, config);
     } catch (error) { console.error('住户提醒未发送', key, error.code || 'E_NOTIFY'); }
   }
+  async function visitReport(order) {
+    if (!order.visitReportNotifyAuthorizedAt) return { skipped: true };
+    return resident('visitReport', order);
+  }
   async function newTask(order) {
     if (order.kind !== 'service') return;
     try {
@@ -57,6 +61,6 @@ function createNotifier(cloud, server) {
     const fields = config.templateFields && config.templateFields.eventReminder || EVENT_REMINDER_FIELDS;
     return send(openid, 'eventReminder', eventReminderData(event, fields), 'events/detail/detail?id=' + event._id, config);
   }
-  return { send, newTask, resident, unaccepted, eventReminder };
+  return { send, newTask, resident, visitReport, unaccepted, eventReminder };
 }
 module.exports = { createNotifier };

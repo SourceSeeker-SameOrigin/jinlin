@@ -74,7 +74,7 @@ exports.main = async (event = {}) => {
     }
   } catch (error) { results.closeBoardPosts = { failed: true }; console.error('需求帖到期查询失败', error.code || 'E_INTERNAL'); }
   try {
-    const cards = await server.all('memberships', { status: 'active', serviceCode: 'trash', startAt: command.lte(now), endAt: command.gt(now) });
+    const cards = await server.all('memberships', { status: 'active', serviceCode: command.in(['trash','visit']), startAt: command.lte(now), endAt: command.gt(now) });
     results.membershipTasks = { created: 0, failed: 0 };
     const tasks = createMembershipTasks(server);
     for (const card of cards) {

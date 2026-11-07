@@ -2,7 +2,8 @@ const { checkText } = require('./blacklist');
 const { ensure } = require('./validate');
 
 function orderTexts(note, detail) {
-  return [note, detail.items, detail.shop, detail.desc].filter(value => typeof value === 'string' && value.trim());
+  return [note, detail.items, detail.shop, detail.desc, detail.canteenName, detail.hospital, detail.department]
+    .filter(value => typeof value === 'string' && value.trim());
 }
 
 function checkLocal(texts, blacklist) {

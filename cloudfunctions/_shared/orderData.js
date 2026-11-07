@@ -2,7 +2,7 @@ const { ensure, record, text } = require('./validate');
 const { ymd, addDays, parseWindow, nextDutyWindow } = require('./time');
 const { STATUS_TEXT, assertTransition } = require('./stateMachine');
 
-const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', idle: '闲置担保交易' });
+const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', idle: '闲置担保交易', meal: '送餐上门', visit: '独居探访', escort: '陪诊' });
 const STATUS_GROUPS = Object.freeze({ ongoing: ['pending_pay', 'paid', 'accepted', 'in_service', 'delivered'],
   done: ['completed', 'closed', 'cancelled'], aftersale: ['disputed', 'refunded'] });
 
@@ -35,6 +35,9 @@ function cleanDetail(serviceCode, detail, community) {
   }
   if (serviceCode === 'trash') return { bags: detail.bags, sorted: detail.sorted, placement: 'door' };
   if (serviceCode === 'buy') return { shop: detail.shop.trim(), items: detail.items.trim(), goodsCap: detail.goodsCap };
+  if (serviceCode === 'meal') return require('./services/elder').cleanMeal(detail, community);
+  if (serviceCode === 'visit') return require('./services/elder').cleanVisit(detail);
+  if (serviceCode === 'escort') return require('./services/elder').cleanEscort(detail, community.dutyWindows);
   if (serviceCode === 'help') return { category: detail.category, desc: detail.desc.trim(), blocks: detail.blocks };
   if (serviceCode === 'custom') return { title: text(detail.title, '任务标题', 100).trim(),
     desc: text(detail.desc, '任务说明', 2000).trim(), needEnterHome: detail.needEnterHome === true };
@@ -70,7 +73,9 @@ function newOrder({ id, orderNo, user, community, building, serviceCode, detail,
     communityId: community._id, buildingId: building._id, address: { ...addressSnapshot(user, community, building, selectedAddress),
       ...(selectedAddress ? { contactName: selectedAddress.contactName || '', contactPhone: selectedAddress.contactPhone } : {}) },
     userOpenid: user.openid, userPhone: selectedAddress ? selectedAddress.contactPhone : user.phone,
-    minLevel: minLevel || (serviceCode === 'help' ? 2 : 1), ...(taskPostId ? { taskPostId } : {}),
+    minLevel: minLevel || (['help','meal','visit','escort'].includes(serviceCode) ? 2 : 1),
+    ...(taskPostId ? { taskPostId } : {}),
+    ...(serviceCode === 'escort' ? { requiredCert: 'escort' } : {}),
     detail: cleanDetail(serviceCode, detail, community), note: cleanNote(note), slot,
     pricing: { listPrice: pricing.listPrice, discount: pricing.discount, payAmount: pricing.payAmount,
       goodsCap: pricing.goodsCap, goodsActual: 0, freeByMembership: pricing.freeByMembership,

@@ -34,7 +34,7 @@ Codex 写代码，但下面这些步骤需要登录微信公众平台、微信�
 ## D. 订阅消息（第 3 周）
 
 1. 公众平台"功能 → 订阅消息"，按 `docs/TEMPLATES.md` 选择核心订单通知模板；启用 `events` 时再选活动提醒模板，记下模板 ID。
-2. 填进 `config.templateIds`。
+2. 启用 `elder` 时申请探访报告模板 `visitReport`；所有已选模板 ID 填入 `config.templateIds`。
 
 ## E. 体验版与上线
 
@@ -57,7 +57,7 @@ Codex 写代码，但下面这些步骤需要登录微信公众平台、微信�
 | `travelCarry` | 依赖 `board`；服务协议写入境外帮带规则 |
 | `location` | 公众平台"开发管理 → 接口设置"申请 `getLocation`、`chooseLocation`，写清用途；更新用户隐私保护指引；给每个小区设好坐标 |
 | `autoPayout` | 商户平台开通新版“商家转账”、配置转账场景和回调；云函数 `payout` 配好 `MCH_ID`、`MCH_SERIAL_NO`、`MCH_PRIVATE_KEY`、`APIV3_KEY`、`TRANSFER_SCENE_ID`；按新版 API 状态及确认页联调，不使用旧版“商家转账到零钱”接口 |
-| `elder` | 陪诊服务员参加陪诊培训并取得证书，管理员核验后勾选证书；与合作食堂签约；为每个小区配置探访单次服务员报酬、送餐预付上限和值班时段；必要时添加医疗健康相关类目 |
+| `elder` | 陪诊服务员参加培训并经管理员核验证书；与合作食堂签约；逐小区配置 `canteens`、`prices.meal.goodsCapMax`（分）、`prices.visit.taskPayout`（分/次）和值班时段；配置 `config.templateIds.visitReport`。必填项缺失时不要开启；必要时添加医疗健康类目。 |
 | `pet` | 服务员宠物照护培训；云函数配好 `SECRET_KEY`（32 字节随机密钥）；服务协议写明钥匙与密码的保管责任 |
 | `recycle`、`points` | 与已备案的正规回收企业签约，回收企业作为商家入驻；逐小区配置分类积分单价、企业收购价、品类对应回收企业及服务员报酬；缺项时不得开放回收 |
 | `merchants` | 商家入驻协议（佣金、责任、执照公示）；开锁类商家需公安部门备案（按当地要求） |

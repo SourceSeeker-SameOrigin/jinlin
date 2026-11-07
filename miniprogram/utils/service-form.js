@@ -5,6 +5,8 @@ const { pay } = require('./payment');
 
 const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, placementIndex: 0 },
   trash: { bags: '1', sorted: false }, buy: { shop: '就近便利店', items: '', goodsYuan: '50' },
+  meal: { canteenIndex: 0, items: '', goodsYuan: '50' },
+  escort: { hospital: '', department: '', date: '', start: '09:00', blocks: '1', pickup: false },
   help: { categoryIndex: 0, desc: '', blocks: '1' } };
 
 module.exports = function serviceForm(serviceCode) {
@@ -30,6 +32,11 @@ module.exports = function serviceForm(serviceCode) {
         const user = await getApp().ensureSession();
         if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
         this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
+        if (serviceCode === 'escort' && !this.data.form.date) {
+          const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+          const date = [tomorrow.getFullYear(), String(tomorrow.getMonth() + 1).padStart(2, '0'), String(tomorrow.getDate()).padStart(2, '0')].join('-');
+          this.setData({ 'form.date': date, escortDateStart: this.dateOffset(0), escortDateEnd: this.dateOffset(30) });
+        }
         this.restoreDraft(user);
         if (this.idlePrefill) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
@@ -73,6 +80,7 @@ module.exports = function serviceForm(serviceCode) {
       this.saveDraft();
       this.queueQuote();
     },
+    dateOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); },
     addressChange(event) {
       const addressIndex = Number(event.detail.value);
       const address = this.data.addresses[addressIndex];
@@ -105,10 +113,14 @@ module.exports = function serviceForm(serviceCode) {
         largeCount: Number(form.largeCount), placement: Number(form.placementIndex) === 1 ? 'hand' : 'door' };
       if (serviceCode === 'trash') detail = { bags: Number(form.bags), sorted: form.sorted, placement: 'door' };
       if (serviceCode === 'buy') detail = { shop: form.shop, items: form.items, goodsCap: toFen(form.goodsYuan) };
+      if (serviceCode === 'meal') detail = { canteenCode: (community.canteens[Number(form.canteenIndex)] || {}).code || '',
+        items: form.items, goodsCap: toFen(form.goodsYuan) };
+      if (serviceCode === 'escort') detail = { hospital: form.hospital, department: form.department, date: form.date,
+        start: form.start, blocks: Number(form.blocks), pickup: form.pickup };
       if (serviceCode === 'help') detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc, blocks: Number(form.blocks) };
       const address = this.data.addresses[this.data.addressIndex];
       const params = { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
-        slot: this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined };
+        slot: serviceCode === 'escort' ? undefined : (this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined) };
       if (this.couponChoiceSet && this.couponId !== undefined) params.couponId = this.couponId;
       if (this.data.pointsEnabled) params.pointsToUse = Number(this.data.pointsToUse || 0);
       return params;

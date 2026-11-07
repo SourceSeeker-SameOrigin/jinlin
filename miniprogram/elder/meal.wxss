@@ -1,0 +1,2 @@
+.page-title { margin-bottom: 12rpx; }
+textarea, input { width: 100%; box-sizing: border-box; padding: 16rpx; background: #f7f8f7; border-radius: 10rpx; }

@@ -44,6 +44,8 @@ function orderView(order, user, provider, config, now) {
       ...(seller || admin ? { sellerAmount: order.idleSnapshot && order.idleSnapshot.sellerAmount } : {}),
       delivery: order.idleDelivery || null };
   }
+  if (order.serviceCode === 'visit' && order.visitReport && (owner || assigned || admin)) view.visitReport = order.visitReport;
+  if (order.serviceCode === 'visit' && owner) view.visitReportNotifyAuthorized = Boolean(order.visitReportNotifyAuthorizedAt);
   if (provider && order.providerId === provider._id && (owner || assigned || admin || property)) {
     view.provider = { name: (provider.realName || '服务员').slice(0, 1) + '师傅', level: provider.level,
       avatarFileId: provider.avatarFileId || null,

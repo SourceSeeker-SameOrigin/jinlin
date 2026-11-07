@@ -3,14 +3,20 @@ const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
 Page({
-  data: { loading: true, busy: false, error: '', plans: [], cards: [], slots: ['早班', '中班', '晚班'], slotIndex: 2 },
+  data: { loading: true, busy: false, error: '', plans: [], cards: [], addresses: [], addressIndex: 0,
+    slots: ['早班', '中班', '晚班'], slotIndex: 2 },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
-      if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
-      const [plans, mine] = await Promise.all([api.call('membership', 'plans', {}, { loading: false, silent: true }),
+      if (!user.buildingId && !(user.addresses && user.addresses.length)) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+      const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
+        buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room, isDefault: true }];
+      addresses.forEach(address => { address.pickerLabel = this.addressLabel(address); });
+      const addressIndex = Math.max(0, addresses.findIndex(item => item.isDefault));
+      this.setData({ addresses, addressIndex, addressText: this.addressLabel(addresses[addressIndex]) });
+      const [plans, mine] = await Promise.all([api.call('membership', 'plans', { addressId: addresses[addressIndex].id || undefined }, { loading: false, silent: true }),
         api.call('membership', 'mine', {}, { loading: false, silent: true })]);
       this.setData({ plans: plans.list.map(plan => ({ ...plan, priceText: yuan(plan.payAmount), originalText: yuan(plan.price) })),
         cards: mine.list.map(card => ({ ...card, startText: display(card.startAt), endText: display(card.endAt),
@@ -18,15 +24,32 @@ Page({
     } catch (error) { this.setData({ error: error.message || '月卡加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
   },
+  addressLabel(address) {
+    return [address.buildingName, address.unit, address.room].filter(Boolean).join(' ');
+  },
+  async addressChange(event) {
+    const addressIndex = Number(event.detail.value);
+    const address = this.data.addresses[addressIndex];
+    if (!address) return;
+    this.request = null;
+    this.setData({ addressIndex, addressText: this.addressLabel(address), loading: true, error: '' });
+    try {
+      const plans = await api.call('membership', 'plans', { addressId: address.id || undefined }, { loading: false, silent: true });
+      this.setData({ plans: plans.list.map(plan => ({ ...plan, priceText: yuan(plan.payAmount), originalText: yuan(plan.price) })) });
+    } catch (error) { this.setData({ error: error.message || '月卡方案加载失败' }); }
+    finally { this.setData({ loading: false }); }
+  },
   slot(event) { this.setData({ slotIndex: Number(event.detail.value) }); },
   async buy(event) {
     if (this.data.busy) return;
     const planCode = event.currentTarget.dataset.code;
     const slot = ['morning', 'afternoon', 'evening'][this.data.slotIndex];
+    const address = this.data.addresses[this.data.addressIndex];
+    const addressId = address && address.id || undefined;
     this.setData({ busy: true, error: '' });
     try {
-      if (!this.request || this.request.planCode !== planCode || this.request.slot !== slot) this.request = {
-        planCode, slot, requestId: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
+      if (!this.request || this.request.planCode !== planCode || this.request.slot !== slot || this.request.addressId !== addressId) this.request = {
+        planCode, slot, addressId, requestId: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
       const created = await api.call('membership', 'buy', this.request);
       this.request = null;
       try { await pay(created); } catch (error) { wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }

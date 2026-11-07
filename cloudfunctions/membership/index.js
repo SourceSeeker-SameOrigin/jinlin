@@ -7,6 +7,7 @@ const { orderNo, membershipTaskId } = require('./lib/shared/ids');
 const { ymd } = require('./lib/shared/time');
 const { transitionPatch, addressSnapshot } = require('./lib/shared/orderData');
 const { ensure, text } = require('./lib/shared/validate');
+const { isEnabled } = require('./lib/shared/features');
 const { createPayFlow } = require('./lib/shared/payFlow');
 const { payConfig } = require('./lib/shared/payConfig');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -14,10 +15,13 @@ const server = createServer(cloud);
 const payments = createPayFlow(cloud, server);
 
 async function plans(event, { user, openid }) {
-  const community = await server.get('communities', user.communityId);
+  const selectedAddress = event.addressId ? (user.addresses || []).find(item => item.id === event.addressId) : null;
+  ensure(!event.addressId || selectedAddress, '请选择已保存的服务地址');
+  const community = await server.get('communities', selectedAddress ? selectedAddress.communityId : user.communityId);
   ensure(community && community.status === 'active', '请先绑定有效小区');
   const history = await server.all('memberships', { userOpenid: openid, communityId: community._id });
-  return { list: community.cardPlans.map(item => {
+  const config = await server.config();
+  return { list: community.cardPlans.filter(item => item.serviceCode !== 'visit' || isEnabled('elder', config, community)).map(item => {
     const plan = cardPlan(community, item.code);
     const first = !history.some(card => card.planCode === plan.code);
     return { ...plan, first, payAmount: first ? plan.firstPeriodPrice : plan.price };
@@ -28,8 +32,9 @@ async function mine(event, { openid }) {
   const rows = await server.all('memberships', { userOpenid: openid });
   const today = ymd(new Date());
   return { list: rows.sort((a, b) => b.endAt - a.endAt).map(card => ({ _id: card._id, communityId: card.communityId,
-    name: card.planCode === 'trash_monthly' ? '垃圾月卡' : '快递月卡', planCode: card.planCode,
+    name: card.planCode === 'trash_monthly' ? '垃圾月卡' : card.planCode === 'visit_monthly' ? '独居探访月卡' : '快递月卡', planCode: card.planCode,
     serviceCode: card.serviceCode, slot: card.slot, slotText: { morning: '早班', afternoon: '中班', evening: '晚班' }[card.slot] || '', startAt: card.startAt, endAt: card.endAt,
+    visitAddressText: card.visitAddress ? [card.visitAddress.buildingName, card.visitAddress.unit, card.visitAddress.room].filter(Boolean).join(' ') : '',
     status: card.status === 'active' && card.endAt <= new Date() ? 'expired' : card.status,
     skippedToday: card.skipDates.includes(today), purchaseOrderId: card.purchaseOrderId })) };
 }
@@ -37,13 +42,18 @@ async function mine(event, { openid }) {
 async function buy(event, { user, openid }) {
   text(event.requestId, '请求编号', 80);
   ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
+  const selectedAddress = event.addressId ? (user.addresses || []).find(item => item.id === event.addressId) : null;
+  ensure(!event.addressId || selectedAddress, '请选择已保存的服务地址');
+  const communityId = selectedAddress ? selectedAddress.communityId : user.communityId;
+  const buildingId = selectedAddress ? selectedAddress.buildingId : user.buildingId;
   const [community, building, config, history] = await Promise.all([
-    server.get('communities', user.communityId), server.get('buildings', user.buildingId), server.config(),
-    server.all('memberships', { userOpenid: openid, communityId: user.communityId })
+    server.get('communities', communityId), server.get('buildings', buildingId), server.config(),
+    server.all('memberships', { userOpenid: openid, communityId })
   ]);
-  addressSnapshot(user, community, building);
+  addressSnapshot(user, community, building, selectedAddress);
   const plan = cardPlan(community, event.planCode);
-  ensure(plan.serviceCode !== 'trash' || ['morning', 'afternoon', 'evening'].includes(event.slot), '请选择上门时段');
+  if (plan.serviceCode === 'visit') await server.feature('elder', community._id);
+  ensure(!['trash','visit'].includes(plan.serviceCode) || ['morning', 'afternoon', 'evening'].includes(event.slot), '请选择上门时段');
   ensure(event.slot !== 'afternoon' || (Array.isArray(community.dutyWindows) && community.dutyWindows.length >= 3),
     '中班需要先配置三段上门时段', 'E_CONFIG');
   const first = !history.some(card => card.planCode === plan.code);
@@ -53,18 +63,19 @@ async function buy(event, { user, openid }) {
     const previous = await read(transaction, 'orders', id);
     if (previous) {
       ensure(previous.userOpenid === openid && previous.planCode === plan.code && previous.communityId === community._id &&
-        (plan.serviceCode !== 'trash' || previous.detail.slot === event.slot), '请求编号已用于其他月卡订单', 'E_CONFLICT');
+        previous.addressId === (selectedAddress && selectedAddress.id || null) &&
+        (!['trash','visit'].includes(plan.serviceCode) || previous.detail.slot === event.slot), '请求编号已用于其他月卡订单', 'E_CONFLICT');
       return previous;
     }
     const currentUser = await read(transaction, 'users', user._id);
-    sameSnapshot(currentUser, user, ['orderRevision', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked']);
+    sameSnapshot(currentUser, user, ['orderRevision', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses']);
     const currentCommunity = await read(transaction, 'communities', community._id);
     sameSnapshot(currentCommunity, community, ['status', 'cardPlans', 'rates']);
     const currentBuilding = await read(transaction, 'buildings', building._id);
     sameSnapshot(currentBuilding, building, ['communityId', 'name', 'units']);
     const now = new Date();
     const created = purchaseOrder({ id, orderNo: orderNo(now), user: currentUser, community: currentCommunity,
-      building: currentBuilding, plan, first, slot: event.slot, now, payMode: config.payMode });
+      building: currentBuilding, plan, first, slot: event.slot, now, payMode: config.payMode, selectedAddress });
     await insert(transaction, 'orders', created);
     await transaction.collection('users').doc(user._id).update({ data: { orderRevision: (currentUser.orderRevision || 0) + 1 } });
     return created;
