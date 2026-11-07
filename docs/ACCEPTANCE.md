@@ -22,7 +22,7 @@
 | T02 | 种子、集合、索引、安全规则 | 开发云 33 个集合、72 条业务索引及权限配置已逐项回读核验；5 条种子全部写入并回读：全局配置、1 个小区、3 栋楼 | 客户端权限拒绝及 SDK 日期类型仍待实际验收；小区和楼栋导入临时文件清理失败，暂保留待确认 |
 | T03 | 登录、绑门牌、首页 | `user`、`catalog` 已部署；小程序登录成功；绑定页实际加载示例小区、楼栋、单元，已观察到 3号楼/1单元 | 手机号授权及保存门牌受主体资格阻塞；扫码、拒绝定位等仍待验收；页面加载成功不代表完整绑定通过 |
 | T04 | 下单、报价、mock 支付 | 代码已集成；order 已部署且拒绝无微信身份调用；共享逻辑单测通过 | 开发环境 mock 支付走快递、垃圾、代买、帮把手及取消流程 |
-| T05 | 微信支付、退款回调 | 代码、幂等逻辑已集成；payCallback 已部署并通过空事件拒绝检查 | 商户配置后用获批测试金额验证支付与退款，不做未授权真实扣款 |
+| T05 | 微信支付、退款回调 | 代码、幂等逻辑已集成；payCallback、refundCallback 已部署并通过空事件拒绝检查 | 商户配置后用获批测试金额验证支付与退款，不做未授权真实扣款 |
 | T06 | 服务员申请、审核、接单、履约 | 代码已集成；provider 已部署并通过无身份调用拒绝检查 | 双账号验证等级、保险到期、门牌隐私、并发接单和完工照片 |
 | T07 | 确认、评价、投诉、定时任务 | 代码已集成 | 部署 timer 和通知后验收告警、自动确认、投诉退款及重试 |
 | T08 | 垃圾/快递月卡 | 代码和排期逻辑已集成；membership 已部署并通过无身份调用拒绝检查 | mock 购买，验收额度、任务生成、跳过日期和重复触发幂等 |
@@ -119,7 +119,7 @@
 
 1. 2026-11-07 已在解锁后的微信开发者工具实际编译。已确认项目目录、AppID `wx2908c7661d0ed153` 和开发环境 `cloud1-d4gbpd8zx89564fb6`；`admin/merchants/merchants.wxml` 实际存在，重建项目文件列表缓存后“模拟器启动失败”消失，首页/订单/我的可打开。修复求助详情无效页面配置及隐私弹窗、空状态组件标签选择器，清除编译缓存后相关告警消失；仍有基础库提示。当时页面显示 `FUNCTION_NOT_FOUND`；后续部署 catalog 后，绑定页的该错误已消失，实际加载结果见下文，仍不代表完整业务链路通过。
 2. 用户授权后，已在 `cloud1-d4gbpd8zx89564fb6` 创建 33 个集合，按 `database/indexes.md` 建立 72 条业务索引，并逐集合回读核对字段顺序、排序方向和唯一属性。权限回读结果：`communities`、`buildings` 为 ADMINWRITE（客户端只读），其余 31 个集合为 ADMINONLY（客户端不可读写）。`config/global` 已保存；原始 `communities.json` 以 Insert 模式导入成功，回读确认 `demo_community` 的价格、费率、值班时段、关闭的功能开关及月卡配置，日期在控制台显示为北京时间 2026-11-06 08:00:00。随后原始 `buildings.json` 以 Insert 模式导入成功，3 条成功、0 条失败，耗时约 13 秒；逐条回读确认 demo_building_1/2/3 均关联 demo_community，各有 1单元、2单元，短码分别为 A7M2XQ、B8N3YR、K3F9QA，createdAt 均显示为北京时间 2026-11-06 08:00:00。5 条种子已全部完成。初始化未覆盖已有数据，未授予管理员角色。配置核验不替代客户端拒绝访问的实际测试。
-3. 已执行 `npm run sync`，按用户授权开启开发工具服务端口，并将编辑器 `cloudfunctions` 根目录部署目标从“无”设为已有 `cloud1`。CLI 部署曾返回 `getCloudAPISignedHeader failed`、`ret:41002`、`system error`，重新登录后仍失败。后经用户授权改用官方 CloudBase 控制台上传 `jinlin-user-531a733.zip`：首次创建响应为 `ClientError.NetworkError`，内部 SCF 请求等待响应超时；随后核查函数列表及详情，`user` 已实际创建且状态正常，因此没有重复创建。入口为 `index.main`、Node.js 20.19、256 MB、执行超时 3 秒，未开放 HTTP 域名。随后 catalog、order、provider、membership、admin、board、chat、content、coupon、event、idle、mediaCallback、merchant、payCallback、payout、pet 也已部署成功（见下文），目前共 17/21 个业务函数已部署，其余 4 个仍待部署；云调用权限和所需环境变量仍需逐项核对。管理员、物业、服务员、商家、驿站身份及授权由用户确认。
+3. 已执行 `npm run sync`，按用户授权开启开发工具服务端口，并将编辑器 `cloudfunctions` 根目录部署目标从“无”设为已有 `cloud1`。CLI 部署曾返回 `getCloudAPISignedHeader failed`、`ret:41002`、`system error`，重新登录后仍失败。后经用户授权改用官方 CloudBase 控制台上传 `jinlin-user-531a733.zip`：首次创建响应为 `ClientError.NetworkError`，内部 SCF 请求等待响应超时；随后核查函数列表及详情，`user` 已实际创建且状态正常，因此没有重复创建。入口为 `index.main`、Node.js 20.19、256 MB、执行超时 3 秒，未开放 HTTP 域名。随后 catalog、order、provider、membership、admin、board、chat、content、coupon、event、idle、mediaCallback、merchant、payCallback、payout、pet、refundCallback 也已部署成功（见下文），目前共 18/21 个业务函数已部署，其余 3 个仍待部署；云调用权限和所需环境变量仍需逐项核对。管理员、物业、服务员、商家、驿站身份及授权由用户确认。
 4. mock 场景先行；真实支付、退款和新版商家转账须先配置商户环境，真实扣款/打款前由用户另行授权。
 5. 逐项走第二、三节，写入实际结果、日期和截图文件名；只有体验版/云端通过才将状态改为“通过”。
 6. T33 集成基线为 `feat/t33-acceptance`，本轮 IDE 联调修复位于其后续分支 `fix/dev-integration`，验收应使用包含该修复的完整版本。T16–T33 共 18 个任务评审分支和草稿 PR 已建立，均未自动合并；不要直接使用中间快照部署生产。分支、PR 和逐任务本地验证见第六节。
@@ -138,7 +138,7 @@ catalog 部署及基础联调：用户明确授权后，2026-11-07 已上传 `/t
 
 后续手机号排查：用户操作后出现“未取得手机号授权，可重新点击授权”。源码与本地缺少 code 的回调探针确认，该提示在 bind 页调用 user.bindPhone 之前返回；该次原始 errMsg/errno 未保留，不能把具体平台返回码写成已知。随后由用户提供的公众平台页面确认个人主体、未认证，用户选定 A 并暂缓资格相关验收。记录只保存资格状态，不复制截图中的证件信息、联系方式、验证码或身份验证二维码。
 
-剩余 19 个云函数已从源码基线 7811126 准备本地部署包，目录 `/tmp/jinlin-deploy-7811126`，包含 admin、board、chat、content、coupon、event、idle、mediaCallback、membership、merchant、order、payCallback、payout、pet、provider、refundCallback、station、timer、vacant。共 1330 个文件、2270021 字节，逐包 unzip 完整性检查通过；manifest.json 记录各包大小和 SHA-256。用户随后明确授权将清单中 19 个源码包上传至同一开发环境并创建普通云函数、云端安装依赖；不启用 timer 触发器、不开放 HTTP、不授予管理员角色、不配置支付密钥、不购买或升级套餐，遇到资源限制交用户决策。本批 order、provider、membership、admin、board、chat、content、coupon、event、idle、mediaCallback、merchant、payCallback、payout、pet 已部署，其余 4 个待执行；尚未核验 config.json 中声明的云调用权限是否在控制台实际生效，不因包内有声明就记为权限验收通过。
+剩余 19 个云函数已从源码基线 7811126 准备本地部署包，目录 `/tmp/jinlin-deploy-7811126`，包含 admin、board、chat、content、coupon、event、idle、mediaCallback、membership、merchant、order、payCallback、payout、pet、provider、refundCallback、station、timer、vacant。共 1330 个文件、2270021 字节，逐包 unzip 完整性检查通过；manifest.json 记录各包大小和 SHA-256。用户随后明确授权将清单中 19 个源码包上传至同一开发环境并创建普通云函数、云端安装依赖；不启用 timer 触发器、不开放 HTTP、不授予管理员角色、不配置支付密钥、不购买或升级套餐，遇到资源限制交用户决策。本批 order、provider、membership、admin、board、chat、content、coupon、event、idle、mediaCallback、merchant、payCallback、payout、pet、refundCallback 已部署，其余 3 个待执行；尚未核验 config.json 中声明的云调用权限是否在控制台实际生效，不因包内有声明就记为权限验收通过。
 
 
 ## 六、逐任务评审分支与本地验证
@@ -204,5 +204,6 @@ catalog 部署及基础联调：用户明确授权后，2026-11-07 已上传 `/t
 | payCallback | 源码基线 7811126 的 payCallback.zip，117376 字节，SHA-256 与授权 manifest 一致；函数 lam-qu3h9j1r，普通云函数、状态正常、Node.js 20.19、index.main、256 MB、3 秒超时；无环境变量、触发器、HTTP 域名；修改时间为北京时间 2026-11-07 23:40:08 | 控制台空事件 {} 返回 {"errcode":1,"errmsg":"支付结果待核实，请重试"}，日志为 E_PAYMENT；请求 ID a6b7de39-dac1-11f1-b0ff-5254008621f3，运行 3 ms | 仅验证入口可加载且拒绝缺少支付成功信息的事件；未配置支付参数或密钥，未执行真实支付及订单更新。真实支付回调、金额与支付流水核验、主动查单、重复回调幂等和客户端调用拒绝仍待验收 |
 | payout | 源码基线 7811126 的 payout.zip，116807 字节，SHA-256 与授权 manifest 一致；函数 lam-fbc1wpol，普通云函数、状态正常、Node.js 20.19、index.main、256 MB、3 秒超时；无环境变量、触发器、HTTP 域名；修改时间为北京时间 2026-11-07 23:47:46 | 控制台 {"action":"list"} 返回 E_FORBIDDEN / 请在微信小程序内登录；请求 ID bb039c24-dac2-11f1-9790-525400c50ece，运行 4 ms | 仅验证入口加载和无身份调用拒绝；未配置商户参数或密钥，未开启 autoPayout，未创建提现、锁定账本或执行真实打款。服务员及卖家提现、用户确认、商户查单、成功/失败状态、限额和幂等仍待验收 |
 | pet | 源码基线 7811126 的 pet.zip，118918 字节，SHA-256 与授权 manifest 一致；函数 lam-onofhler，普通云函数、状态正常、Node.js 20.19、index.main、256 MB、3 秒超时；无环境变量、触发器、HTTP 域名；修改时间为北京时间 2026-11-07 23:51:36 | 控制台 {"action":"listVisits"} 返回 E_FORBIDDEN / 请在微信小程序内登录；请求 ID 528c7a1f-dac3-11f1-9d04-525400f7d8a7，运行 4 ms | 仅验证入口加载和无身份调用拒绝；未开启功能开关或配置 SECRET_KEY，未访问门锁密码、提交上门结果或执行退款。多日子任务、照片/视频、漏次退款、密码授权/审计/删除及订阅通知仍待验收；云调用权限仍待核对 |
+| refundCallback | 源码基线 7811126 的 refundCallback.zip，117311 字节，SHA-256 与授权 manifest 一致；函数 lam-87ixmj2b，普通云函数、状态正常、Node.js 20.19、index.main、256 MB、3 秒超时；无环境变量、触发器、HTTP 域名；修改时间为北京时间 2026-11-07 23:56:03 | 控制台空事件 {} 返回 {"errcode":1,"errmsg":"退款结果待核实，请重试"}，日志为 E_INVALID_PARAM；请求 ID e50bbc24-dac3-11f1-b542-52540023faa2，运行 4 ms | 仅验证入口加载和缺少订单号、退款号的事件被拒绝；未配置支付参数或密钥，未执行真实退款及订单更新。真实退款回调、主动查单与金额核验、成功/失败状态、重复回调幂等和客户端调用拒绝仍待验收 |
 
-下一项 refundCallback 创建表单已准备，等待用户手动选择 /tmp/jinlin-deploy-7811126/refundCallback.zip。属于已授权的同一批代码部署；当前尚未创建 refundCallback，不配置支付密钥或执行真实退款。
+下一项 station 创建表单已准备，等待用户手动选择 /tmp/jinlin-deploy-7811126/station.zip。属于已授权的同一批代码部署；当前尚未创建 station，不授予驿站角色或创建配送批次。
