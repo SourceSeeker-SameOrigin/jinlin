@@ -202,14 +202,22 @@ async function myTasks(event, { openid }) {
 async function earnings(event, { openid }) {
   const provider = await mine(openid);
   requireApprovedProvider(provider, 1);
-  const ledger = await server.all('ledger', { providerId: provider._id });
+  const [ledger, config, community] = await Promise.all([server.all('ledger', { providerId: provider._id }),
+    server.config(), server.get('communities', provider.communityId)]);
   const totals = ledger.reduce((sum, row) => {
     sum[row.settled.provider ? 'settled' : 'pending'] += row.amounts.provider + row.amounts.goods;
     return sum;
   }, { pending: 0, settled: 0 });
+  const cutoff = new Date(Date.now() - integer(config.complaintWindowHours, '投诉期', 0, 720, 'E_CONFIG') * 3600000);
+  const available = ledger.filter(row => row.createdAt <= cutoff && row.settled.provider === false &&
+    !(row.settlementIds && row.settlementIds.provider) && !row.payoutId)
+    .reduce((sum, row) => sum + row.amounts.provider + row.amounts.goods, 0);
   const rows = ledger.sort((a, b) => b.createdAt - a.createdAt).slice(offset(event), offset(event) + 20);
-  return { ...totals, list: rows.map(row => ({ _id: row._id, refId: row.refId, amount: row.amounts.provider + row.amounts.goods,
-    settled: row.settled.provider, createdAt: row.createdAt })), hasMore: offset(event) + rows.length < ledger.length };
+  return { ...totals, available, canWithdraw: available >= 1000,
+    payoutEnabled: isEnabled('autoPayout', config, community),
+    list: rows.map(row => ({ _id: row._id, refId: row.refId, amount: row.amounts.provider + row.amounts.goods,
+      settled: row.settled.provider, locked: Boolean(row.payoutId), createdAt: row.createdAt })),
+    hasMore: offset(event) + rows.length < ledger.length };
 }
 
 async function updateLocation(event, { openid }) {

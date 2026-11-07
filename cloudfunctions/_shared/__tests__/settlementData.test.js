@@ -1,4 +1,4 @@
-const { period, rowsForPayee, total, csvCell, csv, settlementId } = require('../settlementData');
+const { period, rowsForPayee, total, amountForPayee, csvCell, csv, settlementId } = require('../settlementData');
 
 test('结算日期包含结束日且限制范围为一年', () => {
   expect(period({ from: '2026-11-01', to: '2026-11-30' })).toMatchObject({ period: { from: '2026-11-01', to: '2026-11-30' } });
@@ -35,6 +35,15 @@ test('商家结算只纳入该商家未结算账目', () => {
   ];
   expect(rowsForPayee(rows, 'merchant', 'shop1').map(row => row._id)).toEqual(['m1']);
   expect(total(rowsForPayee(rows, 'merchant', 'shop1'), 'merchant')).toBe(900);
+});
+
+test('卖家人工结算金额扣除已完成的分笔打款', () => {
+  const rows = [{ _id: 'sale', sellerOpenid: 'seller', settled: { seller: false },
+    amounts: { seller: 200000 }, paidAmounts: { seller: 199000 } }];
+  expect(rowsForPayee(rows, 'seller', 'seller')).toHaveLength(1);
+  expect(total(rows, 'seller')).toBe(1000);
+  expect(amountForPayee(rows[0], 'seller')).toBe(1000);
+  expect(rowsForPayee([{ ...rows[0], payoutId: 'payout' }], 'seller', 'seller')).toHaveLength(0);
 });
 
 test('CSV 添加 UTF-8 BOM、正确转义并防止公式注入', () => {

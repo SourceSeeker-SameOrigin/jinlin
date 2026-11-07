@@ -246,11 +246,12 @@ pointsLedger: { _id, openid, delta, reason: 'recycle' | 'redeem' | 'refund' | 'a
 
 用微信支付新版“商家转账”给服务员和担保交易的卖家打款。后端使用新版商家转账 API 与状态查询/回调规则，小程序侧使用 `wx.requestMerchantTransfer`；不得实现已暂停新增接入的旧版“商家转账到零钱”。
 
-- 前置：商户号开通商家转账、充值转账余额、在商户平台配置转账场景（建议"服务款项"类场景，以商户平台可选项为准）。
-- 新建云函数 `payout`，直接调用微信支付 APIv3 的商家转账"发起转账"接口（云开发的 cloudPay 不覆盖此接口）。所需密钥放环境变量：`MCH_ID`、`MCH_SERIAL_NO`、`MCH_PRIVATE_KEY`（Base64）、`APIV3_KEY`、`TRANSFER_SCENE_ID`。**任何密钥不得写进代码或数据库。**
-- 提现流程：服务员在收入页点"提现"→ `payout.create` 汇总可提现账本（订单完成超过 `complaintWindowHours` 且未结算的 provider 金额 + 代买报销）→ 调发起转账接口，拿到 `package_info` → 前端 `wx.requestMerchantTransfer` 拉起官方确认收款页 → 用户确认后到账。
-- 规则：单次 10–2000 元（超过 2000 元需要收款人实名信息，第一版不支持，分次提现）；每人每天 1 次；转账中的账本锁定。
-- 状态：`payouts: { _id, payeeType, payeeOpenid, ledgerIds, amount, outBillNo, state: 'created'|'wait_user_confirm'|'processing'|'success'|'failed'|'cancelled', failReason, createdAt, updatedAt }`。不配置回调地址，由 `timer` 每 5 分钟查询未终结的转账单并更新；成功后把对应账本标记为已结算。失败或用户超时未确认，账本解锁。
+- 前置：商户号开通**新版商家转账**、充值转账余额、在商户平台配置佣金报酬场景（场景 ID 通常为 `1005`，以商户实际开通项为准）。旧版“商家转账到零钱”已停止新增接入；接口采用新版用户确认模式，前端仍调用 `wx.requestMerchantTransfer`。
+- 新建云函数 `payout`，调用新版 APIv3 `POST /v3/fund-app/mch-transfer/transfer-bills` 和 `GET /v3/fund-app/mch-transfer/transfer-bills/out-bill-no/{out_bill_no}`；云开发 `cloudPay` 不覆盖此接口。环境变量：`MCH_ID`、`MCH_SERIAL_NO`、`MCH_PRIVATE_KEY_B64`、`WXPAY_PUBLIC_KEY_B64`、`WXPAY_PUBLIC_KEY_ID`、`MINI_APP_ID`、`TRANSFER_SCENE_ID`、`TRANSFER_JOB_TYPE`、`TRANSFER_REPORT_DESCRIPTION`。**任何密钥不得写进代码或数据库。**不配置回调地址，以定时查单兜底。
+- 提现流程：服务员或卖家在收入页点“提现”→ `payout.create` 汇总已超过 `complaintWindowHours` 且未结算、未锁定的对应账本余额→ 同一事务锁账本并创建提现记录→ 请求新版发起转账接口→ 前端 `wx.requestMerchantTransfer` 拉起微信确认收款页。前端调起成功只表示页面已展示，不代表到账；须通过查单的终态确认。
+- 服务员规则：单次 10–2000 元、每人每天 1 次；金额达到 2000 元时按微信要求加密发送服务员真实姓名。担保交易卖家未有已核验的收款真实姓名，单笔自动打款上限为 1999.99 元；超出部分留在未结算余额中，可后续分笔申请。人工结算可由管理员按实际对账金额处理。
+- 账本已有人工结算单或提现锁定时不得重复申请；转账中的账本锁定。成功后只结算本批锁定账目，失败/取消才解锁。
+- 状态：`payouts: { _id, payeeType: 'provider'|'seller', providerId, sellerOpenid, payeeOpenid, ledgerIds, ledgerAmounts, amount, outBillNo, state: 'created'|'wait_user_confirm'|'processing'|'success'|'failed'|'cancelled', wxState, transferBillNo, requestBody, packageInfo, failReason, createdAt, updatedAt }`。卖家可拆分单条账本多次支付，成功一笔只累计对应 `ledgerAmounts`，累计全部收清后才标记账本已结算。`timer` 每 5 分钟查询未终结转账；只有微信终态 `SUCCESS` 结算本批金额，`FAIL`/`CANCELLED` 解锁。用户超过 24 小时未确认时继续查单，未确认终态前不解锁。
 - 开关关闭时继续使用 SPEC §11 的人工结算。物业分成、商家货款始终走人工结算（B2B 对公转账）。
 
 ## E8. 助老包 `elder`

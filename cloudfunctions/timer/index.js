@@ -6,11 +6,13 @@ const { ensure, integer } = require('./lib/shared/validate');
 const { createMembershipTasks } = require('./lib/shared/membershipFlow');
 const { createEventCancellationWorker } = require('./lib/shared/eventCancellation');
 const { createNotifier } = require('./lib/shared/notify');
+const { createPayoutFlow } = require('./lib/shared/payoutFlow');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const payments = createPayFlow(cloud, server);
 const ledger = createLedgerFlow(server);
 const notify = createNotifier(cloud, server);
+const payout = createPayoutFlow(cloud, server);
 const eventCancellation = createEventCancellationWorker(server, payments);
 const { db, command } = server;
 
@@ -94,6 +96,8 @@ exports.main = async (event = {}) => {
       } catch (error) { results.expireVacantSecrets.failed++; console.error('空置房门锁密文清理失败', card._id, error.code || 'E_INTERNAL'); }
     }
   } catch (error) { results.expireMemberships = { failed: true }; console.error('月卡到期处理失败', error.code || 'E_INTERNAL'); }
+  try { results.payouts = await payout.runPending(); }
+  catch (error) { results.payouts = { failed: true }; console.error('提现查单任务失败', error.code || 'E_PAYOUT'); }
   try {
     results.endEvents = await db.collection('events').where({ status: 'published', endAt: command.lte(now) })
       .update({ data: { status: 'ended', updatedAt: now } });

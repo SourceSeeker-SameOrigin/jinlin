@@ -9,7 +9,7 @@ const INFO = {
   idleEscrow: '平台代收用户之间的货款，属于电商平台性质，需要对应类目和资质（通常涉及增值电信业务经营许可）；拿到前保持关闭，只用信息模式。',
   travelCarry: '依赖 board；服务协议写入境外帮带规则。',
   location: '公众平台“开发管理 → 接口设置”申请 getLocation、chooseLocation，写清用途；更新用户隐私保护指引；给每个小区设好坐标。',
-  autoPayout: '商户平台开通“商家转账”、配置转账场景、充值转账余额；云函数 payout 配好 MCH_ID、MCH_SERIAL_NO、MCH_PRIVATE_KEY、APIV3_KEY、TRANSFER_SCENE_ID。',
+  autoPayout: '商户平台开通新版“商家转账”、配置报备场景并充值；云函数 payout 设置 MCH_ID、MCH_SERIAL_NO、MCH_PRIVATE_KEY_B64、WXPAY_PUBLIC_KEY_B64、WXPAY_PUBLIC_KEY_ID、MINI_APP_ID、TRANSFER_SCENE_ID、TRANSFER_JOB_TYPE、TRANSFER_REPORT_DESCRIPTION。',
   elder: '陪诊服务员参加陪诊培训并取得证书，管理员核验后勾选证书；与合作食堂签约；必要时添加医疗健康相关类目。',
   pet: '服务员宠物照护培训；云函数配好 SECRET_KEY（32 字节随机密钥）；服务协议写明钥匙与密码的保管责任。',
   points: '与已备案的正规回收企业签约，回收企业作为商家入驻。',

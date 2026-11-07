@@ -12,7 +12,7 @@ function period(event) {
 function rowsForPayee(ledger, payee, payeeId) {
   return ledger.filter(row => row.settled && row.settled[payee] === false &&
     (payee === 'provider' ? row.providerId === payeeId : payee === 'seller' ? row.sellerOpenid === payeeId : payee === 'merchant' ? row.merchantId === payeeId : true) &&
-    !(payee === 'seller' && row.payoutId));
+    !(['provider','seller'].includes(payee) && row.payoutId));
 }
 
 function amountForPayee(row, payee) {
