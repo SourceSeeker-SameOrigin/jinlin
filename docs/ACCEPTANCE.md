@@ -8,7 +8,7 @@
 |---|---|---|---|
 | T00 | 仓库、工具链、项目配置 | 仓库及小程序配置已集成；`project.config.json` 使用已提供的 AppID，开发配置指向开发环境 | 在微信开发者工具导入本目录，确认 AppID 与 `cloud1-d4gbpd8zx89564fb6`，编译并打开模拟器 |
 | T01 | 共享逻辑、北京时间和跨午夜值班规则 | 自动化覆盖；全量 Jest 通过 | 云端用跨午夜、重叠和相等起止配置验证错误及时段归属 |
-| T02 | 种子、集合、索引、安全规则 | 开发云 33 个集合、72 条业务索引及权限配置已逐项回读核验；已保存 `config/global` | 小区手工写入返回 `InvalidParameter`，具体字段未明确；待通过原始种子文件导入小区及 3 条楼栋；客户端权限拒绝场景仍待实际验收 |
+| T02 | 种子、集合、索引、安全规则 | 开发云 33 个集合、72 条业务索引及权限配置已逐项回读核验；已保存 `config/global`，原始文件导入 `demo_community` 成功并回读 | 3 条楼栋待导入；客户端权限拒绝及 SDK 日期类型仍待实际验收；小区导入临时文件清理失败，暂保留待确认 |
 | T03 | 登录、绑门牌、首页 | `user` 已部署；开发者工具实际调用 `user.login` 返回 `ok:true`、`resident` 和用户资料 | 部署 catalog 等其余函数并完成种子，再验收扫码、手机号授权、门牌绑定、拒绝定位和修改地址 |
 | T04 | 下单、报价、mock 支付 | 代码已集成；共享逻辑单测通过 | 开发环境 mock 支付走快递、垃圾、代买、帮把手及取消流程 |
 | T05 | 微信支付、退款回调 | 代码、幂等逻辑已集成 | 商户配置后用获批测试金额验证支付与退款，不做未授权真实扣款 |
@@ -106,7 +106,7 @@
 ## 五、用户集中验收前准备与未完成事项
 
 1. 2026-11-07 已在解锁后的微信开发者工具实际编译。已确认项目目录、AppID `wx2908c7661d0ed153` 和开发环境 `cloud1-d4gbpd8zx89564fb6`；`admin/merchants/merchants.wxml` 实际存在，重建项目文件列表缓存后“模拟器启动失败”消失，首页/订单/我的可打开。修复求助详情无效页面配置及隐私弹窗、空状态组件标签选择器，清除编译缓存后相关告警消失；仍有基础库提示。页面显示 `FUNCTION_NOT_FOUND`，不代表业务链路通过。
-2. 用户授权后，已在 `cloud1-d4gbpd8zx89564fb6` 创建 33 个集合，按 `database/indexes.md` 建立 72 条业务索引，并逐集合回读核对字段顺序、排序方向和唯一属性。权限回读结果：`communities`、`buildings` 为 ADMINWRITE（客户端只读），其余 31 个集合为 ADMINONLY（客户端不可读写）。`config/global` 已保存；小区文档通过编辑器核对 Date 类型后提交，但刷新列表仍为空，尚未确认写入成功；3 条楼栋文档尚未提交。初始化未覆盖已有数据，未授予管理员角色。配置核验不替代客户端拒绝访问的实际测试。
+2. 用户授权后，已在 `cloud1-d4gbpd8zx89564fb6` 创建 33 个集合，按 `database/indexes.md` 建立 72 条业务索引，并逐集合回读核对字段顺序、排序方向和唯一属性。权限回读结果：`communities`、`buildings` 为 ADMINWRITE（客户端只读），其余 31 个集合为 ADMINONLY（客户端不可读写）。`config/global` 已保存；原始 `communities.json` 以 Insert 模式导入成功，回读确认 `demo_community` 的价格、费率、值班时段、关闭的功能开关及月卡配置，日期在控制台显示为北京时间 2026-11-06 08:00:00。5 条种子中已完成 2 条，3 条楼栋文档尚未提交。初始化未覆盖已有数据，未授予管理员角色。配置核验不替代客户端拒绝访问的实际测试。
 3. 已执行 `npm run sync`，按用户授权开启开发工具服务端口，并将编辑器 `cloudfunctions` 根目录部署目标从“无”设为已有 `cloud1`。CLI 部署曾返回 `getCloudAPISignedHeader failed`、`ret:41002`、`system error`，重新登录后仍失败。后经用户授权改用官方 CloudBase 控制台上传 `jinlin-user-531a733.zip`：首次创建响应为 `ClientError.NetworkError`，内部 SCF 请求等待响应超时；随后核查函数列表及详情，`user` 已实际创建且状态正常，因此没有重复创建。入口为 `index.main`、Node.js 20.19、256 MB、执行超时 3 秒，未开放 HTTP 域名。其他 20 个业务函数仍待部署，云调用权限和所需环境变量仍需逐项核对。管理员、物业、服务员、商家、驿站身份及授权由用户确认。
 4. mock 场景先行；真实支付、退款和新版商家转账须先配置商户环境，真实扣款/打款前由用户另行授权。
 5. 逐项走第二、三节，写入实际结果、日期和截图文件名；只有体验版/云端通过才将状态改为“通过”。
@@ -116,7 +116,9 @@
 
 云端调用证据：控制台默认事件执行成功并返回预期 `E_UNKNOWN_ACTION`（请求 ID `e10c5910-daa6-11f1-ba0a-5254008bd148`）；控制台 `{"action":"login"}` 返回预期 `E_FORBIDDEN / 请在微信小程序内登录`（请求 ID `f2476a3b-daa9-11f1-9509-5254005e7215`）；开发者工具小程序上下文实际调用 `user.login`，控制台输出 `JINLIN_LOGIN_CHECK {"ok":true,"roles":["resident"],"profilePresent":true}`。以上确认函数可加载、拒绝无微信身份调用及小程序登录成功，不代表门牌绑定或全部业务验收通过。未在记录中保存用户 openid、手机号或会话凭据。
 
-数据库诊断补充：用户授权读取本次两条请求后，确认小区 `PutItem` 返回 `InvalidParameter / Check request parameter fail`（请求 ID `5a88bae9-7295-4088-9dd3-b1ae0de40ad9`），响应未指出具体字段；随后 `QueryRecords` 返回 `NORMAL`、`Data:[]`、`Total:0`（请求 ID `218fc55f-9f73-43f5-979e-2d221cac92c9`）。因此确认小区尚未写入，不能归因于列表未刷新。已准备 `communities` 的官方文件导入入口，模式为 `Insert`，待选择原始 `database/seed/communities.json` 后继续；不得用覆盖模式或修改价格、日期、数据结构来规避未定位的问题。
+数据库诊断补充：用户授权读取本次两条请求后，确认小区 `PutItem` 返回 `InvalidParameter / Check request parameter fail`（请求 ID `5a88bae9-7295-4088-9dd3-b1ae0de40ad9`），响应未指出具体字段；随后 `QueryRecords` 返回 `NORMAL`、`Data:[]`、`Total:0`（请求 ID `218fc55f-9f73-43f5-979e-2d221cac92c9`），确认当时小区未写入。随后用户选择原始 `database/seed/communities.json`，官方导入入口以 `Insert` 模式返回“1 条记录成功，0 条记录失败，耗时约 7 秒”，并已回读确认文档。未修改种子价格、日期或数据结构；手工添加文档的具体失败字段仍未定位。
+
+导入后平台另报“清理 tmp-1794057144151-communities.json 失败”，该临时文件暂保留，完整存储路径及实际大小尚未核查，删除待用户确认。`buildings` 集合已确认仍为空，Insert 导入窗口已准备，等待用户选择 `database/seed/buildings.json`。开发者工具截图读取可用，但点击控制台时返回 `noWindowsAvailable`；本轮客户端小区读取、SDK Date 类型及 users 拒绝访问检查未取得执行结果，不能标记通过。
 
 
 ## 六、逐任务评审分支与本地验证
