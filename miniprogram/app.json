@@ -42,7 +42,9 @@
         "coupons/coupons",
         "content/content",
         "merchants/merchants",
-        "recycle/recycle"
+        "recycle/recycle",
+        "exports/exports",
+        "stations/stations"
       ]
     },
     {
@@ -90,9 +92,9 @@
     {
       "root": "pet",
       "pages": [
-        "order/order",
-        "work/work",
-        "reports/reports"
+        "order",
+        "work",
+        "reports"
       ]
     },
     {
@@ -115,10 +117,18 @@
     {
       "root": "station",
       "pages": [
+        "apply/apply",
         "workbench/workbench",
         "create/create",
         "worker/worker",
         "batch/batch"
+      ]
+    },
+    {
+      "root": "elder",
+      "pages": [
+        "meal",
+        "escort"
       ]
     }
   ],
