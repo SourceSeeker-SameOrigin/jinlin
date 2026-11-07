@@ -12,18 +12,33 @@ Page({
       typeIndex: Math.max(0, TYPES.findIndex(item => item.key === options.type)) });
   },
   onShow() { this.load(); },
+  async loadAll(name, action, params = {}) {
+    const list = [];
+    let page;
+    do {
+      page = await api.call(name, action, { ...params, offset: list.length }, { loading: false, silent: true });
+      if (!page.list.length && page.hasMore) throw new Error('列表分页异常，请稍后重试');
+      list.push(...page.list);
+    } while (page.hasMore);
+    return list;
+  },
   async load() {
     this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
       if (!user.roles.includes('admin')) throw new Error('只有运营管理员可以使用数据导出');
+      const selectedCommunity = this.data.communities[this.data.communityIndex]?._id || user.communityId;
+      const selectedProvider = this.data.providers[this.data.providerIndex]?._id;
+      const selectedMerchant = this.data.merchants[this.data.merchantIndex]?._id;
       const [communities, providers, merchants] = await Promise.all([
-        api.call('catalog', 'listCommunities', {}, { loading: false, silent: true }),
-        api.call('admin', 'listProviders', { status: 'approved' }, { loading: false, silent: true }),
-        api.call('merchant', 'adminList', { status: 'approved' }, { loading: false, silent: true })
+        this.loadAll('catalog', 'listCommunities'),
+        this.loadAll('admin', 'listProviders', { status: 'approved' }),
+        this.loadAll('merchant', 'adminList', { status: 'approved' })
       ]);
-      this.setData({ communities: communities.list, providers: providers.list, merchants: merchants.list,
-        communityIndex: Math.max(0, communities.list.findIndex(item => item._id === user.communityId)) });
+      this.setData({ communities, providers, merchants,
+        communityIndex: Math.max(0, communities.findIndex(item => item._id === selectedCommunity)),
+        providerIndex: Math.max(0, providers.findIndex(item => item._id === selectedProvider)),
+        merchantIndex: Math.max(0, merchants.findIndex(item => item._id === selectedMerchant)) });
       await this.loadCommunity();
     } catch (error) { this.setData({ error: error.message || '数据导出页面加载失败' }); }
     finally { this.setData({ loading: false }); }
