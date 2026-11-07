@@ -40,6 +40,10 @@ async function nearbyCommunities(event) {
   const point = validatePoint(event.location);
   const offset = event.offset === undefined ? 0 : integer(event.offset, '页码', 0, 10000);
   const config = await server.config();
+  if (!isEnabled('location', config)) {
+    const enabled = await db.collection('communities').where({ status: 'active', 'features.location': true }).limit(1).get();
+    ensure(enabled.data.length > 0, '该功能暂未开放', 'E_FEATURE_OFF');
+  }
   const rows = await db.collection('communities').where({ status: 'active',
     locationGeo: server.command.geoNear({ geometry: toGeoPoint(db, point), maxDistance: 3000 })
   }).skip(offset).limit(100).get();
