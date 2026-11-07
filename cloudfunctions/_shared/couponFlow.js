@@ -89,7 +89,75 @@ async function releaseOrderDiscounts(transaction, order, user, now) {
   return nextBalance;
 }
 
+async function restoreRefundedPoints(transaction, order, refunds, now) {
+  const points = integer(order.pricing.pointsRedeemed || 0, '抵扣积分');
+  const serviceFee = integer(order.pricing.payAmount || 0, '服务费实付');
+  if (!points || !serviceFee) return 0;
+  const successful = refunds.filter(item => item.status === 'success')
+    .slice().sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0) || a.outRefundNo.localeCompare(b.outRefundNo));
+  if (!successful.length) return 0;
+  const user = await read(transaction, 'users', order.userId);
+  ensure(user, '订单用户不存在', 'E_CONFIG');
+  let cumulativeServiceRefund = 0;
+  let restored = 0;
+  let totalAdded = 0;
+  for (const refund of successful) {
+    const serviceAmount = refund.serviceAmount === undefined
+      ? Math.max(0, refund.amount - (refund.goodsAmount || 0)) : refund.serviceAmount;
+    cumulativeServiceRefund += serviceAmount;
+    const target = Math.floor(points * Math.min(cumulativeServiceRefund, serviceFee) / serviceFee);
+    const ledgerId = 'points_restore_' + refund.outRefundNo;
+    const existing = await read(transaction, 'pointsLedger', ledgerId);
+    if (existing) {
+      restored += Math.max(0, existing.delta || 0);
+      continue;
+    }
+    const delta = Math.max(0, target - restored);
+    const balance = integer(user.pointsBalance || 0, '积分余额') + delta;
+    await insert(transaction, 'pointsLedger', { _id: ledgerId, openid: user.openid, delta,
+      reason: 'refund', refId: order._id, refundId: refund.outRefundNo, balanceAfter: balance, createdAt: now });
+    if (delta) {
+      await transaction.collection('users').doc(user._id).update({ data: { pointsBalance: balance } });
+      user.pointsBalance = balance;
+      totalAdded += delta;
+    }
+    restored += delta;
+  }
+  return totalAdded;
+}
+
+async function awardReferralCoupons(transaction, order, referredUser, referrerProvider, now, enabled) {
+  if (!enabled || order.kind !== 'service' || order.pricing.payAmount <= 0 ||
+    referredUser.firstPaidOrderId !== order._id || !referrerProvider || !referrerProvider.openid ||
+    referrerProvider.communityId !== order.communityId) return 0;
+  const recipient = await transaction.collection('users').where({ openid: referrerProvider.openid }).limit(1).get();
+  const user = recipient.data && recipient.data[0];
+  if (!user) return 0;
+  const rows = await transaction.collection('couponTemplates').where({ issueMode: 'referral', status: 'active' }).get();
+  const counts = user.couponCounts || {};
+  let issuedCount = 0;
+  for (const template of rows.data || []) {
+    if (!communityMatches(template, order.communityId)) continue;
+    const count = counts[template._id] || 0;
+    if (count >= template.perUserLimit || template.issued >= template.totalLimit) continue;
+    const id = couponId(user.openid, template._id, order._id);
+    if (await read(transaction, 'coupons', id)) continue;
+    await insert(transaction, 'coupons', { _id: id, templateId: template._id, openid: user.openid,
+      status: 'unused', validFrom: now, validTo: addDays(now, template.validDays), orderId: null,
+      referralOrderId: order._id, createdAt: now });
+    await transaction.collection('couponTemplates').doc(template._id).update({ data: {
+      issued: (template.issued || 0) + 1, updatedAt: now
+    } });
+    template.issued = (template.issued || 0) + 1;
+    counts[template._id] = count + 1;
+    issuedCount++;
+  }
+  if (issuedCount) await transaction.collection('users').doc(user._id).update({ data: { couponCounts: counts } });
+  return issuedCount;
+}
+
 async function finalizeRefundDiscounts(transaction, order, refunds, now) {
+  await restoreRefundedPoints(transaction, order, refunds, now);
   const serviceRefunded = refunds.filter(item => item.status === 'success')
     .reduce((sum, item) => sum + (item.serviceAmount === undefined ? item.amount : item.serviceAmount), 0);
   const goodsRefunded = refunds.filter(item => item.status === 'success')
@@ -116,4 +184,4 @@ async function releaseCoupon(transaction, order, now) {
 }
 
 module.exports = { communityMatches, issueOne, issueAutomatic, lockOrderDiscounts, markCouponUsed,
-  releaseCoupon, releaseOrderDiscounts, finalizeRefundDiscounts };
+  releaseCoupon, releaseOrderDiscounts, restoreRefundedPoints, awardReferralCoupons, finalizeRefundDiscounts };
