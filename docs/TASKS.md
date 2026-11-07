@@ -255,7 +255,7 @@
 
 ## T30 自动打款（E7）
 
-- 云函数 `payout`：APIv3 签名（`_shared/wxpayV3.js`，签名串构造写单测，用固定测试密钥对比已知结果）、发起转账、查询转账单；`timer` 轮询；前端提现与 `wx.requestMerchantTransfer`；金额与频次限制；账本锁定与解锁。
+- 云函数 `payout`：新版商家转账用户确认模式；APIv3 签名（`_shared/wxpayV3.js`，签名串构造写单测，用固定测试密钥对比已知结果）、发起转账、查询转账单；`timer` 轮询；前端提现与 `wx.requestMerchantTransfer`；金额与频次限制；账本锁定与解锁。
 - 环境变量缺失时 `payout` 返回 `E_CONFIG`，开关无法打开。
 
 **验收**：E19 场景 10（商户号开通商家转账后由人验证；之前用单测和代码审查）。

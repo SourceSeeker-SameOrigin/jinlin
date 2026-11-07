@@ -28,6 +28,8 @@
 | settlements | community_created | communityId 升序、createdAt 倒序 | 否 |
 | settlements | provider_period | providerId 升序、period.from 升序、period.to 升序 | 否 |
 | settlements | seller_period | sellerOpenid 升序、period.from 升序、period.to 升序 | 否 |
+| payouts | payee_created | payeeOpenid 升序、createdAt 倒序 | 否 |
+| payouts | state_id | state 升序、_id 升序 | 否 |
 | events | community_status_start | communityIds 升序、status 升序、startAt 升序 | 否 |
 | events | community_status_hidden_start | communityIds 升序、status 升序、moderationHidden 升序、startAt 升序 | 否 |
 | events | status_end | status 升序、endAt 升序 | 否 |

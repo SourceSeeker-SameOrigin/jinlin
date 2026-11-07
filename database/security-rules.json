@@ -31,6 +31,10 @@
     "read": false,
     "write": false
   },
+  "payouts": {
+    "read": false,
+    "write": false
+  },
   "events": {
     "read": false,
     "write": false
