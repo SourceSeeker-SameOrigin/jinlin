@@ -52,11 +52,13 @@ function createOrderWriter(server) {
       const order = newOrder({ id, orderNo: orderNo(now), user: currentUser, community: currentCommunity,
         building: currentBuilding, serviceCode: event.serviceCode, detail: context.detail, note: context.note,
         slot: context.slot, pricing: context.pricing, now, selectedAddress: context.selectedAddress, detailAlreadyClean: event.serviceCode === 'pet' });
+      if (event.serviceCode === 'recycle') order.recycleSnapshot = context.recycleSnapshot;
       if (event.serviceCode === 'pet') {
         order.petVisitPrices = context.pricing.perVisit;
         if (context.entryPassword) await insert(transaction, 'secrets', { _id: 's_' + order._id, orderId: order._id,
           ...encryptSecret(context.entryPassword, process.env.SECRET_KEY), createdAt: now });
       }
+      if (event.serviceCode === 'recycle') order.recycleSnapshot = context.recycleSnapshot;
       order.userId = user._id;
       order.requestHash = requestHash;
       order.rateSnapshot = currentCommunity.rates;

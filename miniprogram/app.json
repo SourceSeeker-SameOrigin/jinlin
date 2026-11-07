@@ -6,6 +6,7 @@
     "pages/service/trash",
     "pages/service/buy",
     "pages/service/help",
+    "pages/service/recycle",
     "pages/orders/list",
     "pages/orders/detail",
     "pages/membership/index",
@@ -40,7 +41,8 @@
         "chat/chat",
         "coupons/coupons",
         "content/content",
-        "merchants/merchants"
+        "merchants/merchants",
+        "recycle/recycle"
       ]
     },
     {

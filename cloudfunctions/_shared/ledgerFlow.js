@@ -10,7 +10,9 @@ const { removePetSecret } = require('./petFlow');
 
 function createLedgerFlow(server) {
   async function book(transaction, order, accountingInput = {}) {
-    const target = accounting(order, accountingInput);
+    const target = order.serviceCode === 'recycle' ? { gross: 0,
+      provider: order.recycleResult && order.recycleResult.providerPayoutFen || 0,
+      property: 0, platform: 0, goods: 0 } : accounting(order, accountingInput);
     const delta = ledgerDelta(target, order.bookedAmounts);
     const version = (order.ledgerVersion || 0) + 1;
     const now = new Date();

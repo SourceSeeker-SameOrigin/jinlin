@@ -3,7 +3,7 @@
   <navigator url="/admin/features/features">功能开关</navigator>
   <navigator url="/admin/coupons/coupons">优惠券模板管理</navigator>
   <navigator url="/admin/content/content">公告与广告管理</navigator>
-  <navigator url="/admin/reports/reports">内容举报审核</navigator><navigator url="/admin/merchants/merchants">商家入驻与服务审核</navigator>
+  <navigator url="/admin/reports/reports">内容举报审核</navigator><navigator url="/admin/merchants/merchants">商家入驻与服务审核</navigator><navigator url="/admin/recycle/recycle">回收企业月度对账</navigator>
   <view wx:if="{{loading}}">正在加载数据…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
   <picker wx:if="{{communities.length}}" range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="chooseCommunity">

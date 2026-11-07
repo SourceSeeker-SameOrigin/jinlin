@@ -39,6 +39,11 @@ function orderView(order, user, provider, config, now) {
   canPay: owner && order.status === 'pending_pay',
   provider: null };
   if (owner || assigned || admin || seller && order.kind === 'idle_purchase') view.detail = order.detail;
+  if (order.serviceCode === 'recycle' && order.recycleResult && (owner || assigned || admin)) {
+    view.recycleSummary = { kg: (order.recycleResult.totalTenths / 10).toFixed(1), points: order.recycleResult.totalPoints,
+      breakdown: order.recycleResult.breakdown.map(item => ({ category: item.categoryName, kg: (item.tenthsKg / 10).toFixed(1),
+        points: item.points, ...(admin ? { recyclerId: item.recyclerId, revenueFen: item.revenueFen } : {}) })) };
+  }
   if (order.kind === 'idle_purchase' && (owner || seller || admin)) {
     view.idleSale = { seller: !owner, price: order.idleSnapshot && order.idleSnapshot.price,
       ...(seller || admin ? { sellerAmount: order.idleSnapshot && order.idleSnapshot.sellerAmount } : {}),

@@ -25,6 +25,7 @@ function createOrderContext(server) {
     ensure(pointsEnabled || !event.pointsToUse, '环保积分暂未开放', 'E_FEATURE_OFF');
     if (['meal','visit','escort'].includes(event.serviceCode)) await server.feature('elder', community._id);
     if (event.serviceCode === 'pet') await server.feature('pet', community._id);
+    if (event.serviceCode === 'recycle') await server.feature('recycle', community._id);
     const [duty, memberships] = await Promise.all([
       db.collection('providers').where({ communityId: community._id, status: 'approved', onDuty: true,
         insuranceUntil: command.gt(now) }).count(),
@@ -63,6 +64,14 @@ function createOrderContext(server) {
         communityId: community._id, coupons, pointsBalance, pointsEnabled });
       const petInput = event.serviceCode === 'pet' ? require('./pet').clean(event.detail, community, now) : null;
       const detail = petInput ? petInput.detail : cleanDetail(event.serviceCode, event.detail, community);
+      let recycleSnapshot = null;
+      if (event.serviceCode === 'recycle') {
+        recycleSnapshot = require('./recycle').snapshot(community, detail);
+        const recyclerIds = [...new Set(Object.values(recycleSnapshot.categories).map(item => item.recyclerId))];
+        const recyclers = await Promise.all(recyclerIds.map(id => get('merchants', id)));
+        ensure(recyclers.every(item => item && item.status === 'approved' && item.category === 'recycler' &&
+          Array.isArray(item.communityIds) && item.communityIds.includes(community._id)), '回收企业未审核通过或未覆盖本小区', 'E_CONFIG');
+      }
       const note = cleanNote(event.note);
       const slot = event.serviceCode === 'escort' ? escortSlot(detail, community.dutyWindows, now) :
         event.slot === undefined && metadata ? (duty.total > 0 ? null : slots[0]) : event.slot;
@@ -73,7 +82,7 @@ function createOrderContext(server) {
           listPrice: pricing.listPrice }), threshold: item.template.threshold, validTo: item.coupon.validTo }))
         .filter(item => item.discount > 0);
       return { ...common, pricing, detail, note, slot, selectedAddress, couponOptions, pointsBalance,
-        couponsEnabled, pointsEnabled, ...(petInput ? { entryPassword: petInput.entryPassword } : {}) };
+        couponsEnabled, pointsEnabled, recycleSnapshot, ...(petInput ? { entryPassword: petInput.entryPassword } : {}) };
     } catch (error) {
       if (!metadata || error.code !== 'E_INVALID_PARAM') throw error;
       return { ...common, pricing: null, validationMessage: error.message };
