@@ -86,6 +86,7 @@ async function moderateContent(event, { user }) {
     const target = await read(transaction, collection, event.targetId);
     ensure(target && target.communityId === event.communityId, '内容不存在或不属于该小区', 'E_CONFLICT');
     await transaction.collection(collection).doc(target._id).update({ data: { moderationHidden: event.hidden,
+      ...(event.targetType === 'comment' ? { status: event.hidden ? 'hidden' : 'ok' } : {}),
       moderatedAt: new Date() } });
     return { targetId: target._id, hidden: event.hidden };
   });

@@ -1,0 +1,1 @@
+.tabs{display:flex;gap:14rpx;margin-bottom:18rpx}.tabs button{flex:1}

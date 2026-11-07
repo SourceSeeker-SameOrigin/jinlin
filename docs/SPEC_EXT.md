@@ -101,8 +101,8 @@ posts: {
   _id, type: 'task' | 'ask' | 'carry',
   communityId, scope: 'community' | 'federation',
   authorOpenid, title, content, images: [],
-  // type=task
-  reward, needEnterHome: false, orderId,
+  // type=task；reward 使用分，slot 属于小区值班时段
+  reward, needEnterHome: false, orderId, slot: { date, start, end },
   // type=carry（见 E14）
   carry: { direction: 'offer' | 'request', destination, destinationType: 'domestic' | 'overseas', departAt, returnAt },
   status: 'open' | 'taken' | 'done' | 'closed' | 'hidden',
@@ -111,10 +111,10 @@ posts: {
 comments: { _id, postId, authorOpenid, content, status: 'ok' | 'hidden', createdAt }
 ```
 
-- **悬赏任务 `task`**：发布时支付悬赏金（≥ 3 元），系统同时创建订单 `serviceCode='custom'`，`listPrice = reward`，`minLevel = needEnterHome ? 2 : 1`，走 SPEC 的完整订单状态机、分账、投诉。只有审核通过的服务员（含邻居帮手）能接；`scope` 只能是 `community`（需要本地上门）。
+- **悬赏任务 `task`**：发布人必须选择未来日期及本小区已配置的值班时段（包含开始、不包含结束；跨午夜时段归开始日期），不支持“尽快”或联合社区。发布时悬赏金至少 300 分；帖子和订单 `serviceCode='custom'` 在同一数据库事务中创建，`listPrice = payAmount = reward`，`minLevel = needEnterHome ? 2 : 1`，订单 `slot` 保存所选时段，并走 SPEC 的完整订单状态机、分账、投诉。订单未支付时，任务仅发布人可见；支付成功后才出现在公共列表。帖子状态按关联订单派生：已支付未接单为 `open`，已接单/服务中/待确认/售后中为 `taken`，完成为 `done`，取消/关闭/退款为 `closed`。服务时段结束后不可接单，帖子到所选时段结束时过期。只有审核通过的服务员（含邻居帮手）能接。
 - **求助 `ask`**：不涉及钱，只能评论；可选 `federation` 范围。
 - **帮带 `carry`**：见 E14。
-- 列表：按类型分 tab；可切换"本小区 / 联合社区"（`federation` 开启时）；按时间倒序；7 天后 `ask` 和 `carry` 自动 `closed`。
+- 列表：按类型分 tab；可切换"本小区 / 联合社区"（`federation` 开启时；悬赏固定本小区）；按时间倒序；7 天后 `ask` 和 `carry` 自动 `closed`。
 - 地址保护：帖子只显示楼栋；悬赏任务接单后服务员才看到门牌。
 - 云函数 `board`：`list`、`detail`、`create`、`comment`、`close`、`report`；悬赏的支付与接单复用 `order` 和 `provider`。
 - 小程序码分享：帖子详情页支持转发给微信好友（`onShareAppMessage`），落地页仍需登录。

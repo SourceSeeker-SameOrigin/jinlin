@@ -46,6 +46,15 @@ describe('订单创建与时段校验', () => {
   test('不能跨小区选驿站', () => {
     expect(() => newOrder({ ...order(), id: 'o', user, community, building, detail: { ...detail, stationCode: 'other' }, now })).toThrow('本小区');
   });
+  test('悬赏 custom 订单保留任务摘要、预定时段与入户等级', () => {
+    const custom = newOrder({ id: 'custom-o', orderNo: 'JL2', user, community, building, serviceCode: 'custom',
+      detail: { title: '搬纸箱', desc: '从门口搬到楼下', needEnterHome: true }, note: '',
+      slot: { date: '2026-11-08', start: '08:00', end: '09:00' },
+      pricing: { listPrice: 500, discount: 0, payAmount: 500, goodsCap: 0, freeByMembership: false }, now,
+      minLevel: 2, taskPostId: 'bp-task' });
+    expect(custom).toMatchObject({ serviceCode: 'custom', minLevel: 2, taskPostId: 'bp-task',
+      detail: { title: '搬纸箱', desc: '从门口搬到楼下', needEnterHome: true }, pricing: { payAmount: 500 } });
+  });
   test('状态转换追加时间线且不修改输入', () => {
     const original = order();
     const patch = transitionPatch(original, 'paid', 'system', now);

@@ -25,6 +25,10 @@
     {
       "root": "chat",
       "pages": ["list/list", "room/room"]
+    },
+    {
+      "root": "board",
+      "pages": ["list/list", "detail/detail", "create/create"]
     }
   ],
   "window": {

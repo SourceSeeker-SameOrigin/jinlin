@@ -25,7 +25,8 @@ Page({
         } catch (_) { this.chatConversationId = null; }
       }
       const labels = { stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数',
-        sorted: '已分类', shop: '店名', items: '清单', goodsCap: '商品预付', category: '类别', desc: '描述', blocks: '时长块数' };
+        sorted: '已分类', shop: '店名', items: '清单', goodsCap: '商品预付', category: '类别', desc: '描述', blocks: '时长块数',
+        title: '悬赏任务', needEnterHome: '需要进入家中' };
       const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));

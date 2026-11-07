@@ -58,6 +58,17 @@ exports.main = async (event = {}) => {
     }
   } catch (error) { results.closeChats = { failed: true }; console.error('聊天会话查询失败', error.code || 'E_INTERNAL'); }
   try {
+    const expiredPosts = await server.all('posts', { type: command.in(['ask', 'carry']), status: 'open', expireAt: command.lte(now) });
+    results.closeBoardPosts = { done: 0, failed: 0 };
+    for (const post of expiredPosts) {
+      try {
+        const result = await db.collection('posts').where({ _id: post._id, status: 'open' })
+          .update({ data: { status: 'closed', updatedAt: now } });
+        if (result.stats.updated) results.closeBoardPosts.done++;
+      } catch (error) { results.closeBoardPosts.failed++; console.error('需求帖到期关闭失败', post._id, error.code || 'E_INTERNAL'); }
+    }
+  } catch (error) { results.closeBoardPosts = { failed: true }; console.error('需求帖到期查询失败', error.code || 'E_INTERNAL'); }
+  try {
     const cards = await server.all('memberships', { status: 'active', serviceCode: 'trash', startAt: command.lte(now), endAt: command.gt(now) });
     results.membershipTasks = { created: 0, failed: 0 };
     const tasks = createMembershipTasks(server);

@@ -36,6 +36,11 @@ test('大厅只包含规定摘要，按原价计算服务员预计收入', () =>
   expect(hallView(order)).toEqual({ _id: 'o', serviceCode: 'express', serviceName: '代取快递',
     buildingName: '3号楼', slot: null, estimatedIncome: 412 });
 });
+test('悬赏任务大厅显示公开任务描述和入户要求', () => {
+  const custom = { ...order, serviceCode: 'custom', detail: { title: '搬纸箱', desc: '门口搬到楼下', needEnterHome: true },
+    pricing: { listPrice: 500, payAmount: 500, goodsCap: 0, goodsActual: 0 } };
+  expect(hallView(custom)).toMatchObject({ serviceName: '悬赏任务', title: '搬纸箱', desc: '门口搬到楼下', needEnterHome: true });
+});
 test('代买完成必须提交照片、小票和有效实际金额', () => {
   const buying = { ...order, serviceCode: 'buy', pricing: { ...order.pricing, goodsCap: 5000 } };
   const event = { photos: ['cloud://env.bucket/orders/o/complete.jpg'],

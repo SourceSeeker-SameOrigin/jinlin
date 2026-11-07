@@ -13,5 +13,7 @@
   "auditLogs": { "read": false, "write": false },
   "mediaChecks": { "read": false, "write": false },
   "conversations": { "read": false, "write": false },
-  "messages": { "read": false, "write": false }
+  "messages": { "read": false, "write": false },
+  "posts": { "read": false, "write": false },
+  "comments": { "read": false, "write": false }
 }

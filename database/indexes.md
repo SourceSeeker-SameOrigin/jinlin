@@ -26,5 +26,8 @@
 | conversations | member_lastAt | members 升序、lastAt 倒序 | 否 |
 | conversations | type_closeAt | type 升序、closedAt 升序、closeAt 升序 | 否 |
 | messages | conversation_id | convId 升序、_id 升序 | 否 |
+| posts | feed | communityId 升序、scope 升序、type 升序、status 升序、expireAt 升序、createdAt 倒序 | 否 |
+| posts | type_status_expireAt | type 升序、status 升序、expireAt 升序 | 否 |
+| comments | post_status_created | postId 升序、status 升序、createdAt 升序 | 否 |
 
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。
