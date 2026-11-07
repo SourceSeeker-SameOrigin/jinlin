@@ -1,4 +1,18 @@
-const { application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView } = require('../merchant');
+const { application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView,
+  locksmithStartCheck, requireLocksmithCheck } = require('../merchant');
+
+test('开锁开始前必须明确核验一致，仅保存结果和服务端审计字段', () => {
+  const order = { detail: { category: 'locksmith' } };
+  for (const confirmed of [undefined, false, 1, 'true']) expect(() => locksmithStartCheck(order, confirmed, 'staff')).toThrow();
+  const at = new Date('2026-11-07T00:00:00Z');
+  const patch = locksmithStartCheck(order, true, 'staff', at);
+  expect(patch).toEqual({ identityCheck: { passed: true, checkedBy: 'staff', checkedAt: at } });
+  expect(() => requireLocksmithCheck(order)).toThrow();
+  expect(() => requireLocksmithCheck({ ...order, ...patch })).not.toThrow();
+  expect(() => requireLocksmithCheck({ ...order, identityCheck: { passed: true } })).toThrow();
+  expect(locksmithStartCheck({ detail: { category: 'repair' } }, false, 'staff')).toEqual({});
+  expect(() => requireLocksmithCheck({ detail: { category: 'repair' } })).not.toThrow();
+});
 
 test('商家入驻验证营业执照并只开放申请所属小区', () => {
   const value = application({ name: '安心维修', category: 'repair', licenseFileId: 'cloud://license',

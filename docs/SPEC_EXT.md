@@ -331,6 +331,7 @@ merchantServices: { _id, merchantId, title, desc, images, priceType: 'fixed' | '
   - 商家接单 → 商家标记完成并拍照 → 住户确认（或 24 小时自动）→ 账本 `refType='merchant_order'`，商家收入 = 实收 − 佣金；物业分成从平台佣金中按 `rates.property` 计提。
 - 商家货款人工结算（每周对公）。
 - 开锁类商家：订单必须由下单人当面核验身份证与门牌一致，写进服务协议；平台不保存身份证照片，仅保存核验结果，并保留非身份证类的门锁/服务过程证据。
+  实现记录为订单 `identityCheck: { passed, checkedBy, checkedAt }`；商家开始服务时确认核验一致，核验人取服务端登录身份、时间取服务端时间，与状态变更同时写入。没有核验记录不得提交完成，不接收身份证号码或身份证图片字段。
 - 云函数 `merchant`：入驻、审核（admin）、服务管理、预约、报价、接单、完成、评价。
 
 ## E13. 空置房巡检 `vacantHome`

@@ -3,7 +3,8 @@ const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
 const { requireRole, requireCommunityAccess } = require('./lib/shared/auth');
 const { ensure, integer, text } = require('./lib/shared/validate');
-const { application, service, visibleMerchant, visibleService, merchantOrderView, CATEGORY_NAMES } = require('./lib/shared/merchant');
+const { application, service, visibleMerchant, visibleService, merchantOrderView, CATEGORY_NAMES,
+  locksmithStartCheck, requireLocksmithCheck } = require('./lib/shared/merchant');
 const { atomic, read, insert, sameSnapshot } = require('./lib/shared/transaction');
 const { orderNo } = require('./lib/shared/ids');
 const { addressSnapshot, transitionPatch } = require('./lib/shared/orderData');
@@ -156,7 +157,6 @@ async function createBooking(event, { user, openid }) {
   ensure(serviceItem && serviceItem.status === 'on', '该服务暂不可预约');
   const merchant = await server.get('merchants', serviceItem.merchantId);
   ensure(merchant && merchant.status === 'approved' && merchant.communityIds.includes(user.communityId), '商家暂不可用');
-  ensure(merchant.category !== 'locksmith', '开锁服务的核验照片留存规则尚待确认', 'E_FEATURE_OFF');
   await assertEnabled(user.communityId);
   const community = await server.get('communities', user.communityId);
   ensure(community && community.status === 'active', '小区暂不可用');
@@ -185,7 +185,7 @@ async function createBooking(event, { user, openid }) {
     const currentService = await read(transaction, 'merchantServices', serviceItem._id);
     sameSnapshot(currentService, serviceItem, ['merchantId', 'title', 'desc', 'priceType', 'price', 'unit', 'status']);
     const currentMerchant = await read(transaction, 'merchants', merchant._id);
-    sameSnapshot(currentMerchant, merchant, ['status', 'communityIds', 'commissionRate']);
+    sameSnapshot(currentMerchant, merchant, ['status', 'communityIds', 'commissionRate', 'category']);
     ensure(currentMerchant.status === 'approved' && currentService.status === 'on', '商家服务状态已变化，请重试', 'E_CONFLICT');
     const currentCommunity = await read(transaction, 'communities', community._id);
     sameSnapshot(currentCommunity, community, ['status', 'rates', 'features']);
@@ -261,7 +261,8 @@ async function merchantTransition(event, { openid }) {
   const target = event.actionName === 'accept' ? 'accepted' : event.actionName === 'start' ? 'in_service' : null;
   ensure(target && (target === 'accepted' ? order.status === 'paid' : order.status === 'accepted'), '预约状态不支持此操作', 'E_BAD_STATE');
   return require('./lib/shared/orderStore').conditionalTransition(server, order, target, openid,
-    target === 'accepted' ? { acceptedAt: new Date(), merchantOpenid: openid } : {}, { merchantId: merchant._id });
+    target === 'accepted' ? { acceptedAt: new Date(), merchantOpenid: openid }
+      : locksmithStartCheck(order, event.identityConfirmed, openid), { merchantId: merchant._id });
 }
 
 async function completeBooking(event, { openid }) {
@@ -271,6 +272,7 @@ async function completeBooking(event, { openid }) {
   const merchant = await mine(openid);
   ensure(order.merchantId === merchant._id, '无权操作此预约', 'E_FORBIDDEN');
   ensure(order.status === 'in_service', '请先接单并开始服务', 'E_BAD_STATE');
+  requireLocksmithCheck(order);
   ensure(Array.isArray(event.photos) && event.photos.length >= 1 && event.photos.length <= 3 &&
     event.photos.every(file => typeof file === 'string' && file.startsWith('cloud://')), '请上传 1—3 张服务完成照片');
   const patch = { photos: event.photos, deliveredAt: new Date() };

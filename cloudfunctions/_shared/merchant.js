@@ -60,6 +60,19 @@ function visibleService(item, viewerOpenid = '') {
     priceType: item.priceType, price: item.price, unit: item.unit, status: item.status };
 }
 
+function locksmithStartCheck(order, confirmed, openid, now = new Date()) {
+  if (order.detail?.category !== 'locksmith') return {};
+  ensure(confirmed === true, '请先当面核验下单人身份证与门牌一致，再开始开锁服务');
+  return { identityCheck: { passed: true, checkedBy: text(openid, '核验人'), checkedAt: now } };
+}
+
+function requireLocksmithCheck(order) {
+  if (order.detail?.category === 'locksmith') {
+    ensure(order.identityCheck?.passed === true && order.identityCheck.checkedBy && order.identityCheck.checkedAt,
+      '该开锁订单缺少当面身份核验记录，请联系管理员', 'E_BAD_STATE');
+  }
+}
+
 function merchantOrderView(order) {
   const address = order.address || {};
   const quote = order.quote || null;
@@ -70,9 +83,11 @@ function merchantOrderView(order) {
       ...(address.contactName ? { contactName: address.contactName } : {}),
       ...(address.contactPhone ? { contactPhone: address.contactPhone } : {}) },
     note: order.note || '',
+    identityChecked: order.identityCheck?.passed === true,
     detail: { title: detail.title, desc: detail.desc, category: detail.category,
       merchantName: detail.merchantName, serviceId: detail.serviceId, priceType: detail.priceType, unit: detail.unit },
     photos: Array.isArray(order.photos) ? order.photos.slice(0, 3) : [] };
 }
 
-module.exports = { CATEGORIES, CATEGORY_NAMES, application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView };
+module.exports = { CATEGORIES, CATEGORY_NAMES, application, service, quoteAmount, visibleMerchant, visibleService, merchantOrderView,
+  locksmithStartCheck, requireLocksmithCheck };
