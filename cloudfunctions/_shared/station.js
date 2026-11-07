@@ -37,6 +37,12 @@ function deliveryItem(item, event, batchId, now = new Date()) {
   return { status: 'failed', failReason: reason.trim(), at: now };
 }
 
+function skippedItem(item, reason, now = new Date()) {
+  ensure(item && item.status === 'pending', '该住户已处理，请刷新后重试', 'E_CONFLICT');
+  ensure(typeof reason === 'string' && [...reason].length >= 1 && [...reason].length <= 100, '跳过原因不正确');
+  return { status: 'skipped', failReason: reason.trim(), at: now };
+}
+
 function batchStatus(items) {
   ensure(Array.isArray(items) && items.length > 0, '批次门牌列表为空', 'E_CONFIG');
   return items.some(item => item.status === 'pending') ? 'assigned' : 'done';
@@ -63,9 +69,10 @@ function statement(batches, from, to) {
       const items = (batch.items || []).filter(item => item.consented === true);
       const delivered = deliveredCount(items);
       const failed = items.filter(item => item.status === 'failed').length;
+      const skipped = items.filter(item => item.status === 'skipped').length;
       const amounts = batch.amounts || billing(delivered, batch.priceSnapshot || {});
       return { batchId: batch._id, stationCode: batch.stationCode, providerId: batch.providerId,
-        completedAt: batch.completedAt, totalItems: items.length, delivered, failed,
+        completedAt: batch.completedAt, totalItems: items.length, delivered, failed, skipped,
         gross: amounts.gross, provider: amounts.provider };
     });
   return { rows, gross: rows.reduce((sum, row) => sum + row.gross, 0),
@@ -73,10 +80,10 @@ function statement(batches, from, to) {
 }
 
 function statementCsv(result) {
-  const header = ['批次编号', '驿站编号', '服务员编号', '完成时间', '批次数', '送达件数', '未送达件数', '驿站应付（分）', '服务员计件（分）'];
+  const header = ['批次编号', '驿站编号', '服务员编号', '完成时间', '批次数', '送达件数', '未送达件数', '撤回授权跳过数', '驿站应付（分）', '服务员计件（分）'];
   const rows = result.rows.map(row => [row.batchId, row.stationCode, row.providerId, row.completedAt.toISOString(),
-    row.totalItems, row.delivered, row.failed, row.gross, row.provider]);
+    row.totalItems, row.delivered, row.failed, row.skipped, row.gross, row.provider]);
   return '\uFEFF' + [header, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
 }
 
-module.exports = { parseAddressLines, deliveryItem, batchStatus, deliveredCount, billing, statement, statementCsv };
+module.exports = { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv };

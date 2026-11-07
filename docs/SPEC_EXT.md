@@ -292,9 +292,9 @@ detail: {
 分包 `station/`，角色 `station`。
 
 - 住户可在"我的"设置"快递默认送上门"（`users.prefs.doorDelivery=true`），只有明确同意的住户可加入批次；驿站无权覆盖住户设置。
-- 驿站员工创建批次：录入或粘贴门牌列表（楼栋-单元-门牌，每行一条），系统校验门牌存在并只纳入 `doorDelivery=true` 的住户。
-- 批次 `deliveryBatches: { _id, communityId, stationCode, items: [{ buildingId, unit, room, status: 'pending'|'delivered'|'failed'|'skipped', skipReason, photoFileId, at }], providerId, status: 'open'|'assigned'|'done', createdAt }` 发布到任务大厅，作为一个整单由一名服务员接，逐户送达并拍照。`skipped` 项必须记录原因且不阻断其他住户。
-- 服务员每户配送前重新检查住户当前同意状态；如已撤回，将该户标记跳过/失败并记录原因，继续处理批次内其他住户。
+- 驿站员工创建批次：录入或粘贴门牌列表（楼栋-单元-门牌，每行一条），系统校验门牌存在。仅将明确开启 `users.prefs.doorDelivery=true` 的住户加入批次；未授权、无住户关联或已撤回授权的门牌只计入跳过数量，不保留其标识。
+- 批次仅为同意住户保存关联和地址快照；服务员处理每户前及提交配送结果时重新核验当前授权。住户撤回授权时将该户记为 `skipped` 并记原因，不上传照片、不计费，其他住户仍可继续配送。
+- 批次 `deliveryBatches: { _id, communityId, stationCode, items: [{ _id, userId, buildingId, buildingName, unit, room, consented: true, status: 'pending'|'delivered'|'failed'|'skipped', failReason, photoFileId, at }], providerId, status: 'open'|'assigned'|'done', priceSnapshot, createdAt }` 发布到任务大厅，作为一个整单由一名服务员接。
 - 计费：每件 `stationDelivery.perPiece`（默认 50 分）向驿站收，服务员每件 `perPiecePayout`（默认 40 分）。账本 `refType='station_delivery'`。驿站按月对公结算（人工）。
 - 管理后台：驿站账号审核、驿站月度对账单导出。
 

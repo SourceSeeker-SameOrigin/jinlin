@@ -1,4 +1,4 @@
-const { parseAddressLines, deliveryItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('../station');
+const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('../station');
 
 test('解析多行楼栋、单元和门牌，忽略空行并拒绝重复地址', () => {
   expect(parseAddressLines('1栋-1单元-302\n\n2栋-2单元-501')).toEqual([
@@ -18,6 +18,14 @@ test('逐户送达需上传本批次照片；失败项记录原因', () => {
     .toThrow('本批次');
   expect(deliveryItem(item, { status: 'failed', reason: '无人应答' }, 'b1', now))
     .toEqual({ status: 'failed', failReason: '无人应答', at: now });
+});
+
+test('撤回授权后标记跳过并记录原因，不当作送达计费', () => {
+  const now = new Date('2026-11-07T01:00:00Z');
+  const skipped = skippedItem({ status: 'pending' }, '住户已撤回送上门授权', now);
+  expect(skipped).toEqual({ status: 'skipped', failReason: '住户已撤回送上门授权', at: now });
+  expect(deliveredCount([{ status: 'delivered' }, skipped])).toBe(1);
+  expect(batchStatus([{ status: 'delivered' }, skipped])).toBe('done');
 });
 
 test('只在所有门牌均已处理后结束批次，计费件数只统计送达项', () => {
@@ -40,10 +48,11 @@ test('月度对账仅统计完成批次的实际送达件数并输出公式安�
   const to = new Date('2026-12-01T00:00:00Z');
   const result = statement([{ _id: 'b1', stationCode: '=S1', providerId: 'p1', status: 'done',
     completedAt: new Date('2026-11-20T00:00:00Z'), priceSnapshot: {},
-    items: [{ consented: true, status: 'delivered' }, { consented: true, status: 'failed' },
+      items: [{ consented: true, status: 'delivered' }, { consented: true, status: 'failed' }, { consented: true, status: 'skipped' },
       { consented: false, status: 'delivered' }] },
   { _id: 'b2', status: 'assigned', completedAt: new Date('2026-11-21T00:00:00Z'), items: [] }], from, to);
   expect(result).toMatchObject({ gross: 50, provider: 40 });
+  expect(result.rows[0].skipped).toBe(1);
   expect(result.rows).toHaveLength(1);
   expect(statementCsv(result)).toContain("'=S1");
 });

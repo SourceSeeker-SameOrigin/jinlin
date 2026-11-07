@@ -29,8 +29,15 @@ Page({
     const itemId = event.currentTarget.dataset.id;
     this.setData({ busy: true, error: '' });
     try {
+      const consent = await api.call('station', 'checkDoorDeliveryConsent', { batchId: this.batchId, itemId }, { loading: false, silent: true });
+      if (!consent.allowed) {
+        wx.showToast({ title: '住户已撤回授权，已跳过', icon: 'none' });
+        await this.load();
+        return;
+      }
       const files = await uploadPhotos('station/' + this.batchId, 1);
-      await api.call('station', 'recordDelivery', { batchId: this.batchId, itemId, status: 'delivered', photoFileId: files[0] });
+      const result = await api.call('station', 'recordDelivery', { batchId: this.batchId, itemId, status: 'delivered', photoFileId: files[0] });
+      if (result.status === 'skipped') wx.showToast({ title: '住户已撤回授权，已跳过', icon: 'none' });
       await this.load();
     } catch (error) { this.setData({ error: error.message || '送达记录失败' }); }
     finally { this.setData({ busy: false }); }

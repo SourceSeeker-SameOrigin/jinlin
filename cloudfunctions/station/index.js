@@ -1,10 +1,11 @@
 const cloud = require('wx-server-sdk');
+const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
 const { requireRole, requireApprovedProvider } = require('./lib/shared/auth');
 const { ensure, integer, text } = require('./lib/shared/validate');
 const { atomic, read, insert } = require('./lib/shared/transaction');
 const { canWork } = require('./lib/shared/providerData');
-const { parseAddressLines, deliveryItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('./lib/shared/station');
+const { parseAddressLines, deliveryItem, skippedItem, batchStatus, deliveredCount, billing, statement, statementCsv } = require('./lib/shared/station');
 const { period } = require('./lib/shared/settlementData');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -40,6 +41,73 @@ async function stationContext(user) {
   return { community, stationCode: user.stationCode };
 }
 
+function addressMatches(user, address, buildingId, communityId) {
+  const primary = user.communityId === communityId && user.buildingId === buildingId &&
+    user.unit === address.unit && user.room === address.room;
+  const saved = (user.addresses || []).some(item => item.communityId === communityId && item.buildingId === buildingId &&
+    item.unit === address.unit && item.room === address.room);
+  return primary || saved;
+}
+
+async function createBatch(event, { user }) {
+  const { community, stationCode } = await stationContext(user);
+  text(event.requestId, '请求编号', 80);
+  ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
+  const addresses = parseAddressLines(event.lines);
+  const buildings = await server.all('buildings', { communityId: community._id });
+  const byName = new Map(buildings.map(building => [building.name, building]));
+  const resolved = addresses.map(address => {
+    const building = byName.get(address.buildingName);
+    ensure(building && Array.isArray(building.units) && building.units.includes(address.unit), `门牌不存在：${address.buildingName}-${address.unit}-${address.room}`);
+    return { ...address, buildingId: building._id };
+  });
+  const candidates = [];
+  for (let start = 0; start < resolved.length; start += 10) {
+    const group = resolved.slice(start, start + 10);
+    const results = await Promise.all(group.map(async (address, offset) => {
+      const [primary, saved] = await Promise.all([
+        db.collection('users').where({ communityId: community._id, buildingId: address.buildingId,
+          unit: address.unit, room: address.room }).limit(20).get(),
+        db.collection('users').where({ addresses: command.elemMatch({ communityId: community._id,
+          buildingId: address.buildingId, unit: address.unit, room: address.room }) }).limit(20).get()
+      ]);
+      const matching = new Map();
+      for (const resident of [...primary.data, ...saved.data]) {
+        if (resident.prefs && resident.prefs.doorDelivery === true && addressMatches(resident, address, address.buildingId, community._id)) {
+          matching.set(resident._id, resident);
+        }
+      }
+      const resident = matching.values().next().value;
+      return resident ? { address, userId: resident._id, sourceIndex: start + offset } : null;
+    }));
+    candidates.push(...results.filter(Boolean));
+  }
+  const batchId = 'station_' + crypto.createHash('sha256').update(stationCode + ':' + event.requestId).digest('hex').slice(0, 32);
+  const result = await atomic(db, async transaction => {
+    const previous = await read(transaction, 'deliveryBatches', batchId);
+    if (previous) {
+      ensure(previous.stationCode === stationCode && previous.communityId === community._id, '请求编号已用于其他批次', 'E_CONFLICT');
+      return { batchId, eligibleCount: previous.items.length, skippedCount: addresses.length - previous.items.length, repeated: true };
+    }
+    const items = [];
+    for (const candidate of candidates) {
+      const currentResident = await read(transaction, 'users', candidate.userId);
+      if (!currentResident || currentResident.blocked || currentResident.prefs?.doorDelivery !== true ||
+        !addressMatches(currentResident, candidate.address, candidate.address.buildingId, community._id)) continue;
+      items.push({ _id: 'item_' + candidate.sourceIndex, userId: currentResident._id, buildingId: candidate.address.buildingId,
+        buildingName: candidate.address.buildingName, unit: candidate.address.unit, room: candidate.address.room,
+        consented: true, status: 'pending', photoFileId: null, at: null, failReason: '' });
+    }
+    if (!items.length) return { batchId: null, eligibleCount: 0, skippedCount: addresses.length, repeated: false };
+    const now = new Date();
+    await insert(transaction, 'deliveryBatches', { _id: batchId, communityId: community._id, stationCode,
+      items, providerId: null, providerOpenid: null, status: 'open', createdAt: now, updatedAt: now,
+      priceSnapshot: community.prices && community.prices.stationDelivery || {} });
+    return { batchId, eligibleCount: items.length, skippedCount: addresses.length - items.length, repeated: false };
+  });
+  return result;
+}
+
 async function listMyBatches(event, { user }) {
   const { community, stationCode } = await stationContext(user);
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
@@ -49,7 +117,7 @@ async function listMyBatches(event, { user }) {
     const items = Array.isArray(batch.items) ? batch.items : [];
     return { _id: batch._id, status: batch.status, createdAt: batch.createdAt, itemCount: items.length,
     deliveredCount: items.filter(item => item.status === 'delivered').length,
-    failedCount: items.filter(item => item.status === 'failed').length,
+    failedCount: items.filter(item => item.status === 'failed').length, skippedCount: items.filter(item => item.status === 'skipped').length,
     providerId: batch.providerId || null };
   }), hasMore: rows.data.length === 20 };
 }
@@ -79,6 +147,7 @@ function providerBatchView(batch) {
   const prices = batch.priceSnapshot || {};
   return { _id: batch._id, stationCode: batch.stationCode, status: batch.status, createdAt: batch.createdAt,
     itemCount: items.length, pendingCount: items.filter(item => item.status === 'pending').length, deliveredCount: deliveredCount(items),
+    skippedCount: items.filter(item => item.status === 'skipped').length,
     estimatedIncome: billing(items.filter(item => item.status === 'pending').length, prices).provider };
 }
 
@@ -144,7 +213,7 @@ async function startBatch(event, { openid }) {
   return { batchId: batch._id, status: 'assigned', startedAt: result.startedAt };
 }
 
-async function recordDelivery(event, { openid }) {
+async function checkDoorDeliveryConsent(event, { openid }) {
   const { provider, batch } = await assignedBatch(event.batchId, openid);
   ensure(batch.status === 'assigned' && batch.startedAt, '请先开始配送', 'E_BAD_STATE');
   text(event.itemId, '门牌记录');
@@ -155,12 +224,66 @@ async function recordDelivery(event, { openid }) {
     const index = (current.items || []).findIndex(item => item._id === event.itemId);
     ensure(index >= 0, '门牌记录不存在');
     const item = current.items[index];
+    ensure(item.consented === true && item.status === 'pending', '该门牌当前不能继续配送', 'E_BAD_STATE');
+    const resident = await read(transaction, 'users', item.userId);
+    if (resident && resident.communityId === current.communityId && resident.prefs && resident.prefs.doorDelivery === true) {
+      return { allowed: true, status: 'pending' };
+    }
+    const now = new Date();
+    const items = current.items.slice();
+    items[index] = { ...item, ...skippedItem(item, '住户已撤回送上门授权', now) };
+    const eligibleItems = items.filter(row => row.consented === true);
+    const status = batchStatus(eligibleItems);
+    const data = { items, status, updatedAt: now };
+    if (status === 'done') {
+      const amounts = billing(deliveredCount(eligibleItems), current.priceSnapshot || {});
+      if (amounts.gross > 0) await insert(transaction, 'ledger', { _id: 'station_' + current._id,
+        refType: 'station_delivery', refId: current._id, communityId: current.communityId,
+        stationCode: current.stationCode, providerId: provider._id, amounts,
+        settled: { provider: false, property: false }, settlementIds: { provider: null, property: null }, createdAt: now });
+      Object.assign(data, { completedAt: now, amounts, ledgerId: amounts.gross > 0 ? 'station_' + current._id : null });
+    }
+    await transaction.collection('deliveryBatches').doc(current._id).update({ data });
+    return { allowed: false, status: 'skipped', reason: '住户已撤回送上门授权', batchStatus: status };
+  });
+}
+
+async function recordDelivery(event, { openid }) {
+  const { provider, batch } = await assignedBatch(event.batchId, openid);
+  ensure(batch.status === 'assigned' && batch.startedAt, '请先开始配送', 'E_BAD_STATE');
+  text(event.itemId, '门牌记录');
+  ensure(['delivered', 'failed'].includes(event.status), '配送结果不正确');
+  return atomic(db, async transaction => {
+    const current = await read(transaction, 'deliveryBatches', batch._id);
+    ensure(current && current.status === 'assigned' && current.providerId === provider._id && current.startedAt,
+      '批次状态已变化，请刷新后重试', 'E_CONFLICT');
+    const index = (current.items || []).findIndex(item => item._id === event.itemId);
+    ensure(index >= 0, '门牌记录不存在');
+    const item = current.items[index];
     ensure(item.consented === true, '该住户未同意送上门');
     ensure(item.userId, '门牌缺少住户关联，请联系驿站管理员', 'E_CONFIG');
+    const resident = await read(transaction, 'users', item.userId);
+    if (!resident || resident.communityId !== current.communityId || !resident.prefs || resident.prefs.doorDelivery !== true) {
+      const now = new Date();
+      const items = current.items.slice();
+      items[index] = { ...item, ...skippedItem(item, '住户已撤回送上门授权', now) };
+      const eligibleItems = items.filter(row => row.consented === true);
+      const status = batchStatus(eligibleItems);
+      const data = { items, status, updatedAt: now, ...(status === 'done' ? { completedAt: now } : {}) };
+      if (status === 'done') {
+        const amounts = billing(deliveredCount(eligibleItems), current.priceSnapshot || {});
+        if (amounts.gross > 0) await insert(transaction, 'ledger', { _id: 'station_' + current._id,
+          refType: 'station_delivery', refId: current._id, communityId: current.communityId,
+          stationCode: current.stationCode, providerId: provider._id, amounts,
+          settled: { provider: false, property: false }, settlementIds: { provider: null, property: null }, createdAt: now });
+        data.amounts = amounts;
+        data.ledgerId = amounts.gross > 0 ? 'station_' + current._id : null;
+      }
+      await transaction.collection('deliveryBatches').doc(current._id).update({ data });
+      return { batchId: current._id, itemId: event.itemId, status: 'skipped', reason: '住户已撤回送上门授权', batchStatus: status };
+    }
     if (event.status === 'delivered') {
-      const resident = await read(transaction, 'users', item.userId);
       ensure(resident && resident.communityId === current.communityId, '住户资料不存在', 'E_CONFIG');
-      ensure(resident.prefs && resident.prefs.doorDelivery === true, '住户已关闭默认送上门，请勿继续配送', 'E_FORBIDDEN');
     }
     const now = new Date();
     const patch = deliveryItem(item, event, current._id, now);
@@ -184,4 +307,4 @@ async function recordDelivery(event, { openid }) {
 }
 
 exports.main = server.entry({ setDoorDelivery, listMyBatches, exportStatement, providerHall, acceptBatch, providerBatch,
-  startBatch, recordDelivery }, ['resident', 'admin', 'station']);
+  createBatch, startBatch, checkDoorDeliveryConsent, recordDelivery }, ['resident', 'admin', 'station', 'provider']);

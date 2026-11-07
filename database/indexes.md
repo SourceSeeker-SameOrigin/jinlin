@@ -5,6 +5,8 @@
 | 集合 | 索引名称 | 字段顺序 | 唯一 |
 | --- | --- | --- | --- |
 | users | openid_unique | openid 升序 | 是 |
+| users | community_building_unit_room | communityId 升序、buildingId 升序、unit 升序、room 升序 | 否 |
+| users | saved_address_lookup | addresses.communityId 升序、addresses.buildingId 升序、addresses.unit 升序、addresses.room 升序 | 否 |
 | users | phone | phone 升序 | 否 |
 | orders | orderNo_unique | orderNo 升序 | 是 |
 | orders | community_status_created | communityId 升序、status 升序、createdAt 倒序 | 否 |

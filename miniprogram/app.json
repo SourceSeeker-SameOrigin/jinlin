@@ -116,6 +116,7 @@
       "root": "station",
       "pages": [
         "workbench/workbench",
+        "create/create",
         "worker/worker",
         "batch/batch"
       ]
