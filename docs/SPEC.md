@@ -1,6 +1,6 @@
 # 近邻帮 · 第一版产品与技术规格（SPEC）
 
-版本 v1.1 · 2026-11-07（同步用户已确认的跨午夜、事务及投诉退款规则）
+版本 v1.2 · 2026-11-07（同步用户已确认的跨午夜、事务、投诉退款及 T17–T30 补充规则）
 
 变更基线：原始 `jinlin-spec.zip` 保留。本文同步已确认需求，未确认方案不得作为实现或验收依据。
 
@@ -384,6 +384,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 
 | 状态 | 中文 | 可转到 | 触发者 |
 | --- | --- | --- | --- |
+| `pending_quote` | 待报价 | `pending_pay`（商家提交报价）；`closed`（用户取消） | 商家、住户 |
 | `pending_pay` | 待支付 | `paid`（支付回调 / mock）；`closed`（超时或用户取消） | 系统、住户 |
 | `paid` | 待接单 | `accepted`（服务员接单 / 管理员指派）；`cancelled`（住户取消，全额退款） | 服务员、管理员、住户 |
 | `accepted` | 已接单 | `in_service`（服务员开始）；`paid`（服务员放弃）；`cancelled`（管理员取消，全额退款） | 服务员、管理员 |
@@ -402,6 +403,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 - 服务员放弃：`stats.released + 1`；同一订单被同一人放弃后，不再对他显示。
 - 进入 `paid` 后 `acceptAlertMinutes` 分钟仍未接单：通知 `config.adminOpenids`，记 `alertedAt`，不重复提醒。
 - `pending_pay` 超过 `payTimeoutMinutes`：关单，微信支付侧调用关闭订单。
+- `pending_quote` 是报价制商家订单的未付款前置状态；收到报价后才进入 `pending_pay` 并按 §11 创建/发起支付。用户已确认待报价订单不自动过期；只能由商家报价或用户主动取消，不得套用支付超时。
 - `delivered` 超过 `autoConfirmHours`：自动 `completed`。
 
 ---
@@ -507,7 +509,7 @@ goods    = goodsActual（代买商品款，全额给服务员报销，不参与�
 | | `mockPay` | 住户 | 见 §11.2 |
 | | `listMine` | 住户 | 分页，`status` 分组 |
 | | `detail` | 住户 / 接单服务员 / 管理员 / 物业 | 按角色裁剪字段 |
-| | `cancel` | 住户 | 仅 `pending_pay`、`paid` |
+| | `cancel` | 住户 | 仅 `pending_quote`、`pending_pay`、`paid` |
 | | `confirm` | 住户 | `delivered → completed` |
 | | `rate` | 住户 | 1–5 分 + ≤ 100 字，仅 `completed`，只能评一次 |
 | | `complain` | 住户 | `reason`（未上门 / 物品损坏或丢失 / 态度 / 其他）+ 文本，时限内 |
