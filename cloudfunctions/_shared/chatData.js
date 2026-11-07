@@ -5,6 +5,10 @@ function orderConversationId(orderId, providerOpenid) {
   return 'cv_' + crypto.createHash('sha256').update(orderId + ':' + providerOpenid).digest('hex').slice(0, 36);
 }
 
+function idleConversationId(itemId, buyerOpenid) {
+  return 'ci_' + crypto.createHash('sha256').update(itemId + ':' + buyerOpenid).digest('hex').slice(0, 36);
+}
+
 function newOrderConversation(order, now = new Date()) {
   ensure(order && order.kind === 'service' && order.userOpenid && order.providerOpenid,
     '订单会话参与者不完整', 'E_CONFIG');
@@ -14,6 +18,20 @@ function newOrderConversation(order, now = new Date()) {
     communityId: order.communityId, members: [order.userOpenid, order.providerOpenid],
     lastMessage: '', lastAt: now, unread: { [order.userOpenid]: 0, [order.providerOpenid]: 0 },
     lastSentAt: {}, closedAt: null, closeAt: null, createdAt: now, updatedAt: now };
+}
+
+function newIdleConversation(item, buyerOpenid, now = new Date()) {
+  ensure(item && item._id && item.sellerOpenid && buyerOpenid && item.sellerOpenid !== buyerOpenid,
+    '闲置会话参与者不完整', 'E_CONFIG');
+  ensure(item.tradeMode === 'offline' && item.status === 'on_sale' && !item.moderationHidden, '该闲置当前不可聊天', 'E_BAD_STATE');
+  return { _id: idleConversationId(item._id, buyerOpenid), type: 'idle', refId: item._id,
+    communityId: item.communityId, members: [buyerOpenid, item.sellerOpenid],
+    lastMessage: '', lastAt: now, unread: { [buyerOpenid]: 0, [item.sellerOpenid]: 0 },
+    lastSentAt: {}, closedAt: null, closeAt: null, createdAt: now, updatedAt: now };
+}
+
+function idleReadOnly(item, conversation) {
+  return Boolean(conversation.closedAt || !item || item.status !== 'on_sale' || item.moderationHidden);
 }
 
 function readOnly(order, conversation, config, now = new Date()) {
@@ -44,4 +62,5 @@ function checkSendRate(lastSentAt, now = new Date()) {
   return true;
 }
 
-module.exports = { orderConversationId, newOrderConversation, readOnly, messageView, checkSendRate };
+module.exports = { orderConversationId, idleConversationId, newOrderConversation, newIdleConversation,
+  idleReadOnly, readOnly, messageView, checkSendRate };

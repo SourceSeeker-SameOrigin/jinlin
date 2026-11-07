@@ -8,9 +8,10 @@ function orderView(order, user, provider, config, now) {
   const owner = user.openid === order.userOpenid;
   const assigned = provider && provider.openid === user.openid && order.providerId === provider._id &&
     provider.status === 'approved';
+  const seller = order.kind === 'idle_purchase' && order.sellerOpenid === user.openid;
   const admin = roles.includes('admin');
   const property = roles.includes('property') && user.communityId === order.communityId;
-  ensure(owner || assigned || admin || property, '无权查看此订单', 'E_FORBIDDEN');
+  ensure(owner || assigned || admin || property || seller, '无权查看此订单', 'E_FORBIDDEN');
   const active = ['accepted', 'in_service', 'delivered', 'disputed'].includes(order.status);
   const end = order.completedAt || order.deliveredAt;
   const withinPhoneWindow = active && !order.completedAt || end && now - new Date(end) >= 0 &&
@@ -20,7 +21,7 @@ function orderView(order, user, provider, config, now) {
   if (!owner && !admin) delete pricing.couponId;
   const view = { ...listView(order), note: owner || assigned || admin ? order.note : '', address: owner || assigned || admin ? order.address :
     { buildingName: order.address && order.address.buildingName },
-  pricing, photos: order.photos,
+  pricing: { ...pricing }, photos: order.kind === 'idle_purchase' ? order.idleDelivery && order.idleDelivery.photos || [] : order.photos,
   receiptPhoto: order.receiptPhoto || null, rating: order.rating,
   complaint: order.complaint ? { reason: order.complaint.reason, text: order.complaint.text,
     at: order.complaint.at, resolution: order.complaint.resolution ? {
@@ -37,7 +38,12 @@ function orderView(order, user, provider, config, now) {
   canCancel: owner && (order.status === 'pending_pay' || order.status === 'paid' && order.kind !== 'membership_purchase'),
   canPay: owner && order.status === 'pending_pay',
   provider: null };
-  if (owner || assigned || admin) view.detail = order.detail;
+  if (owner || assigned || admin || seller && order.kind === 'idle_purchase') view.detail = order.detail;
+  if (order.kind === 'idle_purchase' && (owner || seller || admin)) {
+    view.idleSale = { seller: !owner, price: order.idleSnapshot && order.idleSnapshot.price,
+      ...(seller || admin ? { sellerAmount: order.idleSnapshot && order.idleSnapshot.sellerAmount } : {}),
+      delivery: order.idleDelivery || null };
+  }
   if (provider && order.providerId === provider._id && (owner || assigned || admin || property)) {
     view.provider = { name: (provider.realName || '服务员').slice(0, 1) + '师傅', level: provider.level,
       avatarFileId: provider.avatarFileId || null,

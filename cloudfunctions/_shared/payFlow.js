@@ -8,6 +8,7 @@ const { ensure } = require('./validate');
 const { activateMembership } = require('./membershipFlow');
 const { createNotifier } = require('./notify');
 const { markCouponUsed, releaseOrderDiscounts, finalizeRefundDiscounts } = require('./couponFlow');
+const { releaseReservation } = require('./idleData');
 
 function createPayFlow(cloud, server) {
   const { db } = server;
@@ -24,6 +25,11 @@ function createPayFlow(cloud, server) {
       const now = new Date();
       const patch = paidPatch(current, payment, now);
       if (!patch) return current;
+      if (current.kind === 'idle_purchase') {
+        const item = await read(transaction, 'idleItems', current.idleItemId);
+        ensure(item && item.sellerOpenid === current.sellerOpenid && item.purchaseOrderId === current._id &&
+          item.status === 'reserved', '闲置商品预留状态不一致，支付待核对', 'E_CONFLICT');
+      }
       const currentUser = await read(transaction, 'users', user._id);
       const first = firstPaidChanges(current, currentUser, now);
       const paidCount = paidOrderChanges(current, currentUser, now);
@@ -75,7 +81,10 @@ function createPayFlow(cloud, server) {
       const refunds = refundResult(order, refund.outRefundNo, refund.amount, status).map(item =>
         item.outRefundNo === refund.outRefundNo && dispatched ? { ...item, dispatchedAt: new Date() } : item);
       await transaction.collection('orders').doc(orderId).update({ data: { refunds, updatedAt: new Date() } });
-      if (status === 'success') await finalizeRefundDiscounts(transaction, order, refunds, new Date());
+      if (status === 'success') {
+        await finalizeRefundDiscounts(transaction, order, refunds, new Date());
+        await releaseReservation(transaction, order);
+      }
       return { ...order, refunds };
     });
   }
@@ -109,6 +118,7 @@ function createPayFlow(cloud, server) {
       if (options.to) Object.assign(patch, transitionPatch(current, options.to, options.actor || 'system', new Date()));
       await transaction.collection('orders').doc(order._id).update({ data: patch });
       const resultingOrder = { ...current, ...patch };
+      if (reserved.refund.status === 'success') await releaseReservation(transaction, resultingOrder);
       if (options.afterWrite) await options.afterWrite(transaction, resultingOrder);
       await finalizeRefundDiscounts(transaction, resultingOrder, reserved.refunds, new Date());
       return { order: resultingOrder, refund: reserved.refund };
@@ -136,13 +146,14 @@ function createPayFlow(cloud, server) {
     }
     await atomic(db, async transaction => {
       const current = await read(transaction, 'orders', order._id);
-      ensure(current, '订单不存在');
-      if (current.status === 'closed') return;
-      ensure(current.status === 'pending_pay', '订单状态已变化，请刷新后重试', 'E_CONFLICT');
-      const user = await read(transaction, 'users', current.userId);
-      ensure(user, '订单用户不存在', 'E_CONFIG');
-      await releaseOrderDiscounts(transaction, current, user, new Date());
-      await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, new Date()) });
+      ensure(current && ['pending_pay', 'closed'].includes(current.status), '订单状态已变化，请刷新后重试', 'E_CONFLICT');
+      if (current.status === 'pending_pay') {
+        const user = await read(transaction, 'users', current.userId);
+        ensure(user, '订单用户不存在', 'E_CONFIG');
+        await releaseOrderDiscounts(transaction, current, user, new Date());
+        await transaction.collection('orders').doc(current._id).update({ data: transitionPatch(current, 'closed', actor, new Date()) });
+      }
+      if (current.kind === 'idle_purchase') await releaseReservation(transaction, current);
     });
   }
 

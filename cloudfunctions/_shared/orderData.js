@@ -2,7 +2,7 @@ const { ensure, record, text } = require('./validate');
 const { ymd, addDays, parseWindow, nextDutyWindow } = require('./time');
 const { STATUS_TEXT, assertTransition } = require('./stateMachine');
 
-const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务' });
+const SERVICE_NAMES = Object.freeze({ express: '代取快递', trash: '代扔垃圾', buy: '周边代买', help: '帮把手', custom: '悬赏任务', idle: '闲置担保交易' });
 const STATUS_GROUPS = Object.freeze({ ongoing: ['pending_pay', 'paid', 'accepted', 'in_service', 'delivered'],
   done: ['completed', 'closed', 'cancelled'], aftersale: ['disputed', 'refunded'] });
 
@@ -85,7 +85,7 @@ function newOrder({ id, orderNo, user, community, building, serviceCode, detail,
 
 function listView(order) {
   return { _id: order._id, orderNo: order.orderNo, kind: order.kind, serviceCode: order.serviceCode, communityId: order.communityId,
-    serviceName: SERVICE_NAMES[order.serviceCode] || '月卡', status: order.status,
+    serviceName: order.kind === 'idle_purchase' ? '闲置担保交易' : SERVICE_NAMES[order.serviceCode] || '月卡', status: order.status,
     statusText: order.kind === 'membership_purchase' && order.status === 'paid' ? '已开卡' : STATUS_TEXT[order.status],
     pricing: { payAmount: order.pricing.payAmount, goodsCap: order.pricing.goodsCap }, slot: order.slot,
     createdAt: order.createdAt, buildingName: order.address && order.address.buildingName };

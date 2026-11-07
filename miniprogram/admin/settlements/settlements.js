@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 Page({
   data: { loading: true, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0,
-    payees: ['服务员', '物业'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
+    payees: ['服务员', '物业', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
   onLoad() {
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today }); this.load();
@@ -25,7 +25,7 @@ Page({
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   select(event) { this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
   request() {
-    const payee = this.data.payeeIndex ? 'property' : 'provider';
+    const payee = ['provider', 'property', 'seller'][this.data.payeeIndex];
     const community = this.data.communities[this.data.communityIndex];
     const provider = this.data.providers[this.data.providerIndex];
     if (!community || payee === 'provider' && !provider) throw new Error('请先配置小区和服务员');

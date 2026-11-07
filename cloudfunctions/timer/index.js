@@ -35,8 +35,11 @@ exports.main = async (event = {}) => {
       .update({ data: { alertedAt: now, alertPriority: 1 } });
     if (updated.stats.updated === 1) await notify.unaccepted({ ...order, alertedAt: now });
   });
-  await run('autoConfirm', () => ({ status: 'delivered', deliveredAt: command.lte(new Date(now - integer(config.autoConfirmHours, '自动确认时限', 1) * 3600000)) }),
+  await run('autoConfirm', () => ({ kind: command.neq('idle_purchase'), status: 'delivered',
+    deliveredAt: command.lte(new Date(now - integer(config.autoConfirmHours, '自动确认时限', 1) * 3600000)) }),
     order => ledger.complete(order, 'system'));
+  await run('idleAutoConfirm', () => ({ kind: 'idle_purchase', status: 'delivered',
+    deliveredAt: command.lte(new Date(now - 72 * 3600000)) }), order => ledger.complete(order, 'system'));
   await run('refundRecovery', () => ({ 'refunds.status': command.in(['processing', 'failed']) }), async order => {
     for (const refund of order.refunds.filter(item => item.status !== 'success' && order.payment.mode === 'wechat')) {
       try {

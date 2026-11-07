@@ -1,0 +1,1 @@
+.row{display:flex;align-items:center;gap:20rpx;margin:24rpx 0}.picker{padding:24rpx;background:#fff;border-radius:12rpx;margin:18rpx 0}

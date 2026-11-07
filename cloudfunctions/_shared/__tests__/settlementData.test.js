@@ -17,6 +17,16 @@ test('按服务员和物业分别筛选未结算账目', () => {
   expect(rowsForPayee(ledger, 'property').map(row => row._id)).toEqual(['a', 'c']);
 });
 
+test('个人卖家结算按卖家OpenID筛选并排除打款锁定账目', () => {
+  const rows = [
+    { _id: 's1', sellerOpenid: 'wx-a', payoutId: null, settled: { seller: false }, amounts: { seller: 300 } },
+    { _id: 's2', sellerOpenid: 'wx-a', payoutId: 'po1', settled: { seller: false }, amounts: { seller: 500 } },
+    { _id: 's3', sellerOpenid: 'wx-b', settled: { seller: false }, amounts: { seller: 700 } }
+  ];
+  expect(rowsForPayee(rows, 'seller', 'wx-a').map(row => row._id)).toEqual(['s1']);
+  expect(total(rowsForPayee(rows, 'seller', 'wx-b'), 'seller')).toBe(700);
+});
+
 test('CSV 添加 UTF-8 BOM、正确转义并防止公式注入', () => {
   expect(csvCell('A,"B')).toBe('"A,""B"');
   expect(csvCell('=1+1')).toBe("\"'=1+1\"");

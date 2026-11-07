@@ -1,6 +1,7 @@
 const { ensure, integer, text } = require('./validate');
 const { split } = require('./split');
 const { refundTotals } = require('./refundState');
+const { commission } = require('./idleData');
 
 const COMPLAINT_REASONS = ['未上门', '物品损坏或丢失', '态度', '其他'];
 function complaintAllowed(order, now, hours) {
@@ -29,6 +30,11 @@ function rating(event, order, now) {
 function accounting(order, { serviceRefund = 0, goodsRefund = 0, providerLiable = false } = {}) {
   integer(serviceRefund, '服务费退款', 0, order.pricing.payAmount);
   integer(goodsRefund, '商品款退款', 0, order.pricing.goodsActual || 0);
+  if (order.kind === 'idle_purchase') {
+    const gross = integer(order.pricing.payAmount - serviceRefund, '闲置成交净额', 0, order.pricing.payAmount);
+    const fee = commission(gross, order.idleSnapshot.commissionRate);
+    return { gross, provider: 0, property: 0, platform: fee, goods: 0, seller: gross - fee };
+  }
   const amounts = split({ ...order.pricing, refundAmount: serviceRefund, providerLiable,
     goodsActual: (order.pricing.goodsActual || 0) - goodsRefund,
     rates: order.rateSnapshot, source: order.source, membershipTaskPayout: order.membershipTaskPayout });
@@ -37,9 +43,13 @@ function accounting(order, { serviceRefund = 0, goodsRefund = 0, providerLiable 
 
 function ledgerDelta(target, booked) {
   const result = {};
-  for (const key of ['gross', 'provider', 'property', 'platform', 'goods']) {
-    result[key] = integer(target[key], '账本金额', -Number.MAX_SAFE_INTEGER) -
-      (booked ? integer(booked[key], '已记账金额', -Number.MAX_SAFE_INTEGER) : 0);
+  const keys = ['gross', 'provider', 'property', 'platform', 'goods'];
+  if (target.seller !== undefined || booked && booked.seller !== undefined) keys.push('seller');
+  for (const key of keys) {
+    const current = target[key] === undefined ? 0 : target[key];
+    const previous = booked && booked[key] !== undefined ? booked[key] : 0;
+    result[key] = integer(current, '账本金额', -Number.MAX_SAFE_INTEGER) -
+      integer(previous, '已记账金额', -Number.MAX_SAFE_INTEGER);
     integer(result[key], '账本差额', -Number.MAX_SAFE_INTEGER);
   }
   return result;

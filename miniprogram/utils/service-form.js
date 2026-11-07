@@ -13,6 +13,14 @@ module.exports = function serviceForm(serviceCode) {
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
       pointsToUse: 0, placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
+    onLoad(options) {
+      if (serviceCode === 'help' && options && options.idleTitle) {
+        const title = options.idleTitle;
+        const desc = options.idleDesc || '';
+        this.idlePrefill = { categoryIndex: 0,
+          desc: ('请帮忙搬运：' + title + (desc ? '。' + desc : '')).slice(0, 200) };
+      }
+    },
     onShow() { this.load(); },
     onHide() { clearTimeout(this.quoteTimer); this.quoteSequence = (this.quoteSequence || 0) + 1; },
     onUnload() { this.unloaded = true; clearTimeout(this.quoteTimer); },
@@ -23,6 +31,7 @@ module.exports = function serviceForm(serviceCode) {
         if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
         this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
         this.restoreDraft(user);
+        if (this.idlePrefill) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
           contactName: '', contactPhone: user.phone, isDefault: true }];

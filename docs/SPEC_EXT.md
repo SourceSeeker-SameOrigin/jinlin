@@ -151,7 +151,8 @@ idleItems: {
 
 - **信息模式（默认）**：买家点"我想要"→ 打开与卖家的聊天（E4，需 `chat` 开启；未开启时显示卖家打码手机号并提供一键拨号）。线下交易，卖家标记"已售"。平台不经手货款。
 - **帮搬**：买家或卖家可一键下"帮把手"订单，地址预填。
-- **担保模式（`idleEscrow`）**：卖家发布时可选 `tradeMode='escrow'`。买家下单支付货款 → 订单 `kind='idle_purchase'` → 卖家交付 → 买家确认（或 72 小时自动确认）→ 账本 `refType='idle_sale'`，`payee=seller`，金额 = 货款 − `config.idleCommissionRate`（默认 0）× 货款 → 结算或自动打款给卖家。纠纷走 SPEC §8 的投诉流程。
+- **担保模式（`idleEscrow`）**：仅本小区商品可选 `tradeMode='escrow'`。买家创建待支付订单时商品锁定为 `reserved`，同一商品不能创建第二笔担保订单；支付超时或未付款取消后释放锁定。买家支付货款 → 订单 `kind='idle_purchase'` → 卖家接单并上传 1–3 张交付凭证 → 买家确认（或交付 72 小时自动确认）。订单完成后商品标记 `sold`，账本 `refType='idle_sale'`，平台佣金按 `Math.round(商品金额分 × config.idleCommissionRate)` 四舍五入到分（默认 0），卖家净额为成交金额减佣金。卖家收入按 T30 的 `autoPayout` 开关结算：开启时卖家可申请新版商家转账，关闭时管理员人工结算。退款成功后，若商品记录仍属于原卖家且仍关联该订单，则自动恢复上架。
+- 担保订单纠纷走 SPEC §8 的投诉流程；退款成功后检查商品所有权和关联订单再恢复，避免误上架已转手商品。
 - 禁售：`config.idleBlacklist`（默认：烟草、酒类、药品、医疗器械、活体动物、管制刀具、自制食品、贴身衣物、虚拟账号）+ 通用黑名单。
 - 云函数 `idle`：`list`、`detail`、`create`、`update`、`markSold`、`remove`、`report`、`buy`（担保）、`confirm`（担保）。
 
