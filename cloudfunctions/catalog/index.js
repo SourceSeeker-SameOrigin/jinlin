@@ -14,7 +14,7 @@ const { db, one, get } = server;
 async function listCommunities(event) {
   const offset = event.offset === undefined ? 0 : integer(event.offset, '页码', 0, 10000);
   const result = await db.collection('communities').where({ status: 'active' }).orderBy('_id', 'asc').skip(offset).limit(100).get();
-  return { list: result.data.map(({ _id, name, city, district, address }) => ({ _id, name, city, district, address })),
+  return { list: result.data.map(({ _id, name, city, district, address, federationGroupId }) => ({ _id, name, city, district, address, federationGroupId: federationGroupId || null })),
     hasMore: result.data.length === 100 };
 }
 

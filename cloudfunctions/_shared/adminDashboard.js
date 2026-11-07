@@ -2,6 +2,7 @@ const { ensure, integer, text } = require('./validate');
 const { requireRole, requireCommunityAccess } = require('./auth');
 const { parseDate, addDays, ymd } = require('./time');
 const { validateFeatures } = require('./features');
+const { visibleCommunityIds } = require('./visibility');
 
 function createAdminDashboard(cloud, server) {
   const { db, command } = server;
@@ -9,18 +10,27 @@ function createAdminDashboard(cloud, server) {
     const communityId = user.roles.includes('admin') ? event.communityId || user.communityId : user.communityId;
     ensure(communityId, '请先选择小区');
     requireCommunityAccess(user, communityId);
+    let communityIds = [communityId];
+    if (event.scope === 'federation') {
+      requireRole(user, ['admin']);
+      await server.feature('federation', communityId);
+      const communities = await server.all('communities', { status: 'active' });
+      const selected = communities.find(item => item._id === communityId);
+      communityIds = visibleCommunityIds('federation', selected, communities);
+    } else ensure(!event.scope || event.scope === 'community', '统计范围不正确');
     const today = ymd(new Date());
     const from = event.from || today;
     const to = event.to || today;
     const start = parseDate(from);
     const end = addDays(parseDate(to), 1);
     ensure(end > start && end - start <= 366 * 86400000, '统计日期范围不能超过一年');
-    const orders = await server.all('orders', { communityId, createdAt: command.gte(start).and(command.lt(end)) });
-    const providers = await server.all('providers', { communityId });
+    const communityFilter = command.in(communityIds);
+    const orders = await server.all('orders', { communityId: communityFilter, createdAt: command.gte(start).and(command.lt(end)) });
+    const providers = await server.all('providers', { communityId: communityFilter });
     const [cards, duty, events] = await Promise.all([
-      server.all('memberships', { communityId, status: 'active', startAt: command.lt(end), endAt: command.gt(start) }),
-      db.collection('providers').where({ communityId, status: 'approved', onDuty: true, insuranceUntil: command.gt(new Date()) }).count(),
-      server.all('events', { communityId, at: command.gte(start).and(command.lt(end)) })
+      server.all('memberships', { communityId: communityFilter, status: 'active', startAt: command.lt(end), endAt: command.gt(start) }),
+      db.collection('providers').where({ communityId: communityFilter, status: 'approved', onDuty: true, insuranceUntil: command.gt(new Date()) }).count(),
+      server.all('events', { communityId: communityFilter, at: command.gte(start).and(command.lt(end)) })
     ]);
     const statusCounts = {};
     const uniqueResidents = new Set();
@@ -43,6 +53,7 @@ function createAdminDashboard(cloud, server) {
       totals[card.serviceCode] = (totals[card.serviceCode] || 0) + 1; return totals;
     }, {});
     const source = { scan: new Set(), bind: new Set(), first_paid: new Set(), second_paid: new Set() };
+    const adStats = { views: 0, clicks: 0 };
     const byBuilding = new Map();
     const byProvider = new Map();
     function addFunnel(map, key, type, openid) {
@@ -50,14 +61,18 @@ function createAdminDashboard(cloud, server) {
       if (!map.has(key)) map.set(key, { scan: new Set(), bind: new Set(), first_paid: new Set(), second_paid: new Set() });
       if (map.get(key)[type]) map.get(key)[type].add(openid);
     }
-    for (const eventItem of events) if (source[eventItem.type]) source[eventItem.type].add(eventItem.openid);
+    for (const eventItem of events) {
+      if (source[eventItem.type]) source[eventItem.type].add(eventItem.openid);
+      if (eventItem.type === 'ad_view') adStats.views++;
+      if (eventItem.type === 'ad_click') adStats.clicks++;
+    }
     for (const eventItem of events) {
       addFunnel(byBuilding, eventItem.buildingId, eventItem.type, eventItem.openid);
       addFunnel(byProvider, eventItem.referrerProviderId, eventItem.type, eventItem.openid);
     }
     const funnelRows = map => [...map].map(([id, counts]) => ({ id, scans: counts.scan.size, binds: counts.bind.size,
       firstPaid: counts.first_paid.size, secondPaid: counts.second_paid.size }));
-    return { communityId, from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
+    return { communityId, communityIds, scope: event.scope === 'federation' ? 'federation' : 'community', from, to, readOnly: !user.roles.includes('admin'), orders: statusCounts,
       totalOrders: orders.length, paidOrders, serviceFeeTurnover: turnover, actualIncome: net,
       residentCount: uniqueResidents.size, newFirstPaidResidents: source.first_paid.size,
       secondPaidResidents: source.second_paid.size, acceptRate15m: acceptedCount ?
@@ -70,7 +85,7 @@ function createAdminDashboard(cloud, server) {
       providerStats: providers.map(provider => ({ id: provider._id, name: provider.realName, completed: provider.stats.completed,
         averageRating: provider.stats.ratingCount ? (provider.stats.ratingSum / provider.stats.ratingCount).toFixed(1) : '暂无' })),
       funnel: { scans: source.scan.size, binds: source.bind.size, firstPaid: source.first_paid.size, secondPaid: source.second_paid.size },
-      funnelByBuilding: funnelRows(byBuilding), funnelByProvider: funnelRows(byProvider) };
+      funnelByBuilding: funnelRows(byBuilding), funnelByProvider: funnelRows(byProvider), adStats };
   }
 
   async function updateCommunity(event, { user }) {
@@ -78,11 +93,16 @@ function createAdminDashboard(cloud, server) {
     text(event.communityId, '小区');
     const current = await server.get('communities', event.communityId);
     ensure(current, '小区不存在');
-    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features'];
+    const allowed = ['name', 'city', 'district', 'address', 'propertyName', 'status', 'rates', 'dutyWindows', 'stations', 'prices', 'cardPlans', 'features', 'federationGroupId'];
     const patch = {};
     for (const key of allowed) if (Object.prototype.hasOwnProperty.call(event, key)) patch[key] = event[key];
     ensure(Object.keys(patch).length > 0, '没有可保存的配置');
     if (patch.status !== undefined) ensure(['active', 'paused'].includes(patch.status), '小区状态不正确');
+    if (patch.federationGroupId !== undefined) {
+      ensure(patch.federationGroupId === null || typeof patch.federationGroupId === 'string', '联合社区组 ID 格式不正确');
+      if (typeof patch.federationGroupId === 'string') patch.federationGroupId = patch.federationGroupId.trim() || null;
+      ensure(patch.federationGroupId === null || patch.federationGroupId.length <= 100, '联合社区组 ID 不能超过 100 字');
+    }
     if (patch.features) {
       const config = await server.config();
       validateFeatures({ ...(config.features || {}), ...(current.features || {}), ...patch.features });

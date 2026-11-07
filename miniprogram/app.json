@@ -11,7 +11,8 @@
     "pages/membership/index",
     "pages/me/me",
     "pages/legal/privacy",
-    "pages/legal/terms"
+    "pages/legal/terms",
+    "pages/notices/list"
   ],
   "subPackages": [
     {
@@ -20,7 +21,7 @@
     },
     {
       "root": "admin",
-      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat", "coupons/coupons"]
+      "pages": ["dashboard/dashboard", "orders/orders", "order/order", "providers/providers", "community/community", "posters/posters", "settlements/settlements", "features/features", "reports/reports", "chat/chat", "coupons/coupons", "content/content"]
     },
     {
       "root": "chat",

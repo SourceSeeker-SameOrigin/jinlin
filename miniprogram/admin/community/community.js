@@ -1,7 +1,7 @@
 const api = require('../../utils/api');
 Page({
   data: { loading: true, saving: false, error: '', communities: [], communityIndex: 0, community: null, unitsText: '',
-    stationsText: '', pricesText: '', dutyText: '', blacklistText: '', name: '' },
+    stationsText: '', pricesText: '', dutyText: '', blacklistText: '', name: '', federationGroupId: '' },
   onLoad() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -20,6 +20,7 @@ Page({
     if (!item) return;
     const community = await api.call('catalog', 'getCommunity', { communityId: item._id }, { loading: false, silent: true });
     this.setData({ communityIndex: index, community, name: community.name,
+      federationGroupId: community.federationGroupId || '',
       unitsText: community.buildings.map(building => building.name + ':' + building.units.join(',')).join('\n'),
       stationsText: JSON.stringify(community.stations, null, 2), pricesText: JSON.stringify(community.prices, null, 2),
       dutyText: JSON.stringify(community.dutyWindows, null, 2) });
@@ -34,7 +35,7 @@ Page({
       const prices = JSON.parse(this.data.pricesText);
       const dutyWindows = JSON.parse(this.data.dutyText);
       await api.call('admin', 'updateCommunity', { communityId: this.data.community._id, name: this.data.name,
-        stations, prices, dutyWindows });
+        stations, prices, dutyWindows, federationGroupId: this.data.federationGroupId.trim() || null });
       wx.showToast({ title: '配置已保存', icon: 'success' });
       await this.selectCommunity(this.data.communityIndex);
     } catch (error) { this.setData({ error: error.message || '配置格式不正确，请检查 JSON' }); }
