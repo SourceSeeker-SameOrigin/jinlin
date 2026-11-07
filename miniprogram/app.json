@@ -6,14 +6,12 @@
     "pages/service/trash",
     "pages/service/buy",
     "pages/service/help",
-    "pages/service/recycle",
     "pages/orders/list",
     "pages/orders/detail",
     "pages/membership/index",
     "pages/me/me",
     "pages/legal/privacy",
-    "pages/legal/terms",
-    "pages/notices/list"
+    "pages/legal/terms"
   ],
   "subPackages": [
     {
@@ -129,6 +127,18 @@
       "pages": [
         "meal",
         "escort"
+      ]
+    },
+    {
+      "root": "recycle",
+      "pages": [
+        "order/order"
+      ]
+    },
+    {
+      "root": "notices",
+      "pages": [
+        "list/list"
       ]
     }
   ],

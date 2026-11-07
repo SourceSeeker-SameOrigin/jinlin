@@ -397,7 +397,7 @@ ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId,
 
 新增集合：`posts`、`comments`、`reports`、`idleItems`、`events`、`signups`、`conversations`、`messages`、`couponTemplates`、`coupons`、`pointsLedger`、`payouts`、`merchants`、`merchantServices`、`deliveryBatches`、`stationApplications`、`visits`、`secrets`、`ads`、`notices`、`auditLogs`。安全规则一律前端不可读写。
 
-分包：`board/`、`idle/`、`events/`、`chat/`、`coupons/`、`elder/`、`pet/`、`shops/`、`merchant/`、`station/`。主包只放 SPEC §3.1 列出的页面（首页、绑定、4 项核心服务、订单列表与详情、月卡、我的、隐私政策、服务协议），保证主包小于 2MB。
+分包：`board/`、`idle/`、`events/`、`chat/`、`coupons/`、`elder/`、`pet/`、`shops/`、`merchant/`、`station/`、`recycle/`、`notices/`。主包只放 SPEC §3.1 列出的页面（首页、绑定、4 项核心服务、订单列表与详情、月卡、我的、隐私政策、服务协议），保证主包小于 2MB。
 
 ---
 
@@ -413,6 +413,7 @@ ads: { _id, slot: 'home_banner' | 'board_top' | 'shops_top', title, imageFileId,
 6. 订单聊天：发送含手机号的消息出现隐私提示；订单完成 24 小时后会话只读。
 7. 拒绝定位授权时绑定页退回列表；允许时显示附近小区；服务员在任务详情页时住户地图上能看到位置，订单完成后看不到。
 8. 新用户自动发券；首单价与 5 元券同时可用时系统选择更优者；全额退款后券退回。验证推荐券只给推荐人且在被推荐人首笔付费订单完成后触发；积分全额服务费退款恢复全部、部分退款按服务费比例向下取整、商品款退款不恢复，重复退款回调不重复入账。
+9. 回收预约后由同小区服务员接单称重；按 0.1 kg、分类积分向下取整及企业收购款四舍五入到分计算；住户积分、服务员计件账本和企业月度对账一致。
 10. 自动打款：服务员提现 50 元 → 官方确认页 → 成功后账本标记已结算；服务员单次超过 2000 元被拒。卖家单次最多 1999.99 元，超额余额保留并可后续分笔申请，累计结算金额与卖家账本一致。
 11. 独居探访月卡：子女为父母地址下单（多地址）→ 每周二、五生成任务 → 服务员填写逐项报告、补充文字及“需关注”状态 → 子女收到报告；勾选“需关注”后台标红。修改地址仅影响续期后的新周期；探访服务员报酬按小区配置。政府补贴导出不包含门牌与手机号。送餐预付金额不得超过小区配置上限。
 12. 陪诊：没有 `escort` 证书的服务员在大厅看不到。
