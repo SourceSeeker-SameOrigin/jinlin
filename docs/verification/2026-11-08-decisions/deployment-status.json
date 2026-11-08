@@ -6,7 +6,7 @@
   "uploadAuthorized": true,
   "authorizedFunctions": 18,
   "totalBytes": 2148870,
-  "successfulUpdatesConfirmed": 8,
+  "successfulUpdatesConfirmed": 9,
   "attempts": [
     {
       "function": "order",
@@ -103,12 +103,12 @@
       }
     },
     "newCodeVerified": true,
-    "verificationScope": "admin, board, catalog, chat, content, coupon, event, order"
+    "verificationScope": "admin, board, catalog, chat, content, coupon, event, idle, order"
   },
-  "remainingFunctionsNotAttempted": 10,
+  "remainingFunctionsNotAttempted": 9,
   "browser": "Original CUA provider remains blocked; user-approved Chrome DevTools page reading and clicking work",
   "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "8/18 functions source verified; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
+  "boundary": "9/18 functions source verified; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
   "connectionDiagnosis": {
     "browserProvider": "Still blocked before listing browsers",
     "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
@@ -118,7 +118,7 @@
     "approvedAlternative": "Existing ECC Chrome DevTools; no installation, new port or credentials",
     "alternativeResult": "Connected; official target environment function list shows 21 functions; order upload dialog opened",
     "fileUploadBlock": "upload_file rejected both /tmp/jinlin-deploy-1514833/order.zip and an identical copy under the current user workspace as outside configured workspace roots; configured roots not returned",
-    "nextStep": "Manual file selection for idle; browser metadata check ready"
+    "nextStep": "Manual file selection for membership; browser metadata check ready"
   },
   "codeReadbackDownload": {
     "method": "Official CLI functions download",
@@ -133,10 +133,11 @@
     "content",
     "coupon",
     "event",
+    "idle",
     "order"
   ],
   "inProgressFunction": null,
-  "nextFunction": "idle",
+  "nextFunction": "membership",
   "verifiedSourceEvidence": [
     "admin-cloud-readback.json",
     "board-cloud-readback.json",
@@ -145,6 +146,7 @@
     "content-cloud-readback.json",
     "coupon-cloud-readback.json",
     "event-cloud-readback.json",
+    "idle-cloud-readback.json",
     "order-cloud-readback.json"
   ]
 }
