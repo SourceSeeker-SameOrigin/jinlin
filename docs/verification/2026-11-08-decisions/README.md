@@ -11,7 +11,7 @@
 | login-contract.json | 登录成功、我的入口有效、locationGeo不返回 | 实际源码隔离调用，不代表已部署 |
 | static.json | 69页/14分包；77WXML、78WXSS官方编译通过；issues为空 | 组件/路由/事件/语法检查；不代替真机排版和官方包体 |
 | boundary.json | 21函数、165actions、288项通过；1449共享副本一致 | 无微信上下文时拒绝，DB/网络0调用 |
-| deployment-status.json | 18包已授权；order平台提示成功，新版内容未核实 | Chrome DevTools可操作；order修改时间更新、无身份测试通过，编辑器源码仍不符；D40批准先核验ZIP再重试一次；其余17包未更新 |
+| deployment-status.json | 18包已授权；order/admin/board/catalog源码确认（4/18） | 对应*-cloud-readback.json记录72文件SHA256及依赖版本；其余14待更新。编辑器旧显示通过实际云端下载比对排除，权限仍待核验 |
 | permissions.json | 21函数声明匹配人工核对清单 | 实际云授权未回读，接口尚未真实验收 |
 | ui-status.json | 当前项目重新编译0错误；清理获准缓存、官方CLI重开成功 | 重开后分析点击noWindowsAvailable，尚未取得新统计，不能认定包体通过；浏览器工具关闭 |
 

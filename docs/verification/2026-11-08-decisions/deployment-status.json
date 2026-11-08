@@ -6,7 +6,7 @@
   "uploadAuthorized": true,
   "authorizedFunctions": 18,
   "totalBytes": 2148870,
-  "successfulUpdatesConfirmed": 0,
+  "successfulUpdatesConfirmed": 4,
   "attempts": [
     {
       "function": "order",
@@ -37,6 +37,38 @@
       "codeVersionVerified": false,
       "warning": "Cloud invocation permissions must be synchronized and uploaded through WeChat developer tools",
       "lastModifiedAfterReload": "2026-11-08 15:46:16"
+    },
+    {
+      "function": "order",
+      "method": "User-approved single web retry after browser SHA256 match",
+      "reportedSuccess": true,
+      "codeVersionVerified": true,
+      "fileComparison": "72/72 byte-identical",
+      "dependency": "wx-server-sdk 4.0.2"
+    },
+    {
+      "function": "admin",
+      "method": "Web ZIP upload after browser SHA256 match",
+      "reportedSuccess": true,
+      "codeVersionVerified": true,
+      "fileComparison": "72/72 byte-identical",
+      "dependency": "wx-server-sdk 4.0.2"
+    },
+    {
+      "function": "board",
+      "method": "Web ZIP upload after browser SHA256 match",
+      "reportedSuccess": true,
+      "codeVersionVerified": true,
+      "fileComparison": "72/72 byte-identical",
+      "dependency": "wx-server-sdk 4.0.2"
+    },
+    {
+      "function": "catalog",
+      "method": "Web ZIP upload after browser SHA256 match",
+      "reportedSuccess": true,
+      "codeVersionVerified": true,
+      "fileComparison": "72/72 byte-identical",
+      "dependency": "wx-server-sdk 4.0.2"
     }
   ],
   "readback": {
@@ -60,14 +92,23 @@
         },
         "durationMs": 24,
         "scope": "Module load and unauthenticated rejection only; no business acceptance"
+      },
+      "sourceMismatchResolved": "Official CLI downloaded actual cloud files: all72 match approved ZIP; online editor display is not authoritative",
+      "postRetrySmoke": {
+        "input": "Default Hello World template, no action",
+        "requestId": "93214252-db4a-11f1-9d10-525400b2d845",
+        "code": "E_UNKNOWN_ACTION",
+        "durationMs": 4,
+        "scope": "Module initialization and unknown-action handling only"
       }
     },
-    "newCodeVerified": false
+    "newCodeVerified": true,
+    "verificationScope": "order, admin, board, catalog"
   },
-  "remainingFunctionsNotAttempted": 17,
+  "remainingFunctionsNotAttempted": 14,
   "browser": "Original CUA provider remains blocked; user-approved Chrome DevTools page reading and clicking work",
   "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "Web upload reported success for order; source version unresolved; remaining17 untouched; no timer/HTTP/role/key/package/main changes",
+  "boundary": "4 functions source verified; other14 pending; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
   "connectionDiagnosis": {
     "browserProvider": "Still blocked before listing browsers",
     "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
@@ -77,11 +118,20 @@
     "approvedAlternative": "Existing ECC Chrome DevTools; no installation, new port or credentials",
     "alternativeResult": "Connected; official target environment function list shows 21 functions; order upload dialog opened",
     "fileUploadBlock": "upload_file rejected both /tmp/jinlin-deploy-1514833/order.zip and an identical copy under the current user workspace as outside configured workspace roots; configured roots not returned",
-    "nextStep": "User approved one retry after browser File SHA256 and byte count match; awaiting manual re-selection"
+    "nextStep": "Waiting for manual chat ZIP selection; one-time browser metadata check ready"
   },
-  "platformReportedSuccessfulUpdates": 1,
+  "platformReportedSuccessfulUpdates": 4,
   "codeReadbackDownload": {
     "method": "Official CLI functions download",
-    "result": "Two attempts failed with code 17 invalid output path, including after creating destination directory; no source downloaded"
-  }
+    "result": "Successful when --path supplied a .zip-suffixed target; CLI created extracted directory; folder-only target failed code17",
+    "readbackRoot": "/tmp/jinlin-order-readback-20261108-1546"
+  },
+  "confirmedFunctions": [
+    "order",
+    "admin",
+    "board",
+    "catalog"
+  ],
+  "inProgressFunction": null,
+  "nextFunction": "chat"
 }
