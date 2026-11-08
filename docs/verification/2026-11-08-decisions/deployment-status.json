@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-08",
+  "sourceCommit": "151483331205b4783367e7c91365cb6b78044f6b",
+  "environmentId": "cloud1-d4gbpd8zx89564fb6",
+  "manifest": "/tmp/jinlin-deploy-1514833/manifest.json",
+  "uploadAuthorized": true,
+  "authorizedFunctions": 18,
+  "totalBytes": 2148870,
+  "successfulUpdatesConfirmed": 0,
+  "attempts": [
+    {
+      "function": "order",
+      "method": "official CLI --paths + --project, remote npm install",
+      "reportedSuccess": false,
+      "code": "EISDIR",
+      "message": "illegal operation on a directory, read"
+    },
+    {
+      "function": "order",
+      "method": "official CLI --paths + --appid, remote npm install",
+      "reportedSuccess": false,
+      "code": "EISDIR",
+      "message": "illegal operation on a directory, read"
+    }
+  ],
+  "readback": {
+    "functionListCount": 21,
+    "order": {
+      "status": "Active",
+      "timeout": 3,
+      "runtime": "Nodejs20.19"
+    },
+    "newCodeVerified": false
+  },
+  "remainingFunctionsNotAttempted": 17,
+  "browser": "Local browser use is disabled in Work settings; persists after user confirmations and CUA session reset",
+  "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
+  "boundary": "No confirmed updated function, no timer enabled, no HTTP exposure, no key/role changes, no package upgrade, no main merge"
+}
