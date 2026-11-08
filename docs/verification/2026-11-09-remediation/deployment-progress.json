@@ -13,12 +13,14 @@
   "uploaded": [
     "membership",
     "order",
-    "payCallback"
+    "payCallback",
+    "content"
   ],
   "verified": [
     "membership",
     "order",
-    "payCallback"
+    "payCallback",
+    "content"
   ],
   "supersedesOld110ebe8": [
     "order",
@@ -30,7 +32,7 @@
     "board",
     "timer"
   ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/content.zip in currently open content upload dialog; do not click deploy",
+  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/chat.zip in currently open chat upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
@@ -38,7 +40,7 @@
     "user",
     "provider"
   ],
-  "nextFunction": "content",
+  "nextFunction": "chat",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof"
 }

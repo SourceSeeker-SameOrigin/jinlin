@@ -19,8 +19,8 @@
     "user",
     "provider"
   ],
-  "nextFunction": "content",
-  "nextPackage": "/tmp/jinlin-deploy-fc2a313/content.zip",
+  "nextFunction": "chat",
+  "nextPackage": "/tmp/jinlin-deploy-fc2a313/chat.zip",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
