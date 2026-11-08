@@ -6,7 +6,7 @@
   "uploadAuthorized": true,
   "authorizedFunctions": 18,
   "totalBytes": 2148870,
-  "successfulUpdatesConfirmed": 9,
+  "successfulUpdatesConfirmed": 18,
   "attempts": [
     {
       "function": "order",
@@ -27,8 +27,7 @@
       "method": "official CLI --names with isolated temporary project mapping, remote npm install",
       "reportedSuccess": false,
       "code": "EISDIR",
-      "message": "illegal operation on a directory, read",
-      "sourceVerified": "72 files match authorized ZIP exactly"
+      "message": "illegal operation on a directory, read"
     },
     {
       "function": "order",
@@ -103,12 +102,12 @@
       }
     },
     "newCodeVerified": true,
-    "verificationScope": "admin, board, catalog, chat, content, coupon, event, idle, order"
+    "verificationScope": "admin, board, catalog, chat, content, coupon, event, idle, membership, merchant, order, payCallback, payout, pet, provider, station, user, vacant"
   },
-  "remainingFunctionsNotAttempted": 9,
+  "remainingFunctionsNotAttempted": 0,
   "browser": "Original CUA provider remains blocked; user-approved Chrome DevTools page reading and clicking work",
-  "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "9/18 functions source verified; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
+  "nativeUi": "Native menus and coordinate actions recovered in this round; cloud list synchronization succeeded",
+  "boundary": "18/18 code packages source verified; 13 nonempty cloud invocation permission declarations synchronized through developer tools with success indications and code readback. No timer triggers, HTTP exposure, role grants, keys, purchases, or main merge. Actual OpenAPI calls remain unverified.",
   "connectionDiagnosis": {
     "browserProvider": "Still blocked before listing browsers",
     "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
@@ -118,7 +117,7 @@
     "approvedAlternative": "Existing ECC Chrome DevTools; no installation, new port or credentials",
     "alternativeResult": "Connected; official target environment function list shows 21 functions; order upload dialog opened",
     "fileUploadBlock": "upload_file rejected both /tmp/jinlin-deploy-1514833/order.zip and an identical copy under the current user workspace as outside configured workspace roots; configured roots not returned",
-    "nextStep": "Manual file selection for membership; browser metadata check ready"
+    "nextStep": "Configuration-dependent business and cross-role acceptance; code deployment and 13 nonempty permission declarations synchronized"
   },
   "codeReadbackDownload": {
     "method": "Official CLI functions download",
@@ -134,10 +133,19 @@
     "coupon",
     "event",
     "idle",
-    "order"
+    "membership",
+    "merchant",
+    "order",
+    "payCallback",
+    "payout",
+    "pet",
+    "provider",
+    "station",
+    "user",
+    "vacant"
   ],
   "inProgressFunction": null,
-  "nextFunction": "membership",
+  "nextFunction": null,
   "verifiedSourceEvidence": [
     "admin-cloud-readback.json",
     "board-cloud-readback.json",
@@ -147,6 +155,30 @@
     "coupon-cloud-readback.json",
     "event-cloud-readback.json",
     "idle-cloud-readback.json",
-    "order-cloud-readback.json"
-  ]
+    "membership-cloud-readback.json",
+    "merchant-cloud-readback.json",
+    "order-cloud-readback.json",
+    "payCallback-cloud-readback.json",
+    "payout-cloud-readback.json",
+    "pet-cloud-readback.json",
+    "provider-cloud-readback.json",
+    "station-cloud-readback.json",
+    "user-cloud-readback.json",
+    "vacant-cloud-readback.json"
+  ],
+  "cloudEntrySmoke": {
+    "file": "cloud-entry-smoke.json",
+    "passed": 17,
+    "scope": "Unknown-action handling and module initialization only; payCallback not invoked"
+  },
+  "cloudPermissionSync": {
+    "file": "cloud-permission-sync.json",
+    "confirmed": 13,
+    "scope": "Official developer tools success notifications; not independent effective-ACL readback or successful OpenAPI calls"
+  },
+  "realMiniProgramReadonly": {
+    "file": "cloud-readonly-smoke.json",
+    "passed": 12,
+    "scope": "Current real unbound resident; public/current-user reads and feature/role rejection only"
+  }
 }
