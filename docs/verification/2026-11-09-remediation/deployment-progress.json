@@ -10,8 +10,12 @@
     "merchant",
     "admin"
   ],
-  "uploaded": [],
-  "verified": [],
+  "uploaded": [
+    "membership"
+  ],
+  "verified": [
+    "membership"
+  ],
   "supersedesOld110ebe8": [
     "order",
     "membership",
@@ -22,7 +26,7 @@
     "board",
     "timer"
   ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/membership.zip in currently open membership upload dialog; do not click deploy",
+  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/order.zip in currently open order upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
@@ -30,7 +34,7 @@
     "user",
     "provider"
   ],
-  "nextFunction": "membership",
+  "nextFunction": "order",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof"
 }

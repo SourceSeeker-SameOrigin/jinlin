@@ -54,7 +54,7 @@ sequenceDiagram
 | F04 | R03本地已整改；真实配置未录入，不能算后台运营验收通过 |
 | F07/F08 | R04本地已整改；新云包、内容安全、多账号待验 |
 | F09 | R05本地已整改；真实广告/图片/点击核账待验 |
-| F11 | 原批user/provider均已部署并各回读72文件一致；其余原6包尚未完成，真实绑定未提交 |
+| F11 | 原批user/provider均已部署并各回读72文件一致；membership已由新包替代部署，其余原5项未完成；真实绑定未提交 |
 | F12 | 楼栋维护方式已确定为管理员录入；珺悦真实资料仍缺。定位已有启用/坐标证据，手机GPS及完整定位边界未验 |
 | F13 | 仍未关闭：69页逐页对稿、多角色、成功/空/错误/大字体/大小屏仍需完整验收 |
 | F14 | 当前入口、规格编号/电话字段、README、函数册、页面册、PPT已更新；旧审计/旧轮次明确标历史，不伪造旧测试结果 |
@@ -63,10 +63,10 @@ sequenceDiagram
 
 ## 部署事实与顺序
 
-1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider完成2/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)。另6个为order/membership/merchant/idle/board/timer，尚无本轮成功更新证据。
-2. CloudBase membership上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/membership.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
+1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider完成2/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)。membership已由fc2a313新包替代部署并回读75文件一致，按原8项范围累计完成3项；order/merchant/idle/board/timer尚待完成。
+2. CloudBase order上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/order.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
 3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前0/7上传。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership完成1/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
 5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
@@ -110,4 +110,8 @@ sequenceDiagram
 
 ## provider部署后真实只读联调
 
-云端72文件与110ebe8授权包一致；当前真实住户的myStatus返回成功且无服务员资料，hall/myTasks/earnings均返回E_FORBIDDEN。见[调用证据](provider-live-smoke.json)。这验证了连接与无资格拒绝，不代表审核、接单、履约、收入成功路径已验收。当前待部署为新7包加旧idle/board/timer，共10个函数更新，均已授权。
+云端72文件与110ebe8授权包一致；当前真实住户的myStatus返回成功且无服务员资料，hall/myTasks/earnings均返回E_FORBIDDEN。见[调用证据](provider-live-smoke.json)。这验证了连接与无资格拒绝，不代表审核、接单、履约、收入成功路径已验收。该次provider核验后待部署为新7包加旧idle/board/timer，共10个函数更新（最新进度见下节），均已授权。
+
+## membership部署后真实只读联调
+
+fc2a313的membership已部署，75文件哈希全部一致。真实未绑定账号：mine成功且0张卡；plans返回E_INVALID_PARAM并提示先绑定有效小区。见[源码回读](membership-cloud-readback.json)、[调用证据](membership-live-smoke.json)。无购卡、付款、续期或配置写入；R08须待order/payCallback/admin更新后联合验证。最新剩余新6包+旧idle/board/timer，共9个函数更新。
