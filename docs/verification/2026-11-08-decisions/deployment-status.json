@@ -21,6 +21,14 @@
       "reportedSuccess": false,
       "code": "EISDIR",
       "message": "illegal operation on a directory, read"
+    },
+    {
+      "function": "order",
+      "method": "official CLI --names with isolated temporary project mapping, remote npm install",
+      "reportedSuccess": false,
+      "code": "EISDIR",
+      "message": "illegal operation on a directory, read",
+      "sourceVerified": "72 files match authorized ZIP exactly"
     }
   ],
   "readback": {
@@ -35,5 +43,12 @@
   "remainingFunctionsNotAttempted": 17,
   "browser": "Local browser use is disabled in Work settings; persists after user confirmations and CUA session reset",
   "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "No confirmed updated function, no timer enabled, no HTTP exposure, no key/role changes, no package upgrade, no main merge"
+  "boundary": "No confirmed updated function, no timer enabled, no HTTP exposure, no key/role changes, no package upgrade, no main merge",
+  "connectionDiagnosis": {
+    "browserProvider": "Still blocked before listing browsers",
+    "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
+    "rootCause": "Unknown; configuration/session mismatch is an unverified hypothesis",
+    "pendingDecision": "Explicitly use existing Chrome DevTools tool or user restarts host app",
+    "noNewPermissionsOrPorts": true
+  }
 }
