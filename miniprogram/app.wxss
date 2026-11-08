@@ -57,3 +57,5 @@ input { height:92rpx; padding-top:0; padding-bottom:0; line-height:normal; }
 .page-footer::before,.page-footer::after { content:""; width:64rpx; height:1rpx; background:#CDD1C9; }
 .management-link { display:flex; align-items:center; gap:16rpx; box-sizing:border-box; min-height:96rpx; padding:20rpx 24rpx; border:1rpx solid #E3E7DB; border-radius:20rpx; background:#FFF; color:#202A23; }
 .management-link .menu-icon { width:48rpx; height:48rpx; }
+
+.community-ad{position:relative;overflow:hidden;border-radius:22rpx;background:#EAF1E2;margin:24rpx 0}.community-ad-image{width:100%;height:240rpx}.community-ad-label{position:absolute;top:16rpx;right:16rpx;padding:4rpx 12rpx;border-radius:8rpx;color:#FFF;background:#40553E;font-size:32rpx}.community-ad-title{padding:16rpx 20rpx;font-size:32rpx}

@@ -2,17 +2,29 @@ const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 function merchantName(merchants, id) { const item = (merchants || []).find(merchant => merchant._id === id); return item ? item.name : ''; }
 Page({
-  data: { loading: true, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
+  data: { loading: true, authorized: false, isAdmin: false, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
     payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
   onLoad() {
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today }); this.load();
   },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, error: '', authorized: false, isAdmin: false, preview: [], settlements: [] });
     try {
       const user = await getApp().ensureSession();
-      if (!user.roles.includes('admin')) throw new Error('只有运营管理员可以管理结算');
+      const isAdmin = user.roles.includes('admin');
+      if (!isAdmin && !user.roles.includes('property')) throw new Error('无权查看结算');
+      this.setData({ authorized: true, isAdmin });
+      if (!isAdmin) {
+        if (!user.communityId) throw new Error('尚未分配物业服务小区');
+        const [community, settlements] = await Promise.all([
+          api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true }),
+          api.call('admin', 'listSettlements', {}, { loading: false, silent: true })
+        ]);
+        this.setData({ communities: [community], communityIndex: 0, payeeIndex: 1, providers: [], merchants: [],
+          settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total) })) });
+        return;
+      }
       const [communities, providers, settlements, merchants] = await Promise.all([
         api.call('catalog', 'listCommunities', {}, { loading: false, silent: true }),
         api.call('admin', 'listProviders', { status: 'approved' }, { loading: false, silent: true }),
@@ -26,7 +38,8 @@ Page({
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   select(event) { this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
   request() {
-    const payee = ['provider', 'property', 'merchant', 'seller'][this.data.payeeIndex];
+    if (!this.data.authorized) throw new Error('请先加载结算权限');
+    const payee = !this.data.isAdmin ? 'property' : ['provider', 'property', 'merchant', 'seller'][this.data.payeeIndex];
     const community = this.data.communities[this.data.communityIndex];
     const provider = this.data.providers[this.data.providerIndex]; const merchant = this.data.merchants[this.data.merchantIndex];
     if (!community || payee === 'provider' && !provider || payee === 'merchant' && !merchant) throw new Error('请先选择小区及收款对象');
@@ -42,7 +55,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async create() {
-    if (this.data.busy) return;
+    if (this.data.busy || !this.data.isAdmin) return;
     try {
       this.setData({ busy: true, error: '' });
       const result = await api.call('admin', 'settlementCreate', this.request());
@@ -52,12 +65,14 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async markPaid(event) {
+    if (!this.data.isAdmin || this.data.busy) return;
     try {
       await api.call('admin', 'settlementMarkPaid', { settlementId: event.currentTarget.dataset.id });
       await this.load();
     } catch (error) { this.setData({ error: error.message }); }
   },
   async exportCsv() {
+    if (!this.data.isAdmin) return;
     try {
       const result = await api.call('admin', 'exportCsv', this.request());
       const filePath = await new Promise((resolve, reject) => wx.downloadFile({ url: result.tempFileURL,

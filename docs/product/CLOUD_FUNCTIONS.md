@@ -55,9 +55,9 @@
 |P19 [订单管理](../../miniprogram/admin/orders/orders.js)|admin.exportSubsidyOrders、admin.listOrders|
 |P20 [订单处理](../../miniprogram/admin/order/order.js)|admin.assign、admin.forceCancel、admin.listProviders、admin.resolveComplaint、admin.retryRefund、admin.voidMembership、order.detail|
 |P21 [服务员审核](../../miniprogram/admin/providers/providers.js)|admin.cleanupProviderKyc、admin.listProviders、admin.reviewProvider、admin.setCerts、admin.setInsurance、admin.suspendProvider|
-|P22 [小区配置](../../miniprogram/admin/community/community.js)|admin.updateCommunity、admin.upsertBuilding、catalog.getCommunity、catalog.listCommunities|
+|P22 [小区配置](../../miniprogram/admin/community/community.js)|admin.managementConfig、admin.updateCommunity、admin.updateConfig、admin.upsertBuilding|
 |P23 [海报码](../../miniprogram/admin/posters/posters.js)|admin.genPoster、admin.listProviders、catalog.getCommunity、catalog.listCommunities|
-|P24 [结算](../../miniprogram/admin/settlements/settlements.js)|admin.exportCsv、admin.listProviders、admin.listSettlements、admin.settlementCreate、admin.settlementMarkPaid、admin.settlementPreview、catalog.listCommunities、merchant.adminList|
+|P24 [结算](../../miniprogram/admin/settlements/settlements.js)|admin.exportCsv、admin.listProviders、admin.listSettlements、admin.settlementCreate、admin.settlementMarkPaid、admin.settlementPreview、catalog.getCommunity、catalog.listCommunities、merchant.adminList|
 |P25 [功能开关](../../miniprogram/admin/features/features.js)|admin.getFeatures、admin.updateCommunity、admin.updateConfig、catalog.listCommunities|
 |P26 [内容举报审核](../../miniprogram/admin/reports/reports.js)|content.listReports、content.moderateContent、content.moderateUser、content.resolveReport|
 |P27 [聊天记录审计](../../miniprogram/admin/chat/chat.js)|chat.adminPull|
@@ -68,10 +68,10 @@
 |P32 [数据导出](../../miniprogram/admin/exports/exports.js)|admin.exportCsv、admin.exportRecyclerStatement、admin.exportSubsidyOrders、admin.listProviders、catalog.getCommunity、catalog.listCommunities、merchant.adminList、station.exportStatement|
 |P33 [驿站账号审核](../../miniprogram/admin/stations/stations.js)|station.listApplications、station.reviewApplication|
 |P34 [站内消息](../../miniprogram/chat/list/list.js)|chat.list|
-|P35 [聊天](../../miniprogram/chat/room/room.js)|chat.markRead、chat.open、chat.pull、chat.send|
+|P35 [聊天](../../miniprogram/chat/room/room.js)|chat.markRead、chat.open、chat.pull、chat.send、content.report|
 |P36 [优惠券中心](../../miniprogram/coupons/center/center.js)|coupon.center、coupon.claim|
 |P37 [我的优惠券](../../miniprogram/coupons/mine/mine.js)|coupon.mine、user.retryWelcomeCoupons|
-|P38 [需求广场](../../miniprogram/board/list/list.js)|board.list、catalog.getCommunity|
+|P38 [需求广场](../../miniprogram/board/list/list.js)|board.list、catalog.getCommunity、content.adEvent、content.adsForSlot|
 |P39 [求助详情](../../miniprogram/board/detail/detail.js)|board.close、board.comment、board.detail、board.report|
 |P40 [发布需求](../../miniprogram/board/create/create.js)|board.create、catalog.getCommunity、order.detail、order.mockPay、order.subscriptionTemplates|
 |P41 [闲置交易](../../miniprogram/idle/list/list.js)|catalog.getCommunity、idle.list|
@@ -82,7 +82,7 @@
 |P46 [卖家交付](../../miniprogram/idle/sale/sale.js)|idle.acceptSale、idle.deliverSale、order.detail|
 |P47 [卖家收入](../../miniprogram/idle/income/income.js)|idle.earnings、payout.create、payout.list|
 |P48 [社区活动](../../miniprogram/events/list/list.js)|event.list|
-|P49 [活动详情](../../miniprogram/events/detail/detail.js)|event.cancelSignup、event.detail、event.signup、event.templates、order.detail、order.mockPay、order.subscriptionTemplates|
+|P49 [活动详情](../../miniprogram/events/detail/detail.js)|content.report、event.cancelSignup、event.detail、event.signup、event.templates、order.detail、order.mockPay、order.subscriptionTemplates|
 |P50 [活动管理](../../miniprogram/events/manage/manage.js)|event.adminList、event.cancelEvent、event.checkin、event.create、event.listSignups、event.publish、event.retryCancellation、event.review|
 |P51 [上门喂宠](../../miniprogram/pet/order.js)|catalog.getCommunity、order.create、order.detail、order.mockPay、order.quote、order.subscriptionTemplates|
 |P52 [喂宠上门清单](../../miniprogram/pet/work.js)|pet.listVisits、pet.markDone、pet.markMissed、pet.revealEntry|
@@ -91,8 +91,8 @@
 |P55 [商家工作台](../../miniprogram/merchant/workbench/workbench.js)|merchant.myApplication|
 |P56 [服务管理](../../miniprogram/merchant/services/services.js)|merchant.myServices、merchant.upsertService|
 |P57 [商家预约订单](../../miniprogram/merchant/orders/orders.js)|merchant.completeBooking、merchant.merchantOrders、merchant.merchantTransition、merchant.quoteBooking|
-|P58 [社区商家](../../miniprogram/shops/list/list.js)|merchant.listForCommunity|
-|P59 [商家详情](../../miniprogram/shops/detail/detail.js)|merchant.servicesForMerchant|
+|P58 [社区商家](../../miniprogram/shops/list/list.js)|content.adEvent、content.adsForSlot、merchant.listForCommunity|
+|P59 [商家详情](../../miniprogram/shops/detail/detail.js)|content.report、merchant.servicesForMerchant|
 |P60 [提交预约](../../miniprogram/shops/booking/booking.js)|merchant.createBooking、order.detail、order.mockPay、order.subscriptionTemplates|
 |P61 [申请驿站账号](../../miniprogram/station/apply/apply.js)|station.applicationOptions、station.apply、station.myApplication|
 |P62 [驿站工作台](../../miniprogram/station/workbench/workbench.js)|station.exportStatement、station.listMyBatches|

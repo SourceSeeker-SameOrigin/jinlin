@@ -13,7 +13,7 @@ Page({
   onShow() { return this.load(); },
   async load() {
     this.setData({ loading: true, error: '', community: null, notice: null, ads: [],
-      firstOrder: false, eventsEnabled: false, services: CORE_SERVICES });
+      firstOrder: false, eventsEnabled: false, services: CORE_SERVICES, serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: '待完善资料' })) });
     try {
       const app = getApp();
       const user = await app.ensureSession();
@@ -29,14 +29,26 @@ Page({
       const services = [...CORE_SERVICES];
       if (community.enabledFeatures && community.enabledFeatures.recycle) services.push({ code: 'recycle', name: '回收上门', icon: 'recycle', subtitle: '预约分类回收', url: '/recycle/order/order' });
       this.setData({ community, needsBinding: false, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
-        notice: homeContent.notice, ads: homeContent.ads || [] });
+        notice: homeContent.notice, ads: homeContent.ads || [], serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: community.enabledFeatures[item.feature] ? '可使用' : '未开通' })) });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
   },
   introduce(event) {
     const item = serviceCatalog.find(service => service.code === event.currentTarget.dataset.code);
     if (!item) return;
-    wx.showModal({ title: item.name, content: item.description + '\n开通情况以所选小区为准。', showCancel: false, confirmText: '知道了', confirmColor: '#1F7A5C' });
+    if (this.data.needsBinding) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+    const features = this.data.community && this.data.community.enabledFeatures || {};
+    if (!features[item.feature]) {
+      wx.showModal({ title: item.name + '暂未开通', content: item.description + '\n本小区尚未开放此功能，请联系运营方了解进度。', showCancel: false, confirmText: '知道了', confirmColor: '#1F7A5C' });
+      return;
+    }
+    if (item.code === 'federation') {
+      const url = features.board ? '/board/list/list' : features.idle ? '/idle/list/list' : features.events ? '/events/list/list' : '';
+      if (url) wx.navigateTo({ url });
+      return;
+    }
+    if (item.tab) wx.switchTab({ url: item.url });
+    else wx.navigateTo({ url: item.url });
   },
   callHotline() {
     const phoneNumber = this.data.community && this.data.community.hotline;

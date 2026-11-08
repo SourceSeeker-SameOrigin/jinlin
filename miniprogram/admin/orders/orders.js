@@ -6,7 +6,7 @@ const today = new Date();
 Page({
   data: { loading: false, exporting: false, error: '', rows: [], hasMore: true, statusIndex: 0,
     subsidyFrom: dateText(new Date(today.getFullYear(), today.getMonth(), 1)), subsidyTo: dateText(today),
-    statuses: ['全部', '待支付', '待接单', '已接单', '服务中', '待确认', '已完成', '售后处理中', '已退款', '已取消', '已关闭'] },
+    statuses: ['全部', '待报价', '待支付', '待接单', '已接单', '服务中', '待确认', '已完成', '售后处理中', '已退款', '已取消', '已关闭'] },
   onShow() { this.load(true); },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
   retry() { this.load(true); },
@@ -16,7 +16,7 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
-      const result = await api.call('admin', 'listOrders', { status: ['', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'][this.data.statusIndex],
+      const result = await api.call('admin', 'listOrders', { status: ['', 'pending_quote', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'][this.data.statusIndex],
         offset: reset ? 0 : this.data.rows.length }, { loading: false, silent: true });
       if (sequence !== this.sequence) return;
       const rows = result.list.map(order => ({ ...order, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap), createdText: display(order.createdAt) }));

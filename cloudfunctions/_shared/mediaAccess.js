@@ -7,7 +7,7 @@ const READS = {
   board: ['list', 'detail'], idle: ['list', 'detail', 'mine', 'sales'],
   chat: ['pull', 'adminPull'], pet: ['listVisits'],
   merchant: ['listForCommunity', 'servicesForMerchant', 'adminList', 'myServices', 'adminServices', 'merchantOrders'],
-  content: ['homeContent', 'listNotices', 'listAds'], event: ['list', 'detail', 'adminList'],
+  content: ['homeContent', 'adsForSlot', 'listNotices', 'listAds'], event: ['list', 'detail', 'adminList'],
   station: ['providerBatch', 'listMyBatches']
 };
 
@@ -94,7 +94,7 @@ async function decorateMedia(cloud, server, domain, action, input, result) {
   }
   if (domain === 'content') {
     const notices = action === 'homeContent' ? result.notices || [] : action === 'listNotices' ? list : [];
-    const ads = action === 'homeContent' ? result.ads || [] : action === 'listAds' ? list : [];
+    const ads = ['homeContent','adsForSlot'].includes(action) ? result.ads || [] : action === 'listAds' ? list : [];
     for (const [collection, views] of [['notices', notices], ['ads', ads]]) await rows(collection, views, async p => {
       const id = await userId(p.mediaOwnerOpenid || p.createdBy); return id ? [collection + '/' + id] : [];
     });

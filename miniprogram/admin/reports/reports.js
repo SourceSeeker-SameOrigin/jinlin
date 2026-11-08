@@ -36,7 +36,7 @@ Page({
       if (kind === 'hide' || kind === 'show') await api.call('content', 'moderateContent', {
         targetType: row.targetType, targetId: row.targetId, communityId: row.communityId, hidden: kind === 'hide' });
       else if (row.authorUserId) await api.call('content', 'moderateUser', { userId: row.authorUserId,
-        action: kind === 'mute' ? 'mute' : 'block', hours: 24 });
+        operation: kind === 'mute' ? 'mute' : 'block', hours: 24 });
       else throw new Error('无法定位内容发布者账号');
       await this.load(true);
     } catch (error) { this.setData({ error: error.message || '内容管理操作失败' }); }

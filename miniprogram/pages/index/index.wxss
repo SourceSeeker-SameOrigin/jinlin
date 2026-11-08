@@ -2,3 +2,5 @@
 
 .home-page{padding-top:8rpx}.catalog-heading{display:flex;align-items:center;justify-content:space-between;gap:16rpx;flex-wrap:wrap;margin-top:28rpx;margin-bottom:16rpx}.catalog-heading .section-title{margin:0}.catalog-heading .catalog-note{margin:0;line-height:1.4;max-width:440rpx}.welcome-caption{max-width:430rpx}.welcome-action{min-height:64rpx;box-sizing:border-box;padding:12rpx 28rpx}.membership-banner{padding:20rpx 24rpx;margin:24rpx 0;gap:20rpx}.membership-icon{width:88rpx;height:88rpx}.catalog-grid{background:#FFFEFB}.catalog-item{background:#FFFEFB}.home-page .page-footer{display:none}
 .location-action .chevron{margin-left:0}
+
+.catalog-status{font-size:32rpx;color:#687466;line-height:1.5}.catalog-item{min-height:188rpx}

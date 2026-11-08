@@ -19,10 +19,30 @@ Page({
       }
       this.setData({ user, community: app.globalData.community, provider: app.globalData.provider, merchant, stationApplication, unreadTotal,
         doorDelivery: Boolean(user.prefs && user.prefs.doorDelivery), isStation: user.roles.includes('station'),
+        isAdmin: user.roles.includes('admin'), isProperty: user.roles.includes('property'), isMerchant: user.roles.includes('merchant'),
         manage: user.roles.includes('admin') || user.roles.includes('property'),
         canManageEvents: user.roles.includes('admin') || user.roles.includes('property') || user.roles.includes('merchant') });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }
+  },
+  openWorkspace(event) {
+    const code = event.currentTarget.dataset.code;
+    const user = this.data.user;
+    if (!user) return;
+    const features = this.data.community && this.data.community.enabledFeatures || {};
+    const routes = { provider: '/provider/workbench/workbench', merchant: '/merchant/workbench/workbench', station: '/station/workbench/workbench', admin: '/admin/dashboard/dashboard', property: '/admin/dashboard/dashboard' };
+    const permitted = code === 'provider' ? this.data.provider && this.data.provider.status === 'approved' : user.roles.includes(code);
+    if (permitted && routes[code]) { wx.navigateTo({ url: routes[code] }); return; }
+    if (code === 'admin' || code === 'property') {
+      wx.showModal({ title: code === 'admin' ? '管理员资格' : '物业资格', content: '由运营方核验身份并分配角色及小区范围，扫码不会自动获得权限。请联系运营方。', showCancel: false }); return;
+    }
+    if (!user.communityId || !user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+    const feature = code === 'merchant' ? 'merchants' : code === 'station' ? 'stationDelivery' : null;
+    if (feature && !features[feature]) {
+      wx.showModal({ title: '本小区暂未开通', content: '该工作台需先开放对应服务，再提交申请并由管理员审核。请联系运营方。', showCancel: false }); return;
+    }
+    const apply = { provider: '/provider/apply/apply', merchant: '/merchant/apply/apply', station: '/station/apply/apply' };
+    if (apply[code]) wx.navigateTo({ url: apply[code] });
   },
   callHotline() {
     const phoneNumber = getApp().globalData.community && getApp().globalData.community.hotline;

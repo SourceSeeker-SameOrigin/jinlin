@@ -1,3 +1,4 @@
+const reportAction = require('../../utils/report');
 const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
 const { display } = require('../../utils/time');
@@ -38,6 +39,12 @@ Page({
       this.setData({ readOnly: result.readOnly, unread: result.unread, error: '' });
     } catch (error) { this.setData({ error: error.message || '消息刷新失败' }); }
     finally { this.polling = false; }
+  },
+  async reportContent(event) {
+    if(this.reporting)return;this.reporting=true;
+    try { await reportAction.submit('message',event.currentTarget.dataset.id); }
+    catch(error){this.setData({error:error.message||'举报提交失败'});}
+    finally{this.reporting=false;}
   },
   input(event) { this.setData({ content: event.detail.value }); },
   async send() {

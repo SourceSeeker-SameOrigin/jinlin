@@ -1,17 +1,25 @@
+const ads = require('../../utils/ads');
 const api = require('../../utils/api');
 const { display } = require('../../utils/time');
 const { yuan } = require('../../utils/money');
 Page({
-  data: { loading: false, error: '', posts: [], type: 'ask', scope: 'community', federationEnabled: false,
+  data: { ads: [], adError: '', loading: false, error: '', posts: [], type: 'ask', scope: 'community', federationEnabled: false,
     types: [{ code: 'task', label: '悬赏' }, { code: 'ask', label: '求助' }, { code: 'carry', label: '出行帮带' }] },
+  onLoad(options = {}) { if (options.type === 'carry') this.setData({ type: 'carry' }); },
+  retryAds() { return ads.load(this, 'board_top', this.adCommunityId); },
+  recordAd(event) { ads.record(this,event.currentTarget.dataset.id,'ad_view'); },
+  openAd(event) { ads.open(this,event); },
   onShow() { this.load(true); },
+  onHide() { ads.clear(this); },
   async load(reset = false) {
+    if(reset)ads.clear(this);
     this.setData({ loading: true, error: '', ...(reset ? { posts: [] } : {}) });
     try {
       const user = await getApp().ensureSession();
       const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
       const federationEnabled = community.enabledFeatures.federation;
       if (!community.enabledFeatures.board) throw new Error('需求广场暂未开放');
+      if (reset) await ads.load(this, 'board_top', user.communityId);
       const result = await api.call('board', 'list', { type: this.data.type, scope: this.data.scope,
         offset: reset ? 0 : this.data.posts.length }, { loading: false, silent: true });
       this.setData({ federationEnabled, posts: reset ? result.list.map(this.formatPost) :

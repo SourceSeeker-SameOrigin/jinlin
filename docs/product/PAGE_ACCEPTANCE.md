@@ -22,7 +22,7 @@
 - U4 320/375/390/430逻辑像素宽度、系统大字体、键盘弹起、安全区和底部价格栏不遮挡最后字段。
 - U5 加载、空结果、错误、重试、禁用、提交中有正确反馈；颜色和可读性一致。
 - U6 返回、tab切换、重进、下拉刷新不丢失应保留的输入、不重复提交。
-- U7 静态介绍与真实服务入口区分；无权限按钮不误露，直达接口仍拒绝。
+- U7 完整目录可用/未开通/待资料与工作台资格状态明确；无权限按钮不误露，直达接口仍拒绝。
 
 ### 每页都要检查的功能项
 
@@ -175,7 +175,7 @@
 ### P10 我的
 
 - 路径：pages/me/me。前置：真实微信用户，业务页需对应绑定/参与关系；核心或按操作关联模块。
-- 页面操作清点：load、callHotline、doorDeliveryChange。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 页面操作清点：load、callHotline、doorDeliveryChange、openWorkspace。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：chat.list、merchant.myApplication、station.myApplication、station.setDoorDelivery。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
@@ -231,7 +231,7 @@
 ### P18 管理看板
 
 - 路径：admin/dashboard/dashboard。前置：管理员；物业按接口与小区限制；核心或按操作关联模块。
-- 页面操作清点：load、chooseCommunity、chooseScope。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 页面操作清点：load、chooseCommunity、chooseScope、chooseDate。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：admin.dashboard、admin.notificationTemplates、catalog.listCommunities。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
@@ -259,8 +259,8 @@
 ### P22 小区配置
 
 - 路径：admin/community/community。前置：管理员；物业按接口与小区限制；核心或按操作关联模块。
-- 页面操作清点：chooseCommunity、input、chooseLocation、addBuilding、togglePetCert、saveCommunity。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：admin.updateCommunity、admin.upsertBuilding、catalog.getCommunity、catalog.listCommunities。
+- 页面操作清点：load、chooseCommunity、input、chooseLocation、editBuilding、newBuilding、addBuilding、rowInput、removeRow、addRow、togglePetCert、choosePlan、saveCommunity、saveGlobal。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：admin.managementConfig、admin.updateCommunity、admin.updateConfig、admin.upsertBuilding。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P23 海报码
@@ -274,7 +274,7 @@
 
 - 路径：admin/settlements/settlements。前置：管理员；物业按接口与小区限制；核心或按操作关联模块。
 - 页面操作清点：load、select、input、preview、create、markPaid。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：admin.exportCsv、admin.listProviders、admin.listSettlements、admin.settlementCreate、admin.settlementMarkPaid、admin.settlementPreview、catalog.listCommunities、merchant.adminList。
+- 后端关联：admin.exportCsv、admin.listProviders、admin.listSettlements、admin.settlementCreate、admin.settlementMarkPaid、admin.settlementPreview、catalog.getCommunity、catalog.listCommunities、merchant.adminList。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P25 功能开关
@@ -350,8 +350,8 @@
 ### P35 聊天
 
 - 路径：chat/room/room。前置：真实微信用户，业务页需对应绑定/参与关系；chat。
-- 页面操作清点：start、input、image、send。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：chat.markRead、chat.open、chat.pull、chat.send。
+- 页面操作清点：start、reportContent、input、image、send。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：chat.markRead、chat.open、chat.pull、chat.send、content.report。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P36 优惠券中心
@@ -371,8 +371,8 @@
 ### P38 需求广场
 
 - 路径：board/list/list。前置：真实微信用户，业务页需对应绑定/参与关系；board / travelCarry。
-- 页面操作清点：chooseType、chooseScope、load、open、create、more。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：board.list、catalog.getCommunity。
+- 页面操作清点：chooseType、chooseScope、retryAds、openAd、recordAd、load、open、create、more。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：board.list、catalog.getCommunity、content.adEvent、content.adsForSlot。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P39 求助详情
@@ -448,8 +448,8 @@
 ### P49 活动详情
 
 - 路径：events/detail/detail。前置：真实微信用户，业务页需对应绑定/参与关系；events。
-- 页面操作清点：load、signup、cancelSignup。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：event.cancelSignup、event.detail、event.signup、event.templates、order.detail、order.mockPay、order.subscriptionTemplates。
+- 页面操作清点：load、signup、cancelSignup、reportContent。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：content.report、event.cancelSignup、event.detail、event.signup、event.templates、order.detail、order.mockPay、order.subscriptionTemplates。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P50 活动管理
@@ -511,15 +511,15 @@
 ### P58 社区商家
 
 - 路径：shops/list/list。前置：真实微信用户，业务页需对应绑定/参与关系；merchants。
-- 页面操作清点：load、open。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：merchant.listForCommunity。
+- 页面操作清点：retryAds、openAd、recordAd、load、open。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：content.adEvent、content.adsForSlot、merchant.listForCommunity。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P59 商家详情
 
 - 路径：shops/detail/detail。前置：真实微信用户，业务页需对应绑定/参与关系；merchants。
-- 页面操作清点：load、book。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：merchant.servicesForMerchant。
+- 页面操作清点：load、book、reportContent。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
+- 后端关联：content.report、merchant.servicesForMerchant。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P60 提交预约
@@ -594,8 +594,8 @@
 
 ## 当前必须保留的验收缺口
 
-1. 手填绑定新 user 云包尚待上传与云端源码核验；旧云返回“请先授权手机号”不是新的产品要求。
-2. 珺悦国际真实楼栋、单元、价格、班次和服务人员未提供；不能复制示例数据冒充真实小区。
+1. 110ebe8批次user已部署并回读72文件一致，另7包待继续；R01–R08新修复尚待具体新包部署。真实手填成功与重进持久化仍须验收。
+2. 珺悦国际真实楼栋、单元由管理员手填维护，住户仍选择；价格、班次和服务人员未提供；不能复制示例数据冒充真实小区。
 3. 管理员/物业/服务员/商家/驿站角色准备及跨账号测试尚未完成；D07未自动解除。
 4. 非定位扩展开关不因本次任务自动打开；模块数据、内容安全、订阅模板与密钥按原决策逐项配置。
 5. D05–D07暂缓，真实支付/退款/提现与timer周期结果不能宣称通过。

@@ -1,3 +1,4 @@
+const { reportAccess, contentOwner } = require('./lib/shared/reportAccess');
 const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
@@ -12,29 +13,35 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const server = createServer(cloud);
 const COLLECTIONS = { post: 'posts', comment: 'comments', idle: 'idleItems', event: 'events', message: 'messages', merchant: 'merchants' };
 
-async function report(event, { openid }) {
+async function updateMessagePreview(transaction, message, hidden) {
+  const conversation = await read(transaction, 'conversations', message.convId);
+  if (!conversation) return;
+  const lastId = conversation._id + '_' + String(conversation.messageSeq || 0).padStart(12, '0');
+  if (lastId !== message._id) return;
+  const preview = hidden ? '消息已隐藏，等待审核' : message.type === 'text' ? message.content.slice(0, 100) : message.status === 'ok' ? '[图片]' : message.status === 'pending' ? '图片审核中' : '图片未通过审核';
+  await transaction.collection('conversations').doc(conversation._id).update({ data: { lastMessage: preview } });
+}
+
+async function report(event, { user, openid }) {
   const collection = COLLECTIONS[event.targetType];
   ensure(collection, '暂不支持举报该内容');
-  text(event.targetId, '举报内容'); text(event.communityId, '小区');
+  text(event.targetId, '举报内容');
   const target = await server.get(collection, event.targetId);
-  ensure(target && contentInCommunity(event.targetType, target, event.communityId), '内容不存在或不属于该小区');
-  const targetOwner = target.authorOpenid || target.sellerOpenid || target.openid || target.from || target.ownerOpenid || target.createdBy;
-  ensure(targetOwner !== openid,
-    '不能举报自己的内容');
-  const config = await server.config();
+  const communityId = await reportAccess(event.targetType, target, { user, openid }, server);
   const id = 'r_' + crypto.createHash('sha256').update(event.targetType + ':' + event.targetId + ':' + openid).digest('hex').slice(0, 36);
-  const record = reportData(event.targetType, event.targetId, openid, event.reason, event.text);
+  const record = reportData(event.targetType, event.targetId, openid, event.reason, event.text || '');
   return atomic(server.db, async transaction => {
     const existing = await read(transaction, 'reports', id);
     if (existing) return { reportId: id, duplicate: true, hidden: Boolean(target.moderationHidden) };
     const current = await read(transaction, collection, event.targetId);
-    ensure(current, '内容已删除', 'E_CONFLICT');
+    ensure(current && contentOwner(current) === contentOwner(target), '内容已删除或归属变化', 'E_CONFLICT');
     // 只需记录达到隐藏门槛的三名不同举报人，避免高频举报无限扩大文档。
     const reporters = [...new Set([...(current.reporterOpenids || []), openid])].slice(0, 3);
     const hidden = reportOutcome(reporters.map(reporterOpenid => ({ reporterOpenid }))).hide;
-    await insert(transaction, 'reports', { _id: id, ...record, communityId: event.communityId });
+    await insert(transaction, 'reports', { _id: id, ...record, communityId });
     await transaction.collection(collection).doc(event.targetId).update({ data: { reporterOpenids: reporters,
       ...(hidden ? { moderationHidden: true } : {}) } });
+    if (hidden && event.targetType === 'message') await updateMessagePreview(transaction, current, true);
     return { reportId: id, duplicate: false, hidden };
   });
 }
@@ -48,7 +55,7 @@ async function listReports(event, { user }) {
   const list = await Promise.all(result.data.map(async item => {
     const collection = COLLECTIONS[item.targetType];
     const target = collection ? await server.get(collection, item.targetId) : null;
-    const authorOpenid = target && (target.authorOpenid || target.sellerOpenid || target.openid || target.from || target.ownerOpenid || target.createdBy);
+    const authorOpenid = contentOwner(target);
     const author = authorOpenid ? await server.one('users', { openid: authorOpenid }) : null;
     return { _id: item._id, targetType: item.targetType, targetId: item.targetId, communityId: item.communityId,
       reason: item.reason, text: item.text, status: item.status, createdAt: item.createdAt,
@@ -71,15 +78,15 @@ async function resolveReport(event, { user, openid }) {
 
 async function moderateUser(event, { user }) {
   requireRole(user, ['admin']); text(event.userId, '用户');
-  ensure(['mute','block','unmute','unblock'].includes(event.action), '管理操作不正确');
+  ensure(['mute','block','unmute','unblock'].includes(event.operation), '管理操作不正确');
   const target = await server.get('users', event.userId);
   ensure(target, '用户不存在');
-  if (event.action === 'mute') {
+  if (event.operation === 'mute') {
     const hours = integer(event.hours, '禁言时长', 1, 8760);
     await server.db.collection('users').doc(target._id).update({ data: { mutedUntil: new Date(Date.now() + hours*3600000) } });
-  } else if (event.action === 'unmute') await server.db.collection('users').doc(target._id).update({ data: { mutedUntil: null } });
-  else await server.db.collection('users').doc(target._id).update({ data: { blocked: event.action === 'block' } });
-  return { userId: target._id, action: event.action };
+  } else if (event.operation === 'unmute') await server.db.collection('users').doc(target._id).update({ data: { mutedUntil: null } });
+  else await server.db.collection('users').doc(target._id).update({ data: { blocked: event.operation === 'block' } });
+  return { userId: target._id, operation: event.operation };
 }
 
 async function moderateContent(event, { user }) {
@@ -93,6 +100,7 @@ async function moderateContent(event, { user }) {
     await transaction.collection(collection).doc(target._id).update({ data: { moderationHidden: event.hidden,
       ...(event.targetType === 'comment' ? { status: event.hidden ? 'hidden' : 'ok' } : {}),
       moderatedAt: new Date() } });
+    if (event.targetType === 'message') await updateMessagePreview(transaction, target, event.hidden);
     return { targetId: target._id, hidden: event.hidden };
   });
 }
@@ -112,7 +120,7 @@ function safeTarget(target) {
   text(target.id, '广告目标');
   return { type: target.type, id: target.id };
 }
-async function homeContent(event, { user }) {
+async function contentForSlot(event, { user }, slot = 'home_banner') {
   if (!user.communityId && !user.roles.includes('admin')) return { notice: null, notices: [], ads: [] };
   text(event.communityId, '小区');
   ensure(user.roles.includes('admin') || user.communityId === event.communityId, '无权查看其他小区公告', 'E_FORBIDDEN');
@@ -124,8 +132,8 @@ async function homeContent(event, { user }) {
   const isFeatureOn = key => Object.prototype.hasOwnProperty.call(communityFeatures, key) ? communityFeatures[key] === true : features[key] === true;
   const now = new Date();
   const [notices, ads] = await Promise.all([
-    isFeatureOn('notices') ? server.db.collection('notices').where({ communityId: community._id, status: 'live' }).orderBy('pinnedAt', 'desc').orderBy('createdAt', 'desc').limit(100).get() : { data: [] },
-    isFeatureOn('ads') ? server.db.collection('ads').where({ status: 'live', slot: 'home_banner',
+    slot === 'home_banner' && isFeatureOn('notices') ? server.db.collection('notices').where({ communityId: community._id, status: 'live' }).orderBy('pinnedAt', 'desc').orderBy('createdAt', 'desc').limit(100).get() : { data: [] },
+    isFeatureOn('ads') ? server.db.collection('ads').where({ status: 'live', slot,
       communityIds: server.command.in([community._id]), startAt: server.command.lte(now), endAt: server.command.gt(now) })
       .orderBy('startAt', 'asc').limit(100).get() : { data: [] }
   ]);
@@ -135,6 +143,18 @@ async function homeContent(event, { user }) {
   const banner = ads.data.filter(item => item.moderationHidden !== true &&
     (item.moderationApprovedFileIds || []).includes(item.imageFileId)).slice(0, 3);
   return { notice: list.find(item => item.pinned) || list[0] || null, notices: list, ads: banner.map(({ _id, title, imageFileId, target }) => ({ _id, title, imageFileId, target })) };
+}
+
+async function homeContent(event, context) { return contentForSlot(event, context); }
+async function adsForSlot(event, { user }) {
+  ensure(['board_top','shops_top'].includes(event.slot), '广告位不正确');
+  if (!user.communityId && !user.roles.includes('admin')) await server.featureEntry('ads',user);
+  const communityId = text(event.communityId, '小区');
+  ensure(user.roles.includes('admin') || user.communityId === communityId, '无权查看其他小区广告', 'E_FORBIDDEN');
+  await server.feature(event.slot === 'board_top' ? 'board' : 'merchants',communityId);
+  await server.feature('ads',communityId);
+  const result = await contentForSlot(event, { user }, event.slot);
+  return { ads: result.ads };
 }
 
 async function adEvent(event, { user, openid }) {
@@ -147,6 +167,7 @@ async function adEvent(event, { user, openid }) {
     new Date(ad.startAt) <= now && new Date(ad.endAt) > now &&
     (ad.moderationApprovedFileIds || []).includes(ad.imageFileId) && ad.moderationHidden !== true, '广告已失效', 'E_FORBIDDEN');
   await server.feature('ads', event.communityId);
+  if (ad.slot === 'board_top' || ad.slot === 'shops_top') await server.feature(ad.slot === 'board_top' ? 'board' : 'merchants', event.communityId);
   await server.db.collection('events').add({ data: { type: event.type, adId: ad._id, communityId: event.communityId, openid, at: now } });
   return { recorded: true };
 }
@@ -281,4 +302,4 @@ async function saveAd(event, { user, openid }) {
 }
 
 exports.main = server.entry({ report, listReports, resolveReport, moderateUser, moderateContent,
-  homeContent, adEvent, listNotices, saveNotice, endNotice, listAds, saveAd, endAd, markAdReceived }, ['resident','admin','property'], 'content');
+  homeContent, adsForSlot, adEvent, listNotices, saveNotice, endNotice, listAds, saveAd, endAd, markAdReceived }, ['resident','admin','property'], 'content');

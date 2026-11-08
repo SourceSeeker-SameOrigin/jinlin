@@ -368,7 +368,8 @@
       "handlers": [
         "load",
         "callHotline",
-        "doorDeliveryChange"
+        "doorDeliveryChange",
+        "openWorkspace"
       ],
       "visual": "已有模拟器截图；用户验收待做",
       "business": "待完整业务验收"
@@ -528,7 +529,8 @@
       "handlers": [
         "load",
         "chooseCommunity",
-        "chooseScope"
+        "chooseScope",
+        "chooseDate"
       ],
       "visual": "待实景核查",
       "business": "待完整业务验收"
@@ -617,18 +619,26 @@
       "role": "管理员；物业按接口与小区限制",
       "feature": "核心或按操作关联模块",
       "calls": [
+        "admin.managementConfig",
         "admin.updateCommunity",
-        "admin.upsertBuilding",
-        "catalog.getCommunity",
-        "catalog.listCommunities"
+        "admin.updateConfig",
+        "admin.upsertBuilding"
       ],
       "handlers": [
+        "load",
         "chooseCommunity",
         "input",
         "chooseLocation",
+        "editBuilding",
+        "newBuilding",
         "addBuilding",
+        "rowInput",
+        "removeRow",
+        "addRow",
         "togglePetCert",
-        "saveCommunity"
+        "choosePlan",
+        "saveCommunity",
+        "saveGlobal"
       ],
       "visual": "待实景核查",
       "business": "待完整业务验收"
@@ -668,6 +678,7 @@
         "admin.settlementCreate",
         "admin.settlementMarkPaid",
         "admin.settlementPreview",
+        "catalog.getCommunity",
         "catalog.listCommunities",
         "merchant.adminList"
       ],
@@ -904,10 +915,12 @@
         "chat.markRead",
         "chat.open",
         "chat.pull",
-        "chat.send"
+        "chat.send",
+        "content.report"
       ],
       "handlers": [
         "start",
+        "reportContent",
         "input",
         "image",
         "send"
@@ -957,11 +970,16 @@
       "feature": "board / travelCarry",
       "calls": [
         "board.list",
-        "catalog.getCommunity"
+        "catalog.getCommunity",
+        "content.adEvent",
+        "content.adsForSlot"
       ],
       "handlers": [
         "chooseType",
         "chooseScope",
+        "retryAds",
+        "openAd",
+        "recordAd",
         "load",
         "open",
         "create",
@@ -1197,6 +1215,7 @@
       "role": "真实微信用户，业务页需对应绑定/参与关系",
       "feature": "events",
       "calls": [
+        "content.report",
         "event.cancelSignup",
         "event.detail",
         "event.signup",
@@ -1208,7 +1227,8 @@
       "handlers": [
         "load",
         "signup",
-        "cancelSignup"
+        "cancelSignup",
+        "reportContent"
       ],
       "visual": "待实景核查",
       "business": "待完整业务验收"
@@ -1394,9 +1414,14 @@
       "role": "真实微信用户，业务页需对应绑定/参与关系",
       "feature": "merchants",
       "calls": [
+        "content.adEvent",
+        "content.adsForSlot",
         "merchant.listForCommunity"
       ],
       "handlers": [
+        "retryAds",
+        "openAd",
+        "recordAd",
         "load",
         "open"
       ],
@@ -1410,11 +1435,13 @@
       "role": "真实微信用户，业务页需对应绑定/参与关系",
       "feature": "merchants",
       "calls": [
+        "content.report",
         "merchant.servicesForMerchant"
       ],
       "handlers": [
         "load",
-        "book"
+        "book",
+        "reportContent"
       ],
       "visual": "待实景核查",
       "business": "待完整业务验收"

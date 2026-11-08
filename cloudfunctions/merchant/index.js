@@ -65,14 +65,14 @@ async function listForCommunity(event, { user }) {
   await assertEnabled(communityId);
   const rows = await db.collection('merchants').where({ status: 'approved', communityIds: command.in([communityId]) })
     .orderBy('name', 'asc').limit(100).get();
-  return { list: rows.data.map(visibleMerchant) };
+  return { list: rows.data.filter(item => !item.moderationHidden).map(visibleMerchant) };
 }
 
 async function servicesForMerchant(event, { user }) {
   requireRole(user, ['resident', 'admin']);
   text(event.merchantId, '商家');
   const merchant = await server.get('merchants', event.merchantId);
-  ensure(merchant && merchant.status === 'approved', '商家不存在或暂不可用');
+  ensure(merchant && merchant.status === 'approved' && !merchant.moderationHidden, '商家不存在或暂不可用');
   const communityId = text(event.communityId || user.communityId || merchant.communityIds[0], '小区');
   requireCommunityAccess(user, communityId);
   ensure(merchant.communityIds.includes(communityId), '商家不属于当前小区');
@@ -163,7 +163,7 @@ async function createBooking(event, { user, openid }) {
   const serviceItem = await server.get('merchantServices', event.serviceId);
   ensure(serviceItem && serviceItem.status === 'on', '该服务暂不可预约');
   const merchant = await server.get('merchants', serviceItem.merchantId);
-  ensure(merchant && merchant.status === 'approved' && merchant.communityIds.includes(user.communityId), '商家暂不可用');
+  ensure(merchant && merchant.status === 'approved' && !merchant.moderationHidden && merchant.communityIds.includes(user.communityId), '商家暂不可用');
   await assertEnabled(user.communityId);
   const community = await server.get('communities', user.communityId);
   ensure(community && community.status === 'active', '小区暂不可用');

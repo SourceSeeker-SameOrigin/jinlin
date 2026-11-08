@@ -13,13 +13,16 @@
     <navigator wx:if="{{community.enabledFeatures.chat}}" class="card" url="/chat/list/list">站内消息<text wx:if="{{unreadTotal}}"> · {{unreadTotal}} 条未读</text> ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.coupons}}" class="card" url="/coupons/mine/mine">我的优惠券 ›</navigator>
     <navigator wx:if="{{community.enabledFeatures.events && canManageEvents}}" class="card" url="/events/manage/manage">活动管理 ›</navigator>
-    <navigator wx:if="{{community.features.merchants && merchant.status === 'approved'}}" class="card" url="/merchant/workbench/workbench">商家工作台 ›</navigator><navigator wx:elif="{{community.features.merchants}}" class="card" url="/merchant/apply/apply">{{merchant ? '查看商家入驻审核' : '申请商家入驻'}} ›</navigator>
-    <navigator wx:if="{{isStation}}" class="card" url="/station/workbench/workbench">驿站工作台 ›</navigator>
-    <navigator wx:elif="{{community.features.stationDelivery}}" class="card" url="/station/apply/apply">{{stationApplication ? (stationApplication.status === 'pending' ? '驿站入驻审核中' : stationApplication.status === 'rejected' ? '驿站申请未通过，查看原因' : '申请驿站账号') : '申请驿站账号'}} ›</navigator>
-    <view class="section-title">参与邻里服务</view>
-    <navigator wx:if="{{provider.status === 'approved'}}" class="card" url="/provider/workbench/workbench">服务员工作台 ›</navigator>
-    <navigator wx:else class="join-neighbors" url="/provider/apply/apply"><image class="join-icon" src="/assets/icons/help.png"/><view class="menu-copy"><view class="join-title">{{provider ? '查看服务员申请' : '成为邻居帮手'}}</view><view class="muted">提交申请，审核后接单</view></view><text class="chevron">›</text></navigator>
-    <navigator wx:if="{{manage}}" class="card" url="/admin/dashboard/dashboard">管理后台 ›</navigator>
+    <view wx:if="{{community.enabledFeatures.points}}" class="card">环保积分余额：{{user.pointsBalance || 0}}</view>
+    <view class="section-title">工作台与入驻</view>
+    <view class="muted">共用同一微信身份；资格审核通过后才能办理对应业务。</view>
+    <view class="card">
+      <button class="menu-row workspace-row" data-code="provider" bindtap="openWorkspace"><image class="menu-icon" src="/assets/icons/help.png"/><view class="menu-copy"><view>服务员工作台</view><view class="muted">{{provider.status === 'approved' ? '进入工作台' : provider ? '查看申请与审核结果' : '申请成为邻居帮手'}}</view></view><text class="chevron">›</text></button>
+      <button class="menu-row workspace-row" data-code="merchant" bindtap="openWorkspace"><image class="menu-icon" src="/assets/icons/shop.png"/><view class="menu-copy"><view>商家工作台</view><view class="muted">{{isMerchant ? '进入工作台' : !community.enabledFeatures.merchants ? '本小区未开通 · 查看条件' : merchant ? '查看入驻审核结果' : '提交入驻申请'}}</view></view><text class="chevron">›</text></button>
+      <button class="menu-row workspace-row" data-code="station" bindtap="openWorkspace"><image class="menu-icon" src="/assets/icons/express.png"/><view class="menu-copy"><view>驿站工作台</view><view class="muted">{{isStation ? '进入工作台' : !community.enabledFeatures.stationDelivery ? '本小区未开通 · 查看条件' : stationApplication ? '查看账号审核结果' : '提交驿站申请'}}</view></view><text class="chevron">›</text></button>
+      <button class="menu-row workspace-row" data-code="admin" bindtap="openWorkspace"><image class="menu-icon" src="/assets/icons/admin.png"/><view class="menu-copy"><view>管理员后台</view><view class="muted">{{isAdmin ? '进入管理后台' : '需运营方授权 · 查看条件'}}</view></view><text class="chevron">›</text></button>
+      <button class="menu-row workspace-row" data-code="property" bindtap="openWorkspace"><image class="menu-icon" src="/assets/icons/home.png"/><view class="menu-copy"><view>物业后台</view><view class="muted">{{isProperty ? '查看本小区订单与分成' : '需核验物业身份 · 查看条件'}}</view></view><text class="chevron">›</text></button>
+    </view>
 
     <view class="legal-menu"><navigator class="menu-row" url="/pages/legal/privacy"><image class="menu-icon" src="/assets/icons/shield.png"/><text>隐私政策</text><text class="chevron">›</text></navigator><navigator class="menu-row" url="/pages/legal/terms"><image class="menu-icon" src="/assets/icons/legal.png"/><text>服务协议</text><text class="chevron">›</text></navigator></view><view class="page-footer">邻里互助，安心到家</view>
   </block>

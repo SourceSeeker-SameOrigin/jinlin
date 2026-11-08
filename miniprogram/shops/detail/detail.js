@@ -1,8 +1,15 @@
+const reportAction = require('../../utils/report');
 const api = require('../../utils/api');
 Page({
   data: { loading: true, error: '', merchant: null, list: [] },
   onLoad(options) { this.merchantId = options.merchantId; },
   onShow() { this.load(); },
+  async reportContent(event) {
+    if(this.reporting)return;this.reporting=true;
+    try { await reportAction.submit('merchant',this.merchantId); }
+    catch(error){this.setData({error:error.message||'举报提交失败'});}
+    finally{this.reporting=false;}
+  },
   async load() {
     this.setData({ loading: true, error: '' });
     try {

@@ -7,7 +7,7 @@
         <private-media wx:elif="{{item.fileId}}" media-class="message-image" src="{{item.fileId}}" mode="widthFix"/>
         <text wx:elif="{{item.status === 'pending'}}">图片审核中</text>
         <text wx:elif="{{item.status === 'blocked'}}">{{item.content}}</text>
-        <view class="time">{{item.timeText}}</view>
+        <view class="time">{{item.timeText}}</view><button wx:if="{{!item.mine}}" class="report-button" size="mini" data-id="{{item._id}}" bindtap="reportContent">举报此消息</button>
       </view>
     </view>
     <view wx:if="{{loading}}" class="muted">正在加载消息…</view>

@@ -1,3 +1,4 @@
+const reportAction = require('../../utils/report');
 const api = require('../../utils/api');
 const { pay } = require('../../utils/payment');
 const { yuan } = require('../../utils/money');
@@ -6,6 +7,12 @@ Page({
   data: { loading: true, busy: false, error: '', item: null },
   onLoad(options) { this.eventId = options.id; },
   onShow() { this.load(); },
+  async reportContent(event) {
+    if(this.reporting)return;this.reporting=true;
+    try { await reportAction.submit('event',this.eventId); }
+    catch(error){this.setData({error:error.message||'举报提交失败'});}
+    finally{this.reporting=false;}
+  },
   async load() {
     this.setData({ loading: true, error: '' });
     try {
