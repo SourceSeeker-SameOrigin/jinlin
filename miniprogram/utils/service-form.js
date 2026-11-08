@@ -49,7 +49,7 @@ module.exports = function serviceForm(serviceCode) {
       try {
         const user = await getApp().ensureSession();
         if (sequence !== this.loadSequence || this.hidden || this.unloaded) return;
-        if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+        if (!user.buildingId) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
         this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
         if (serviceCode === 'escort' && !this.data.form.date) {
           const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);

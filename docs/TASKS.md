@@ -55,7 +55,9 @@
 - `app.js`：`onLaunch` 调 `login`，解析 scene 并 `recordScene`；全局 `globalData.user`、`globalData.community`。
 - 页面：`pages/index`、`pages/bind`、`pages/me`（基础信息部分）、`components/privacy-popup`、`pages/legal/privacy`、`pages/legal/terms`。
 
-**验收**：SPEC §17 场景 1。
+**验收**：SPEC §17 场景 1，并按 D41 验证未绑定首页、授权拒绝/换号失败保留表单、返回不回跳、授权后地址保存成功刷新首页及保存失败不改身份；真实成功受 D01 资格限制时须单独标待验收。
+
+- D41（批准 A）：首页仅提示绑定；服务/月卡入口引导绑定；绑定页独立授权错误和返回首页按钮。T04/T08 直接入口的未绑定守卫使用替换导航避免返回循环。
 
 ## T04 下单与订单（mock 支付）
 

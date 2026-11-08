@@ -30,6 +30,7 @@ node docs/verification/2026-11-08/boundary.cjs
 node docs/verification/2026-11-08-decisions/frontend.cjs
 node docs/verification/2026-11-08-decisions/feature-boundaries.cjs
 node docs/verification/2026-11-08-decisions/permissions.cjs
+node docs/verification/2026-11-08-decisions/binding-flow.cjs
 ```
 
 前四个旧脚本输出到 `/tmp/jinlin-check-20261108`，本目录保存本次结果；原2026-11-08目录历史JSON保留未覆盖。
@@ -37,3 +38,6 @@ node docs/verification/2026-11-08-decisions/permissions.cjs
 D02平台依据与限制：微信服务端SDK类型及[腾讯云Node SDK存储说明](https://github.com/TencentCloudBase/node-sdk/blob/master/docs/storage.md)列有 maxAge；[CloudBase当前存储OpenAPI](https://docs.cloudbase.net/api-reference/openapi/storage)同样列出该参数。但[Web SDK更新日志](https://docs.cloudbase.net/api-reference/webv3/changelog)对传统模式TTL有兼容性说明，接口产品/模式不同，不能外推保证本环境恰好600秒。代码请求600秒并限制前端缓存；须部署后用非敏感图片验证同一链接实际过期。未验证前不启用真实证件流程，若平台不支持则按5W2H重新决策，不擅自扩大有效期或改公开存储。
 
 完整用户验收仍以 ../../TEST_HANDOFF.md 为准：40规格场景、15关闭回归、4真实支付、补充与69页索引均保留。D10代码部署及D37本地包体已完成；D01资格、D05–D07配置、云端实际权限/TTL和真机/跨角色实测未完成，不标总体完成。
+
+
+D41–D42 后续证据：`binding-flow-before.json` 为旧代码13项中12项失败的基线，`binding-flow.json` 为修复后13/13；`d41-jest.json` 为49套555项通过；baseline-frontend.json已更新到批准后的首页/phoneError断言，44/44通过，frontend.json仍15/15；static.json已更新最终官方编译结果。`binding-ui.json`区分实际导航、模拟拒绝回调、隔离成功、资格阻塞；无真实绑定写入。D42仅专用class替换并验证加载无该警告；最终0错误，工具/基础库警告保留。

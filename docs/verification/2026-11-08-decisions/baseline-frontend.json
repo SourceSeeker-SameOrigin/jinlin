@@ -101,7 +101,7 @@
       "status": "PASS"
     },
     {
-      "name": "home unbound user returns to bind without business requests",
+      "name": "home unbound user stays home without business requests",
       "status": "PASS"
     },
     {

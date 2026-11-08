@@ -10,7 +10,7 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
-      if (!user.buildingId && !(user.addresses && user.addresses.length)) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+      if (!user.buildingId && !(user.addresses && user.addresses.length)) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
       const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
         buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room, isDefault: true }];
       addresses.forEach(address => { address.pickerLabel = this.addressLabel(address); });

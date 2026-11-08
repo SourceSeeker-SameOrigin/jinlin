@@ -3,22 +3,27 @@ const CORE_SERVICES = [{ code: 'express', name: '代取快递', icon: '📦' }, 
   { code: 'buy', name: '周边代买', icon: '🛒' }, { code: 'help', name: '帮把手', icon: '🤝' }];
 Page({
   data: { loading: true, error: '', community: null, firstOrder: false,
-    notice: null, ads: [],
+    notice: null, ads: [], needsBinding: true, eventsEnabled: false,
     services: CORE_SERVICES },
-  onShow() { this.load(); },
+  onShow() { return this.load(); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, error: '', community: null, notice: null, ads: [],
+      firstOrder: false, eventsEnabled: false, services: CORE_SERVICES });
     try {
       const app = getApp();
       const user = await app.ensureSession();
-      if (!user.communityId || !user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
+      if (!user.communityId || !user.buildingId) {
+        app.globalData.community = null;
+        this.setData({ needsBinding: true, services: CORE_SERVICES.map(item => ({ ...item, url: '/pages/bind/bind' })) });
+        return;
+      }
       const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
       app.globalData.community = community;
       let homeContent = { notice: null, ads: [] };
       try { homeContent = await api.call('content', 'homeContent', { communityId: community._id }, { loading: false, silent: true }); } catch (_) {}
       const services = [...CORE_SERVICES];
       if (community.enabledFeatures && community.enabledFeatures.recycle) services.push({ code: 'recycle', name: '回收上门', icon: '🌱', url: '/recycle/order/order' });
-      this.setData({ community, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
+      this.setData({ community, needsBinding: false, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
         notice: homeContent.notice, ads: homeContent.ads || [] });
     } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
     finally { this.setData({ loading: false }); }

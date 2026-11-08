@@ -14,8 +14,10 @@
     <view class="field"><text class="label">本地址联系电话（选填）</text><input type="number" placeholder="留空时使用已授权手机号" value="{{contactPhone}}" bindinput="contactPhoneChange" maxlength="11" /></view>
     <checkbox-group bindchange="agreementChange"><label><checkbox value="agree" checked="{{agreed}}" color="#1F7A5C" />我已阅读并同意隐私政策和服务协议</label></checkbox-group>
     <view class="links"><navigator url="/pages/legal/privacy">隐私政策</navigator><navigator url="/pages/legal/terms">服务协议</navigator></view>
-    <view class="field"><text class="label">联系电话</text><view wx:if="{{phone}}">{{phone}}</view><button open-type="getPhoneNumber" bindgetphonenumber="phone" disabled="{{!agreed}}">{{phone ? '更换授权手机号' : '授权手机号'}}</button></view>
-    <button type="primary" bindtap="save" loading="{{saving}}" disabled="{{saving || !agreed || !phone || !room}}">保存门牌</button>
+    <view class="field"><text class="label">联系电话</text><view wx:if="{{phone}}">{{phone}}</view><button open-type="getPhoneNumber" bindgetphonenumber="phone" loading="{{authorizing}}" disabled="{{!agreed || authorizing || saving}}">{{phone ? '更换授权手机号' : '授权手机号'}}</button></view>
+    <view wx:if="{{phoneError}}" class="error">{{phoneError}}</view>
+    <button type="primary" bindtap="save" loading="{{saving}}" disabled="{{saving || authorizing || !agreed || !phone || !room}}">保存门牌</button>
   </view>
+  <button bindtap="backHome">返回首页</button>
 </view>
 <privacy-popup />

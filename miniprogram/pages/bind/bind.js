@@ -1,7 +1,7 @@
 const api = require('../../utils/api');
 
 Page({
-  data: { loading: true, saving: false, error: '', communities: [], buildings: [], units: [],
+  data: { loading: true, saving: false, authorizing: false, error: '', phoneError: '', communities: [], buildings: [], units: [],
     communityIndex: 0, buildingIndex: 0, unitIndex: 0, room: '', phone: '', contactName: '', contactPhone: '', agreed: false, locationHint: '' },
   onLoad() { this.load(); },
   async load() {
@@ -76,15 +76,23 @@ Page({
   contactPhoneChange(event) { this.setData({ contactPhone: event.detail.value }); },
   agreementChange(event) { this.setData({ agreed: event.detail.value.includes('agree') }); },
   async phone(event) {
-    if (!event.detail.code) { this.setData({ error: '未取得手机号授权，可重新点击授权' }); return; }
+    if (this.data.authorizing || this.data.saving) return;
+    const code = event.detail && event.detail.code;
+    if (!code) { this.setData({ phoneError: '未取得手机号授权，可重试或返回首页稍后绑定' }); return; }
+    this.setData({ authorizing: true, phoneError: '' });
     try {
-      const user = await api.call('user', 'bindPhone', { code: event.detail.code });
+      const user = await api.call('user', 'bindPhone', { code });
       getApp().globalData.user = user;
-      this.setData({ phone: user.phone, error: '' });
-    } catch (error) { this.setData({ error: error.message }); }
+      this.setData({ phone: user.phone, phoneError: '' });
+    } catch (error) { this.setData({ phoneError: error.message || '手机号授权失败，请重试' }); }
+    finally { this.setData({ authorizing: false }); }
   },
+  backHome() { wx.switchTab({ url: '/pages/index/index' }); },
   async save() {
-    if (this.data.saving) return;
+    if (this.data.saving || this.data.authorizing) return;
+    if (!this.data.agreed || !this.data.phone || !this.data.room.trim()) {
+      this.setData({ error: '请先阅读并同意协议、授权手机号并填写门牌号' }); return;
+    }
     const { communities, communityIndex, buildings, buildingIndex, units, unitIndex, room, agreed } = this.data;
     if (!communities[communityIndex] || !buildings[buildingIndex] || !units[unitIndex]) {
       this.setData({ error: '请先选择有效的小区、楼栋和单元' }); return;
