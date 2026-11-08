@@ -6,7 +6,7 @@
   "uploadAuthorized": true,
   "authorizedFunctions": 18,
   "totalBytes": 2148870,
-  "successfulUpdatesConfirmed": 4,
+  "successfulUpdatesConfirmed": 8,
   "attempts": [
     {
       "function": "order",
@@ -103,12 +103,12 @@
       }
     },
     "newCodeVerified": true,
-    "verificationScope": "order, admin, board, catalog"
+    "verificationScope": "admin, board, catalog, chat, content, coupon, event, order"
   },
-  "remainingFunctionsNotAttempted": 14,
+  "remainingFunctionsNotAttempted": 10,
   "browser": "Original CUA provider remains blocked; user-approved Chrome DevTools page reading and clicking work",
   "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "4 functions source verified; other14 pending; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
+  "boundary": "8/18 functions source verified; no timer/HTTP/role/key/package/main changes; cloud invocation permissions not verified",
   "connectionDiagnosis": {
     "browserProvider": "Still blocked before listing browsers",
     "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
@@ -118,20 +118,33 @@
     "approvedAlternative": "Existing ECC Chrome DevTools; no installation, new port or credentials",
     "alternativeResult": "Connected; official target environment function list shows 21 functions; order upload dialog opened",
     "fileUploadBlock": "upload_file rejected both /tmp/jinlin-deploy-1514833/order.zip and an identical copy under the current user workspace as outside configured workspace roots; configured roots not returned",
-    "nextStep": "Waiting for manual chat ZIP selection; one-time browser metadata check ready"
+    "nextStep": "Manual file selection for idle; browser metadata check ready"
   },
-  "platformReportedSuccessfulUpdates": 4,
   "codeReadbackDownload": {
     "method": "Official CLI functions download",
     "result": "Successful when --path supplied a .zip-suffixed target; CLI created extracted directory; folder-only target failed code17",
     "readbackRoot": "/tmp/jinlin-order-readback-20261108-1546"
   },
   "confirmedFunctions": [
-    "order",
     "admin",
     "board",
-    "catalog"
+    "catalog",
+    "chat",
+    "content",
+    "coupon",
+    "event",
+    "order"
   ],
   "inProgressFunction": null,
-  "nextFunction": "chat"
+  "nextFunction": "idle",
+  "verifiedSourceEvidence": [
+    "admin-cloud-readback.json",
+    "board-cloud-readback.json",
+    "catalog-cloud-readback.json",
+    "chat-cloud-readback.json",
+    "content-cloud-readback.json",
+    "coupon-cloud-readback.json",
+    "event-cloud-readback.json",
+    "order-cloud-readback.json"
+  ]
 }
