@@ -149,7 +149,7 @@ function createChatFlow(cloud, server) {
       content = await checkText(cloud, event.content, { blacklist: config.blacklist, type: 'message', openid });
     } else {
       fileId = text(event.fileId, '图片文件', 300);
-      ensure(fileId.startsWith('cloud://'), '图片文件地址不正确');
+      require('./providerData').fileInFolder(fileId, 'chat/' + conversation._id);
     }
     const recipient = conversation.members.find(member => member !== openid);
     ensure(recipient, '会话参与者不完整', 'E_CONFIG');
@@ -196,6 +196,7 @@ function createChatFlow(cloud, server) {
   }
 
   async function list(event, { openid }) {
+    await server.featureEntry('chat', await server.user(openid));
     const result = await db.collection('conversations').where({ members: openid })
       .orderBy('lastAt', 'desc').limit(100).get();
     const list = [];

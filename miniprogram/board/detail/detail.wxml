@@ -5,7 +5,7 @@
       <view wx:if="{{post.carry}}">{{post.carry.direction === 'request' ? '求帮带' : '我能帮带'}} · {{post.carry.destination}} · {{post.carry.destinationType === 'overseas' ? '境外' : '境内'}}</view>
       <view wx:if="{{post.carry}}">出发 {{post.departText}}<text wx:if="{{post.returnText}}"> · 返程 {{post.returnText}}</text></view>
       <view wx:if="{{post.carry && post.carry.destinationType === 'overseas'}}" class="notice">仅限个人自用、不加价、按海关规定如实申报；居民旅客境外获取物品免税额度为 5000 元，超出部分需申报纳税。</view>
-      <image wx:for="{{post.images}}" wx:key="*this" class="photo" src="{{item}}" data-url="{{item}}" bindtap="preview" mode="aspectFill"/>
+      <private-media wx:for="{{post.images}}" wx:key="*this" media-class="photo" src="{{item}}" data-url="{{item}}" bindtap="preview" mode="aspectFill"/>
       <view class="muted">{{post.timeText}} · {{post.statusText}}</view>
       <button wx:if="{{post.isAuthor && post.type === 'task' && post.status === 'pending_pay'}}" type="primary" bindtap="continuePayment">继续支付悬赏</button><button wx:if="{{post.isAuthor && post.status === 'open'}}" bindtap="close">关闭</button><button wx:elif="{{!post.isAuthor}}" bindtap="report">举报</button>
     </view>

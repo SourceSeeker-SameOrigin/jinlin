@@ -34,7 +34,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   providerChange(event) { this.setData({ providerIndex: Number(event.detail.value) }); },
-  preview() { if (this.data.poster) wx.previewImage({ urls: [this.data.poster.tempFileURL] }); },
+  preview() { if (this.data.poster) require('../../utils/media-links').preview({ urls: [this.data.poster.tempFileURL] }); },
   save() {
     const poster = this.data.poster;
     if (!poster) return;

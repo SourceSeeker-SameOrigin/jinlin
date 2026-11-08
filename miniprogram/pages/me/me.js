@@ -11,10 +11,10 @@ Page({
       try { unreadTotal = (await api.call('chat', 'list', {}, { loading: false, silent: true })).unreadTotal || 0; } catch (_) {}
       let merchant = null;
       let stationApplication = null;
-      if (app.globalData.community && app.globalData.community.features.merchants) {
+      if (app.globalData.community && app.globalData.community.enabledFeatures.merchants) {
         try { merchant = (await api.call('merchant', 'myApplication', {}, { loading: false, silent: true })).merchant; } catch (_) {}
       }
-      if (app.globalData.community && app.globalData.community.features.stationDelivery && !user.roles.includes('station')) {
+      if (app.globalData.community && app.globalData.community.enabledFeatures.stationDelivery && !user.roles.includes('station')) {
         try { stationApplication = (await api.call('station', 'myApplication', {}, { loading: false, silent: true })).application; } catch (_) {}
       }
       this.setData({ user, community: app.globalData.community, provider: app.globalData.provider, merchant, stationApplication, unreadTotal,

@@ -73,5 +73,5 @@ Page({
     catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
 });

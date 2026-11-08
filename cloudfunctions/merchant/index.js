@@ -1,3 +1,4 @@
+const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
@@ -25,8 +26,10 @@ async function assertEnabled(communityId) {
 
 async function apply(event, { user, openid }) {
   requireRole(user, ['resident']);
-  const community = await assertEnabled(event.communityId || user.communityId);
-  requireCommunityAccess(user, community._id);
+  const communityId = event.communityId || user.communityId;
+  if (communityId) requireCommunityAccess(user, communityId);
+  const { community } = await server.featureEntry('merchants', user, communityId);
+  fileInFolder(event.licenseFileId, 'merchants/' + user._id + '/license');
   const fields = application({ ...event, phone: event.phone || user.phone }, { ...user, openid }, community);
   const id = 'm_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 32);
   const existing = await server.get('merchants', id);
@@ -46,15 +49,16 @@ async function mine(openid) {
 }
 
 async function myApplication(event, { openid }) {
-  const user = await server.one('users', { openid });
-  if (user && user.communityId) await assertEnabled(user.communityId);
+  const user = await server.user(openid);
   const merchant = await server.one('merchants', { staffOpenids: command.in([openid]) });
+  await server.featureEntry('merchants', user, merchant ? merchant.communityIds[0] : user.communityId);
   return { merchant: merchant ? { _id: merchant._id, name: merchant.name, category: merchant.category,
     status: merchant.status, reviewNote: merchant.reviewNote || '', communityIds: merchant.communityIds } : null };
 }
 
 async function listForCommunity(event, { user }) {
   requireRole(user, ['resident', 'admin']);
+  if (!event.communityId && !user.communityId) await server.featureEntry('merchants', user);
   const communityId = text(event.communityId, '小区');
   requireCommunityAccess(user, communityId);
   await assertEnabled(communityId);
@@ -120,6 +124,8 @@ async function upsertService(event, { openid }) {
   ensure(merchant.communityIds.includes(communityId), '无权管理该小区的商家服务', 'E_FORBIDDEN');
   await assertEnabled(communityId);
   const fields = service(event);
+  const actor = await server.user(openid);
+  fields.images.forEach(file => fileInFolder(file, 'merchant-services/' + actor._id));
   ensure(fields.status === 'off', '新服务需先由管理员审核上架');
   await checkOrderContent(cloud, openid, '', { desc: fields.title + ' ' + fields.desc }, (await server.config()).blacklist);
   if (event.serviceId) {
@@ -275,6 +281,7 @@ async function completeBooking(event, { openid }) {
   requireLocksmithCheck(order);
   ensure(Array.isArray(event.photos) && event.photos.length >= 1 && event.photos.length <= 3 &&
     event.photos.every(file => typeof file === 'string' && file.startsWith('cloud://')), '请上传 1—3 张服务完成照片');
+  event.photos.forEach(file => fileInFolder(file, 'merchant-orders/' + order._id));
   const patch = { photos: event.photos, deliveredAt: new Date() };
   return require('./lib/shared/orderStore').conditionalTransition(server, order, 'delivered', openid, patch, { merchantId: merchant._id });
 }
@@ -302,4 +309,4 @@ async function adminServices(event, { user }) {
 
 exports.main = server.entry({ apply, myApplication, listForCommunity, servicesForMerchant, adminList, review,
   upsertService, myServices, setServiceStatus, adminServices, createBooking, quoteBooking, merchantOrders, merchantTransition,
-  completeBooking }, ['resident', 'merchant', 'admin']);
+  completeBooking }, ['resident', 'merchant', 'admin'], 'merchant');

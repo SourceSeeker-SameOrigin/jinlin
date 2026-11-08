@@ -11,7 +11,7 @@ const server = createServer(cloud);
 
 async function center(event, { user }) {
   const communityId = user.communityId || '';
-  await server.feature('coupons', communityId);
+  await server.featureEntry('coupons', user, communityId);
   const templates = await server.all('couponTemplates', { status: 'active', issueMode: 'claim' });
   const list = templates.filter(item => communityMatches(item, communityId) && item.issued < item.totalLimit)
     .map(item => ({ _id: item._id, name: item.name, kind: item.kind, value: item.value,
@@ -21,13 +21,13 @@ async function center(event, { user }) {
 }
 
 async function claim(event, { user, openid }) {
-  await server.feature('coupons', user.communityId);
+  await server.featureEntry('coupons', user);
   text(event.templateId, '优惠券模板');
   return issueOne(server, { openid, templateId: event.templateId, mode: 'claim', communityId: user.communityId });
 }
 
 async function mine(event, { user, openid }) {
-  await server.feature('coupons', user.communityId);
+  await server.featureEntry('coupons', user);
   const result = await server.db.collection('coupons').where({ openid }).orderBy('createdAt', 'desc').limit(100).get();
   const templates = new Map((await server.all('couponTemplates', {})).map(item => [item._id, item]));
   const now = new Date();

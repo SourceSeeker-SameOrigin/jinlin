@@ -1,3 +1,4 @@
+const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
@@ -44,7 +45,8 @@ async function stationContext(user) {
   return { community, stationCode: user.stationCode };
 }
 
-async function applicationOptions() {
+async function applicationOptions(event, { user }) {
+  await server.featureEntry('stationDelivery', user, user.stationCommunityId || user.communityId);
   const [config, communities] = await Promise.all([server.config(), server.all('communities', { status: 'active' })]);
   return { list: communities.filter(community => isEnabled('stationDelivery', config, community))
     .map(community => ({ _id: community._id, name: community.name,
@@ -52,9 +54,10 @@ async function applicationOptions() {
     .filter(community => community.stations.length) };
 }
 
-async function myApplication(event, { openid }) {
+async function myApplication(event, { openid, user }) {
   const id = 'station_app_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 32);
   const application = await server.get('stationApplications', id);
+  await server.featureEntry('stationDelivery', user, application ? application.communityId : user.stationCommunityId || user.communityId);
   return { application: application ? { communityId: application.communityId, stationCode: application.stationCode,
     stationName: application.stationName, status: application.status, reviewNote: application.reviewNote || '' } : null };
 }
@@ -326,6 +329,7 @@ async function recordDelivery(event, { openid }) {
   ensure(batch.status === 'assigned' && batch.startedAt, '请先开始配送', 'E_BAD_STATE');
   text(event.itemId, '门牌记录');
   ensure(['delivered', 'failed'].includes(event.status), '配送结果不正确');
+  if (event.status === 'delivered') fileInFolder(event.photoFileId, 'station/' + batch._id);
   return atomic(db, async transaction => {
     const current = await read(transaction, 'deliveryBatches', batch._id);
     ensure(current && current.status === 'assigned' && current.providerId === provider._id && current.startedAt,
@@ -381,4 +385,4 @@ async function recordDelivery(event, { openid }) {
 
 exports.main = server.entry({ setDoorDelivery, listMyBatches, exportStatement, providerHall, acceptBatch, providerBatch,
   createBatch, startBatch, checkDoorDeliveryConsent, recordDelivery, applicationOptions, myApplication, apply,
-  listApplications, reviewApplication }, ['resident', 'admin', 'station', 'provider']);
+  listApplications, reviewApplication }, ['resident', 'admin', 'station', 'provider'], 'station');

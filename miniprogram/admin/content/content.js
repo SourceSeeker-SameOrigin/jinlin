@@ -29,10 +29,14 @@ Page({
   async chooseImage(event) {
     const field = event.currentTarget.dataset.field;
     try {
+      if (!['imageFileId', 'adImage'].includes(field)) throw new Error('图片用途不正确');
+      const user = await getApp().ensureSession();
+      await require('../../utils/privacy').authorize();
       const chosen = await new Promise((resolve, reject) => wx.chooseMedia({ count: 1, mediaType: ['image'], success: resolve, fail: reject }));
       const file = chosen.tempFiles && chosen.tempFiles[0];
       if (!file || !file.tempFilePath) throw new Error('没有选择图片');
-      const uploaded = await wx.cloud.uploadFile({ cloudPath: 'content/' + field + '/' + Date.now() + '.jpg', filePath: file.tempFilePath });
+      const folder = field === 'adImage' ? 'ads' : 'notices';
+      const uploaded = await wx.cloud.uploadFile({ cloudPath: folder + '/' + user._id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg', filePath: file.tempFilePath });
       this.setData({ [field]: uploaded.fileID });
     } catch (error) { this.setData({ error: error.errMsg ? '图片选择或上传失败' : error.message || '图片上传失败' }); }
   },

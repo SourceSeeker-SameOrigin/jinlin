@@ -35,5 +35,5 @@ Page({
     catch (error) { this.setData({ error: error.message || '提交交付失败' }); }
     finally { this.setData({ busy: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.photos }); }
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.photos }); }
 });

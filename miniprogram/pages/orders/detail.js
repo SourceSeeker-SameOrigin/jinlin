@@ -102,7 +102,7 @@ Page({
   previewVacant(event) {
     const urls = this.data.vacantPhotoGroups.flatMap(group => group.photos);
     const current = event.currentTarget.dataset.url;
-    if (urls.includes(current)) wx.previewImage({ current, urls });
+    if (urls.includes(current)) require('../../utils/media-links').preview({ current, urls });
   },
   openChat() {
     if (this.data.order && this.data.order.canChat) wx.navigateTo({ url: '/chat/room/room?conversationId=' + encodeURIComponent(this.chatConversationId || '') +
@@ -128,6 +128,6 @@ Page({
     } catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
   ,openPetReports() { wx.navigateTo({ url: '/pet/reports?id=' + encodeURIComponent(this.orderId) }); }
 });

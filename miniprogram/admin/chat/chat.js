@@ -20,5 +20,5 @@ Page({
     } catch (error) { this.setData({ error: error.message || '聊天记录加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
 });

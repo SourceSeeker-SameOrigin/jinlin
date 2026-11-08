@@ -4,7 +4,7 @@
     <view wx:for="{{messages}}" wx:key="_id" id="message-{{item._id}}" class="message-row {{item.mine ? 'mine' : ''}}">
       <view class="bubble">
         <text wx:if="{{item.type === 'text'}}">{{item.content}}</text>
-        <image wx:elif="{{item.fileId}}" class="message-image" src="{{item.fileId}}" mode="widthFix"/>
+        <private-media wx:elif="{{item.fileId}}" media-class="message-image" src="{{item.fileId}}" mode="widthFix"/>
         <text wx:elif="{{item.status === 'pending'}}">图片审核中</text>
         <text wx:elif="{{item.status === 'blocked'}}">{{item.content}}</text>
         <view class="time">{{item.timeText}}</view>

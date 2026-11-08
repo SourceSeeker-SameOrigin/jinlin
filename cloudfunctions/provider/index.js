@@ -237,4 +237,4 @@ async function updateLocation(event, { openid }) {
   return { updatedAt: now };
 }
 
-exports.main = server.entry({ apply, myStatus, subscriptionTemplates, referralPoster, setDuty, hall, accept, release, start, deliver, myTasks, earnings, updateLocation }, ['resident', 'admin']);
+exports.main = server.entry({ apply, myStatus, subscriptionTemplates, referralPoster, setDuty, hall, accept, release, start, deliver, myTasks, earnings, updateLocation }, ['resident', 'admin'], 'provider');

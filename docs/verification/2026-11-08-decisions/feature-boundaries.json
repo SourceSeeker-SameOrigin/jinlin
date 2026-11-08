@@ -1,0 +1,232 @@
+{
+  "scope": "real entry code with read-only synthetic database; no cloud/identity changes",
+  "total": 56,
+  "passed": 56,
+  "failed": 0,
+  "results": [
+    {
+      "label": "board.list off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "board.list off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "idle.list off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "idle.list off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "chat.list off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "chat.list off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.center off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.center off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.mine off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.mine off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.myApplication off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.myApplication off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.listForCommunity off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.listForCommunity off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listNotices off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listNotices off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "station.myApplication off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "station.myApplication off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "station.applicationOptions off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "station.applicationOptions off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "event.list off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "event.list off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "payout.list off bound=false",
+      "status": "PASS"
+    },
+    {
+      "label": "payout.list off bound=true",
+      "status": "PASS"
+    },
+    {
+      "label": "board.list global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "idle.list global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "chat.list global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.center global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.mine global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.myApplication global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.listForCommunity global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listNotices global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "station.myApplication global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "station.applicationOptions global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "event.list global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "payout.list global on but unbound prompts binding",
+      "status": "PASS"
+    },
+    {
+      "label": "global on/local off uses local override",
+      "status": "PASS"
+    },
+    {
+      "label": "global off/local on allows read",
+      "status": "PASS"
+    },
+    {
+      "label": "board.detail unrelated record returns forbidden before off",
+      "status": "PASS"
+    },
+    {
+      "label": "idle.detail unrelated record returns forbidden before off",
+      "status": "PASS"
+    },
+    {
+      "label": "event.detail unrelated record returns forbidden before off",
+      "status": "PASS"
+    },
+    {
+      "label": "payout.get unrelated record returns forbidden before off",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.adminTemplates authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "coupon.adminTemplates ordinary user has no preparation exemption",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.adminList authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.adminList ordinary user has no preparation exemption",
+      "status": "PASS"
+    },
+    {
+      "label": "station.listApplications authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "station.listApplications ordinary user has no preparation exemption",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listAds authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listAds ordinary user has no preparation exemption",
+      "status": "PASS"
+    },
+    {
+      "label": "content.listNotices authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "event.adminList authorized admin prepares while off",
+      "status": "PASS"
+    },
+    {
+      "label": "event.adminList ordinary user has no preparation exemption",
+      "status": "PASS"
+    },
+    {
+      "label": "home aggregation remains successful empty while off",
+      "status": "PASS"
+    },
+    {
+      "label": "board hidden record is forbidden before feature lookup",
+      "status": "PASS"
+    },
+    {
+      "label": "idle hidden record is forbidden before feature lookup",
+      "status": "PASS"
+    }
+  ]
+}

@@ -10,6 +10,12 @@ const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, 
   help: { categoryIndex: 0, desc: '', blocks: '1' },
   pet: { dates: [], visitsPerDay: '1', catCount: '1', dogCount: '0', otherCount: '0', tasks: ['feed','water'], entryIndex: 1, entryPassword: '' } };
 
+// Only known, non-secret fields may survive a page session.
+function draftForm(serviceCode, form) {
+  const keys = Object.keys(defaults[serviceCode]).filter(key => key !== 'entryPassword').concat('note');
+  return Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(form, key)).map(key => [key, form[key]]));
+}
+
 module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
@@ -27,13 +33,22 @@ module.exports = function serviceForm(serviceCode) {
           desc: ('请帮忙搬运：' + title + (desc ? '。' + desc : '')).slice(0, 200) };
       }
     },
-    onShow() { this.load(); },
-    onHide() { clearTimeout(this.quoteTimer); this.quoteSequence = (this.quoteSequence || 0) + 1; },
-    onUnload() { this.unloaded = true; clearTimeout(this.quoteTimer); },
+    onShow() { this.hidden = false; this.load(); },
+    invalidateRequests() {
+      clearTimeout(this.quoteTimer);
+      this.quoteSequence = (this.quoteSequence || 0) + 1;
+      this.addressSequence = (this.addressSequence || 0) + 1;
+      this.loadSequence = (this.loadSequence || 0) + 1;
+    },
+    onHide() { this.hidden = true; this.invalidateRequests(); },
+    onUnload() { this.unloaded = true; this.invalidateRequests(); },
     async load() {
-      this.setData({ loading: true, error: '' });
+      this.invalidateRequests();
+      const sequence = this.loadSequence;
+      this.setData({ loading: true, error: '', community: null, quote: null, amount: '--' });
       try {
         const user = await getApp().ensureSession();
+        if (sequence !== this.loadSequence || this.hidden || this.unloaded) return;
         if (!user.buildingId) { wx.navigateTo({ url: '/pages/bind/bind' }); return; }
         this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
         if (serviceCode === 'escort' && !this.data.form.date) {
@@ -46,13 +61,13 @@ module.exports = function serviceForm(serviceCode) {
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
           contactName: '', contactPhone: user.phone, isDefault: true }];
-        const addressIndex = Math.max(0, addresses.findIndex(item => item.isDefault));
-        const address = addresses[addressIndex];
-        const community = await api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true });
-        this.setData({ community, addresses, addressIndex, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
-        await this.refreshQuote();
-      } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
-      finally { if (!this.unloaded) this.setData({ loading: false }); }
+        const selected = this.data.addresses[this.data.addressIndex];
+        const previousIndex = selected ? addresses.findIndex(item => item.id === selected.id && item.communityId === selected.communityId) : -1;
+        const addressIndex = previousIndex >= 0 ? previousIndex : Math.max(0, addresses.findIndex(item => item.isDefault));
+        this.setData({ addresses, addressIndex });
+        await this.addressChange({ detail: { value: addressIndex } });
+      } catch (error) { if (sequence === this.loadSequence && !this.hidden && !this.unloaded) this.setData({ error: error.message || '加载失败，请重试' }); }
+      finally { if (sequence === this.loadSequence && !this.hidden && !this.unloaded) this.setData({ loading: false }); }
     },
     restoreDraft(user) {
       const draft = wx.getStorageSync(this.draftKey);
@@ -61,16 +76,21 @@ module.exports = function serviceForm(serviceCode) {
         this.request = null;
         return;
       }
-      this.setData({ form: { ...this.data.form, ...(draft.form || {}) }, restoredDraft: true });
+      const form = draftForm(serviceCode, draft.form || {});
+      // Pet request signatures can contain a lock password; never restore or persist them.
+      const request = serviceCode === 'pet' ? null : draft.request || null;
+      wx.setStorageSync(this.draftKey, { userId: draft.userId, communityId: draft.communityId,
+        savedAt: draft.savedAt, form, slot: draft.slot, request });
+      this.setData({ form: { ...this.data.form, ...form }, restoredDraft: true });
       this.pendingSlot = draft.slot;
-      this.request = draft.request || null;
+      if (serviceCode !== 'pet') this.request = request;
     },
     saveDraft() {
       const user = getApp().globalData.user;
       if (!this.draftKey || !user || !user._id) return;
       const slot = this.data.slots[this.data.slotIndex] && this.data.slots[this.data.slotIndex].value;
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: user.communityId, savedAt: Date.now(),
-        form: this.data.form, slot, request: this.request });
+        form: draftForm(serviceCode, this.data.form), slot, request: serviceCode === 'pet' ? null : this.request });
     },
     address() { wx.navigateTo({ url: '/pages/bind/bind' }); },
     couponChange(event) {
@@ -85,14 +105,24 @@ module.exports = function serviceForm(serviceCode) {
       this.queueQuote();
     },
     dateOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); },
-    addressChange(event) {
+    async addressChange(event) {
       const addressIndex = Number(event.detail.value);
       const address = this.data.addresses[addressIndex];
       if (!address) return;
-      this.setData({ addressIndex, community: null, quote: null, amount: '--' });
-      api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true })
-        .then(community => { this.setData({ community, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room }); this.queueQuote(); })
-        .catch(error => this.setData({ error: error.message || '地址加载失败' }));
+      clearTimeout(this.quoteTimer);
+      this.quoteSequence = (this.quoteSequence || 0) + 1;
+      const sequence = this.addressSequence = (this.addressSequence || 0) + 1;
+      const current = () => sequence === this.addressSequence && !this.hidden && !this.unloaded;
+      this.setData({ addressIndex, community: null, quote: null, amount: '--', addressText: '',
+        slots: [], slotIndex: 0, error: '', quoteError: '', quoteLoading: true });
+      try {
+        const community = await api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true });
+        if (!current()) return;
+        this.setData({ community, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
+        this.queueQuote();
+      } catch (error) {
+        if (current()) this.setData({ error: error.message || '地址加载失败', quoteLoading: false });
+      }
     },
     change(event) {
       const key = event.currentTarget.dataset.field;
@@ -121,6 +151,7 @@ module.exports = function serviceForm(serviceCode) {
     queueQuote() {
       clearTimeout(this.quoteTimer);
       this.quoteSequence = (this.quoteSequence || 0) + 1;
+      this.setData({ quote: null, amount: '--', quoteLoading: true });
       this.quoteTimer = setTimeout(() => this.refreshQuote(), 300);
     },
     params() {
@@ -151,7 +182,7 @@ module.exports = function serviceForm(serviceCode) {
       return params;
     },
     async refreshQuote() {
-      if (!this.data.community) return;
+      if (!this.data.community || this.hidden || this.unloaded) return;
       const sequence = (this.quoteSequence || 0) + 1;
       this.quoteSequence = sequence;
       this.setData({ quoteLoading: true, quoteError: '' });
@@ -178,7 +209,7 @@ module.exports = function serviceForm(serviceCode) {
         if (sequence === this.quoteSequence && !this.unloaded) this.setData({ quote: null, amount: '--', quoteError: error.message || '报价失败，请重试' });
       } finally { if (sequence === this.quoteSequence && !this.unloaded) this.setData({ quoteLoading: false }); }
     },
-    retryQuote() { this.refreshQuote(); },
+    retryQuote() { return this.data.community ? this.refreshQuote() : this.addressChange({ detail: { value: this.data.addressIndex } }); },
     async submit() {
       if (this.data.saving || !this.data.quote || this.data.quoteLoading) return;
       this.setData({ saving: true, error: '' });

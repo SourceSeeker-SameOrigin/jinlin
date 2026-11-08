@@ -11,6 +11,12 @@ async function call(name, action, data = {}, options = {}) {
       error.code = result && result.code || 'E_INTERNAL';
       throw error;
     }
+    if (result.data && result.data._media) {
+      const links = require('./media-links');
+      const snapshot = JSON.parse(JSON.stringify(data));
+      links.register(result.data._media, () => call(name, action, snapshot, { loading: false, silent: true }));
+      delete result.data._media;
+    }
     return result.data;
   } catch (error) {
     if (!options.silent) wx.showToast({ title: error.message || '网络连接失败，请重试', icon: 'none' });

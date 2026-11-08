@@ -4,10 +4,13 @@ const { maskPhone } = require('./money');
 const { SERVICE_NAMES } = require('./orderData');
 const { split } = require('./split');
 
-function fileInFolder(fileId, folder) {
-  ensure(typeof fileId === 'string' && fileId.startsWith('cloud://') &&
-    fileId.replace(/^cloud:\/\/[^/]+\//, '').startsWith(folder + '/') && !fileId.includes('/../'),
-  '请重新上传本次所需的照片');
+function fileInFolder(fileId, folder, message = '请重新上传本次所需的照片') {
+  const match = typeof fileId === 'string' && /^cloud:\/\/[^/?#]+\/([^?#]+)$/.exec(fileId);
+  let path = '';
+  try { if (match) path = decodeURIComponent(match[1]); } catch (_) {}
+  ensure(path && path.startsWith(folder + '/') && !path.includes('\\') &&
+    !path.split('/').some(part => !part || part === '.' || part === '..') && !/[\u0000-\u001f]/.test(path),
+  message);
   return fileId;
 }
 

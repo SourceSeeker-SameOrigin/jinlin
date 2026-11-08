@@ -21,6 +21,7 @@ async function assignedOrder(event, openid) {
   const provider = await server.one('providers', { openid });
   requireApprovedProvider(provider, 2);
   ensure(order.providerId === provider._id && order.providerOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
+  await server.feature('pet', order.communityId);
   return { order, provider };
 }
 async function child(event, order) {
@@ -61,18 +62,10 @@ async function listVisits(event, { openid, user }) {
   const resident = order.userOpenid === openid;
   const assigned = provider && order.providerId === provider._id && order.providerOpenid === openid;
   ensure(resident || assigned || user.roles.includes('admin'), '无权查看上门记录', 'E_FORBIDDEN');
+  await server.feature('pet', order.communityId);
   const result = await server.db.collection('visits').where({ parentOrderId: order._id }).orderBy('date', 'asc').orderBy('seq', 'asc').get();
   const list = result.data.map(item => ({ _id: item._id, date: item.date, seq: item.seq, status: item.status,
     photos: item.photos || [], videoFileId: item.videoFileId || '', doneAt: item.doneAt || null }));
-  const fileIds = list.flatMap(item => [...item.photos, ...(item.videoFileId ? [item.videoFileId] : [])]);
-  if (resident && fileIds.length) {
-    const temp = await cloud.getTempFileURL({ fileList: fileIds });
-    const urls = new Map((temp.fileList || []).map(item => [item.fileID, item.tempFileURL]));
-    for (const item of list) {
-      item.photos = item.photos.map(id => urls.get(id)).filter(Boolean);
-      if (item.videoFileId) item.videoFileId = urls.get(item.videoFileId) || '';
-    }
-  }
   return { list, status: order.status, entryMode: order.detail.entry };
 }
 
@@ -126,4 +119,4 @@ async function markMissed(event, { openid }) {
   return { visitId: visit._id, status: 'missed', refundStatus: result.refunds.find(item => item.key === 'pet_visit_' + visit._id).status };
 }
 
-exports.main = server.entry({ listVisits, revealEntry, markDone, markMissed }, ['resident','admin','provider']);
+exports.main = server.entry({ listVisits, revealEntry, markDone, markMissed }, ['resident','admin','provider'], 'pet');

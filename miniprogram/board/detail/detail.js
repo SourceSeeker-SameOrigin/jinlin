@@ -59,7 +59,7 @@ Page({
     catch (error) { this.setData({ error: error.message || '关闭失败' }); }
   },
   continuePayment() { if (this.data.post && this.data.post.orderId) wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(this.data.post.orderId) }); },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.post.imageUrls }); },
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.post.imageUrls }); },
   onShareAppMessage() { return { title: this.data.post && this.data.post.title || '近邻帮需求',
     path: '/board/detail/detail?id=' + encodeURIComponent(this.postId) }; }
 });

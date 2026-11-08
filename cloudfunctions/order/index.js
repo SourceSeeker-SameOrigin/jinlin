@@ -178,4 +178,4 @@ async function cancel(event, { openid }) {
 }
 
 exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates, subscribeVisitReport,
-  ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property']);
+  ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property'], 'order');

@@ -18,7 +18,7 @@ Page({
     } catch (error) { this.setData({ error: error.message || '商品加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.item.images }); },
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.item.images }); },
   async contact() {
     try {
       const result = await api.call('idle', 'contact', { itemId: this.itemId });

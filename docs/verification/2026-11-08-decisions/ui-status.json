@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-08",
+  "project": "jinlin",
+  "branch": "fix/dev-integration",
+  "compileErrors": 0,
+  "runtimeSubpackages": 14,
+  "cacheActions": [
+    "清除项目文件列表缓存成功",
+    "清除编译缓存成功",
+    "清除文件存储成功"
+  ],
+  "kept": [
+    "数据缓存",
+    "授权数据",
+    "登录状态"
+  ],
+  "analysis": {
+    "total": "8KB",
+    "files": 106,
+    "subpackages": [
+      "admin",
+      "provider"
+    ],
+    "main": "6KB",
+    "accepted": false
+  },
+  "browser": "Local browser use is disabled in Work settings",
+  "cloudRedeployed": false,
+  "scope": "UI text observed through CUA; 0 compile errors does not prove complete business acceptance"
+}

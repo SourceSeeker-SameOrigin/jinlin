@@ -181,5 +181,8 @@
         "selectedIconPath": "assets/tab/me-selected.png"
       }
     ]
+  },
+  "usingComponents": {
+    "private-media": "/components/private-media/index"
   }
 }

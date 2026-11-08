@@ -1,5 +1,13 @@
 const { text, ensure } = require('./validate');
 const { maskPhone } = require('./money');
+const { effectiveFeatures } = require('./features');
+
+function publicCommunity(community, config) {
+  if (!community) return null;
+  const { locationGeo, ...view } = community;
+  const enabledFeatures = effectiveFeatures(config, community);
+  return { ...view, features: enabledFeatures, enabledFeatures, hotline: config.hotline };
+}
 
 function parseScene(scene) {
   if (typeof scene !== 'string' || !scene) return null;
@@ -43,4 +51,4 @@ function validateAddress(input, community, building) {
   return { communityId: community._id, buildingId: building._id, unit: input.unit, room: input.room.trim() };
 }
 
-module.exports = { parseScene, publicUser, providerSummary, validateAddress };
+module.exports = { parseScene, publicUser, publicCommunity, providerSummary, validateAddress };

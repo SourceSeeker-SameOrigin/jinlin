@@ -6,7 +6,7 @@
       <view class="page-title">{{item.title}}</view><view class="price">¥{{item.priceText}}<text wx:if="{{item.negotiable}}" class="muted"> · 可议价</text></view>
       <view class="muted">{{item.conditionText}} · {{item.timeText}}</view><view class="muted">{{item.category}}</view>
       <view class="desc">{{item.desc}}</view>
-      <image wx:for="{{item.images}}" wx:key="*this" src="{{item}}" class="photo" mode="aspectFill" data-url="{{item}}" bindtap="preview"/>
+      <private-media wx:for="{{item.images}}" wx:key="*this" src="{{item}}" media-class="photo" mode="aspectFill" data-url="{{item}}" bindtap="preview"/>
       <view wx:if="{{item.tradeMode === 'escrow'}}" class="notice">担保交易 · 支付由平台暂存，确认收货后结算给卖家</view>
       <view wx:if="{{item.status !== 'on_sale'}}" class="notice">{{item.status === 'sold' ? '已售出' : item.status === 'reserved' ? '担保交易进行中' : item.status === 'removed' ? '已下架' : '暂不可交易'}}</view>
     </view>

@@ -37,7 +37,7 @@
       <view wx:if="{{order.vacantReport.notes}}">补充说明：{{order.vacantReport.notes}}</view>
       <block wx:for="{{vacantPhotoGroups}}" wx:key="label">
         <view>{{item.label}}</view>
-        <image wx:for="{{item.photos}}" wx:for-item="photo" wx:key="*this" class="photo" src="{{photo}}" data-url="{{photo}}" bindtap="previewVacant" mode="aspectFill"/>
+        <private-media wx:for="{{item.photos}}" wx:for-item="photo" wx:key="*this" media-class="photo" src="{{photo}}" data-url="{{photo}}" bindtap="previewVacant" mode="aspectFill"/>
       </block>
     </view>
     <view class="card" wx:if="{{order.serviceCode === 'pet'}}">
@@ -57,18 +57,18 @@
     </view>
     <view class="card" wx:if="{{order.kind === 'idle_purchase' && order.detail.images.length}}">
       <view class="section-title">商品照片</view>
-      <image wx:for="{{order.detail.images}}" wx:key="*this" class="photo" src="{{item}}" mode="aspectFill"/>
+      <private-media wx:for="{{order.detail.images}}" wx:key="*this" media-class="photo" src="{{item}}" mode="aspectFill"/>
     </view>
     <view class="card" wx:if="{{order.provider}}">
       <view class="section-title">服务员</view>
-      <image wx:if="{{order.provider.avatarFileId}}" class="avatar" src="{{order.provider.avatarFileId}}" mode="aspectFill"/>
+      <private-media wx:if="{{order.provider.avatarFileId}}" media-class="avatar" src="{{order.provider.avatarFileId}}" mode="aspectFill"/>
       <view>{{order.provider.name}} · {{order.provider.level === 2 ? '认证服务员' : '邻居帮手'}}</view>
       <view>{{order.provider.phone}}</view>
       <button wx:if="{{order.provider.canCall}}" bindtap="callProvider">联系服务员</button>
     </view>
     <view class="card" wx:if="{{order.photos.length}}">
       <view class="section-title">完成照片</view>
-      <image wx:for="{{order.photos}}" wx:key="*this" class="photo" src="{{item}}" data-url="{{item}}" bindtap="preview" mode="aspectFill"/>
+      <private-media wx:for="{{order.photos}}" wx:key="*this" media-class="photo" src="{{item}}" data-url="{{item}}" bindtap="preview" mode="aspectFill"/>
     </view>
     <view class="card" wx:if="{{refunds.length}}">
       <view class="section-title">退款记录</view>

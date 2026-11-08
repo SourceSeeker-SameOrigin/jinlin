@@ -1,3 +1,4 @@
+const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
 const { createServer } = require('./lib/shared/server');
 const { atomic, read, insert } = require('./lib/shared/transaction');
@@ -30,6 +31,7 @@ async function enabled(communityId) { return server.feature('events', communityI
 
 async function list(event, { user }) {
   requireRole(user, ['resident', 'admin', 'property', 'merchant']);
+  if (!event.communityId && !user.communityId) await server.featureEntry('events', user);
   const communityId = text(event.communityId || user.communityId, '小区');
   if (!user.roles.includes('admin')) ensure(communityId === user.communityId, '无权查看其他小区活动', 'E_FORBIDDEN');
   await enabled(communityId);
@@ -77,12 +79,15 @@ async function create(event, { user, openid }) {
   else if (user.roles.includes('property')) { organizerType = 'property'; organizerId = user.communityId; }
   else { organizerType = 'merchant'; organizerId = user.merchantId; ensure(organizerId, '商家账号未关联商家'); }
   const fields = eventFields({ ...event, organizerType, organizerId, status: 'draft' });
+  fields.images.forEach(file => fileInFolder(file, 'events/' + user._id));
   ensure(organizerType === 'platform' || fields.sponsors.length === 0, '赞助信息由平台管理员录入', 'E_FORBIDDEN');
   ensure(fields.communityIds.length === 1 || fields.sponsors.length === 0, '跨小区赞助的账目归属尚未配置', 'E_INVALID_PARAM');
   if (organizerType !== 'platform') ensure(fields.communityIds.length === 1 && fields.communityIds[0] === user.communityId,
     '只能在所属小区创建活动', 'E_FORBIDDEN');
   if (organizerType === 'merchant') ensure(fields.type === 'interest', '商家只能创建兴趣活动', 'E_FORBIDDEN');
-  for (const communityId of fields.communityIds) await enabled(communityId);
+  if (!user.roles.includes('admin') || fields.sponsors.some(item => item.amount > 0)) {
+    for (const communityId of fields.communityIds) await enabled(communityId);
+  }
   await checkOrderContent(cloud, openid, '', { desc: fields.title + ' ' + fields.desc }, (await server.config()).blacklist);
   const id = 'ev_' + crypto.randomBytes(16).toString('hex');
   const now = new Date();
@@ -115,13 +120,17 @@ async function update(event, { user, openid }) {
   if (!user.roles.includes('admin')) ensure(fields.communityIds.length === 1 && fields.communityIds[0] === user.communityId &&
     fields.sponsors.length === 0, '只能管理所属小区活动，赞助信息由平台管理员录入', 'E_FORBIDDEN');
   if (current.organizerType === 'merchant') ensure(fields.type === 'interest', '商家只能创建兴趣活动', 'E_FORBIDDEN');
-  for (const communityId of fields.communityIds) await enabled(communityId);
+  if (!user.roles.includes('admin')) for (const communityId of fields.communityIds) await enabled(communityId);
   await checkOrderContent(cloud, openid, '', { desc: fields.title + ' ' + fields.desc }, (await server.config()).blacklist);
   const imagesChanged = JSON.stringify(current.images || []) !== JSON.stringify(fields.images);
+  const mediaOwnerOpenid = imagesChanged ? openid : current.mediaOwnerOpenid || current.ownerOpenid;
+  const mediaOwner = imagesChanged ? user : await server.one('users', { openid: mediaOwnerOpenid });
+  ensure(mediaOwner, '图片归属无法确认，请重新上传');
+  fields.images.forEach(file => fileInFolder(file, 'events/' + mediaOwner._id));
   await atomic(db, async transaction => {
     const fresh = await read(transaction, 'events', current._id);
     ensure(fresh && fresh.status === 'draft' && fresh.ownerOpenid === current.ownerOpenid, '活动状态已变化', 'E_CONFLICT');
-    await transaction.collection('events').doc(fresh._id).update({ data: { ...fields,
+    await transaction.collection('events').doc(fresh._id).update({ data: { ...fields, mediaOwnerOpenid,
       reviewRequestedAt: null, moderationApprovedFileIds: imagesChanged ? [] : fresh.moderationApprovedFileIds || [],
       moderationPendingFileIds: imagesChanged ? fields.images.slice() : fresh.moderationPendingFileIds || [], updatedAt: new Date() } });
   });
@@ -134,7 +143,8 @@ async function publish(event, { user, openid }) {
   requireRole(user, ['admin', 'property', 'merchant']);
   text(event.eventId, '活动');
   const initial = await server.get('events', event.eventId);
-  ensure(initial && initial.status === 'draft', '活动不存在或已发布', 'E_CONFLICT');
+  ensure(initial && (user.roles.includes('admin') || initial.ownerOpenid === openid && initial.communityIds.includes(user.communityId)), '无权发布该活动', 'E_FORBIDDEN');
+  ensure(initial.status === 'draft', '活动不存在或已发布', 'E_CONFLICT');
   for (const communityId of initial.communityIds) await enabled(communityId);
   return atomic(db, async transaction => {
     const item = await read(transaction, 'events', event.eventId);
@@ -293,7 +303,7 @@ async function adminList(event, { user }) {
   requireRole(user, ['admin', 'property', 'merchant']);
   const communityId = text(event.communityId || user.communityId, '小区');
   if (!user.roles.includes('admin')) ensure(communityId === user.communityId, '无权查看其他小区活动', 'E_FORBIDDEN');
-  await enabled(communityId);
+  if (!user.roles.includes('admin')) await enabled(communityId);
   const filter = { communityIds: command.in([communityId]) };
   if (!user.roles.includes('admin')) filter.ownerOpenid = user.openid;
   if (event.status) { ensure(['draft', 'published', 'ended', 'cancelled'].includes(event.status), '活动状态不正确'); filter.status = event.status; }
@@ -316,6 +326,7 @@ async function cancelEvent(event, { user, openid }) {
   const item = await server.get('events', event.eventId);
   ensure(item && ['published', 'cancelled'].includes(item.status) &&
     (user.roles.includes('admin') || item.ownerOpenid === openid && item.communityIds.includes(user.communityId)), '无权取消该活动', 'E_FORBIDDEN');
+  await enabled(item.communityIds[0]);
   const now = new Date(), jobId = 'event_cancel_' + item._id;
   await atomic(db, async transaction => {
     const current = await read(transaction, 'events', item._id);
@@ -350,9 +361,10 @@ async function retryCancellation(event, { user, openid }) {
   const item = await server.get('events', event.eventId);
   ensure(item && item.status === 'cancelled' &&
     (user.roles.includes('admin') || item.ownerOpenid === openid && item.communityIds.includes(user.communityId)), '无权重试该活动退款', 'E_FORBIDDEN');
+  await enabled(item.communityIds[0]);
   return cancellation.retryFailed(item._id);
 }
 
 exports.main = server.entry({ list, detail, create, update, publish, review, adminList, signup, cancelSignup, checkin, listSignups,
   templates, cancelEvent, retryCancellation },
-  ['resident', 'admin', 'property', 'merchant']);
+  ['resident', 'admin', 'property', 'merchant'], 'event');
