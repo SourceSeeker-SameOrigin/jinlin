@@ -13,14 +13,16 @@
   ],
   "uploaded": [
     "user",
-    "provider"
+    "provider",
+    "idle"
   ],
   "verified": [
     "user",
-    "provider"
+    "provider",
+    "idle"
   ],
-  "nextFunction": "idle",
-  "nextPackage": "/tmp/jinlin-deploy-110ebe8/idle.zip",
+  "nextFunction": "board",
+  "nextPackage": "/tmp/jinlin-deploy-110ebe8/board.zip",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
