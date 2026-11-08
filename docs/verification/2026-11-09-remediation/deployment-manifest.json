@@ -1,7 +1,6 @@
 {
   "sourceCommit": "fc2a3135ef784c4c4ecd718c70d5e33d3e4f6ecb",
-  "uploaded": false,
-  "status": "authorized by user; not yet uploaded",
+  "status": "authorized; execution status is tracked separately in deployment-progress.json",
   "destination": "Tencent Cloud official CloudBase",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "operation": "update existing functions and cloud install dependencies; no trigger, HTTP, role, key, feature or paid plan changes",
@@ -637,5 +636,6 @@
       "admin"
     ],
     "adminLast": true
-  }
+  },
+  "deploymentStatusSource": "deployment-progress.json"
 }

@@ -64,9 +64,9 @@ sequenceDiagram
 ## 部署事实与顺序
 
 1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider完成2/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)。membership/order已由fc2a313新包替代部署，分别回读75/76文件一致，按原8项范围累计完成4项；merchant/idle/board/timer尚待完成。
-2. CloudBase payCallback上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/payCallback.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
+2. CloudBase content上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/content.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
 3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order完成2/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback完成3/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
 5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
@@ -118,4 +118,8 @@ fc2a313的membership已部署，75文件哈希全部一致。真实未绑定账�
 
 ## order部署后真实只读联调
 
-fc2a313的order已部署，76文件哈希全部一致。真实账号listMine三个分组均成功空列表、hasMore=false；非法分组E_INVALID_PARAM。实际点击已完成/售后后正常空状态，当前模拟器尺寸下状态按钮上下居中；不外推到有订单、多页或真机。见[源码回读](order-cloud-readback.json)、[调用证据](order-live-smoke.json)。无订单/支付/退款写入；R08仍待payCallback/admin更新后联合验证。剩余新5包+旧idle/board/timer，共8个函数更新。
+fc2a313的order已部署，76文件哈希全部一致。真实账号listMine三个分组均成功空列表、hasMore=false；非法分组E_INVALID_PARAM。实际点击已完成/售后后正常空状态，当前模拟器尺寸下状态按钮上下居中；不外推到有订单、多页或真机。见[源码回读](order-cloud-readback.json)、[调用证据](order-live-smoke.json)。无订单/支付/退款写入；R08仍待payCallback/admin更新后联合验证。该次order核验后剩余新5包+旧idle/board/timer，共8个函数更新（最新进度见下节）。
+
+## payCallback部署回读
+
+fc2a313的payCallback已部署，75文件哈希全部一致，包含R08月卡激活版本写入；见[源码回读](payCallback-cloud-readback.json)。本次没有调用函数、模拟支付回调或进行真实资金操作，因此不记录运行时付款通过。membership/order/payCallback三个写入端已更新；admin尚待最后部署，真实并发和资金回调仍待前置条件及联合验收。最新剩余新4包content/chat/merchant/admin与旧idle/board/timer，共7个函数更新，均已授权。

@@ -12,11 +12,13 @@
   ],
   "uploaded": [
     "membership",
-    "order"
+    "order",
+    "payCallback"
   ],
   "verified": [
     "membership",
-    "order"
+    "order",
+    "payCallback"
   ],
   "supersedesOld110ebe8": [
     "order",
@@ -28,7 +30,7 @@
     "board",
     "timer"
   ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/payCallback.zip in currently open payCallback upload dialog; do not click deploy",
+  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/content.zip in currently open content upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
@@ -36,7 +38,7 @@
     "user",
     "provider"
   ],
-  "nextFunction": "payCallback",
+  "nextFunction": "content",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof"
 }
