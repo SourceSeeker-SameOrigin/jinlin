@@ -15,14 +15,16 @@
     "order",
     "payCallback",
     "content",
-    "chat"
+    "chat",
+    "merchant"
   ],
   "verified": [
     "membership",
     "order",
     "payCallback",
     "content",
-    "chat"
+    "chat",
+    "merchant"
   ],
   "supersedesOld110ebe8": [
     "order",
@@ -34,7 +36,7 @@
     "board",
     "timer"
   ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/merchant.zip in currently open merchant upload dialog; do not click deploy",
+  "nextUserAction": "Select /tmp/jinlin-deploy-110ebe8/idle.zip in currently open idle upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
@@ -42,7 +44,8 @@
     "user",
     "provider"
   ],
-  "nextFunction": "merchant",
+  "nextFunction": "idle",
   "browserPageId": 2,
-  "hashListener": "window.__jinlin110ebe8Proof"
+  "hashListener": "window.__jinlin110ebe8Proof",
+  "nextPackageSource": "110ebe8"
 }

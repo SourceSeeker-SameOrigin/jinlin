@@ -63,10 +63,10 @@ sequenceDiagram
 
 ## 部署事实与顺序
 
-1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider完成2/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)。membership/order已由fc2a313新包替代部署，分别回读75/76文件一致，按原8项范围累计完成4项；merchant/idle/board/timer尚待完成。
-2. CloudBase merchant上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/merchant.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
+1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider完成2/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)。membership/order/merchant已由fc2a313新包替代部署，分别回读75/76/75文件一致，按原8项范围累计完成5项；idle/board/timer尚待完成。
+2. CloudBase idle上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-110ebe8/idle.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
 3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback/content/chat完成5/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。idle/board/timer仍继续原批；user/provider不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback/content/chat/merchant完成6/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
 5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
@@ -130,4 +130,8 @@ fc2a313的content已部署，75文件哈希全部一致。当前真实未绑定�
 
 ## chat部署后真实只读及页面联调
 
-fc2a313的chat已部署，75文件哈希全部一致。真实未绑定住户：list返回E_FEATURE_OFF，pull缺少会话参数返回E_INVALID_PARAM，adminPull返回E_FORBIDDEN。消息页显示功能未开放，点击重试完成加载后保留正确提示，返回订单页正常；当前模拟器尺寸重试文字上下居中。见[源码回读](chat-cloud-readback.json)、[调用与页面证据](chat-live-smoke.json)。控制台0错误、累计10警告（含SharedArrayBuffer弃用警告，未宣称所有警告已清除）。没有创建会话、发送消息或标记已读；收发、隐藏/禁言及管理员案件审核成功路径仍待配置和资格。最新剩余新2包merchant/admin与旧idle/board/timer，共5个函数更新，均已授权；admin最后部署。
+fc2a313的chat已部署，75文件哈希全部一致。真实未绑定住户：list返回E_FEATURE_OFF，pull缺少会话参数返回E_INVALID_PARAM，adminPull返回E_FORBIDDEN。消息页显示功能未开放，点击重试完成加载后保留正确提示，返回订单页正常；当前模拟器尺寸重试文字上下居中。见[源码回读](chat-cloud-readback.json)、[调用与页面证据](chat-live-smoke.json)。控制台0错误、累计10警告（含SharedArrayBuffer弃用警告，未宣称所有警告已清除）。没有创建会话、发送消息或标记已读；收发、隐藏/禁言及管理员案件审核成功路径仍待配置和资格。该次chat核验后剩余新2包merchant/admin与旧idle/board/timer，共5个函数更新（最新进度见下节），均已授权；admin最后部署。
+
+## merchant部署后真实只读及权限联调
+
+fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应旧包。当前真实未绑定住户的myApplication/listForCommunity返回E_FEATURE_OFF；myServices/merchantOrders返回商家未审核E_FORBIDDEN；adminList/adminServices返回管理权限E_FORBIDDEN；servicesForMerchant缺少商家参数返回E_INVALID_PARAM。实际进入商家订单页后，E_FORBIDDEN按既有api.js规则返回首页。见[源码回读](merchant-cloud-readback.json)、[调用证据](merchant-live-smoke.json)。控制台0错误、累计13警告，未宣称警告已全部清除。没有提交申请、审批或创建预约；审核通过后的服务管理、隐藏商家过滤、预约与交易成功路径仍待验。最新剩余idle/board/timer三个原授权包和新admin，共4个更新；admin最后部署。

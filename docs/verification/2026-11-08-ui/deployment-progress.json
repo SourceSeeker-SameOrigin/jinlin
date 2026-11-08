@@ -19,13 +19,13 @@
     "user",
     "provider"
   ],
-  "nextFunction": "merchant",
-  "nextPackage": "/tmp/jinlin-deploy-fc2a313/merchant.zip",
+  "nextFunction": "idle",
+  "nextPackage": "/tmp/jinlin-deploy-110ebe8/idle.zip",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
   "permissionsNotExpanded": true,
-  "nextPackageSource": "fc2a313",
+  "nextPackageSource": "110ebe8",
   "supersededByFc2a313": [
     "order",
     "membership",
@@ -33,6 +33,7 @@
   ],
   "fulfilledByReplacement": {
     "membership": "fc2a313",
-    "order": "fc2a313"
+    "order": "fc2a313",
+    "merchant": "fc2a313"
   }
 }
