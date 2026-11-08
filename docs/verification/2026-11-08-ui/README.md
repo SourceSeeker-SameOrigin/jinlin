@@ -49,3 +49,13 @@ node docs/verification/2026-11-08-decisions/binding-flow.cjs docs/verification/2
 node docs/verification/2026-11-08-decisions/frontend.cjs docs/verification/2026-11-08-ui/decisions-frontend.json
 node docs/verification/2026-11-08-decisions/feature-boundaries.cjs docs/verification/2026-11-08-ui/feature-boundaries.json
 ```
+
+
+## 本轮云端部署待授权
+
+已按提交 `110ebe8b562cb1b8304a056e89bac5994b00e95d` 生成 `/tmp/jinlin-deploy-110ebe8/manifest.json`：8包、每包72文件、共964651字节，ZIP完整性与逐文件SHA-256已核对。摘要见 deployment-manifest.json。
+
+- user：手填电话、来源/验证状态、D45绑定事务与本人赠券重试，是手填真实成功验收的必要更新。
+- provider、order、membership、merchant、idle、board、timer：同步实际使用的“请先填写联系电话”提示，统一替代原“请先授权手机号”文案；不改这些函数的业务规则。
+- timer仅更新代码。包内config.json保留仓库声明，但本次不得执行触发器配置部署或启用定时器。
+- 仅既有开发环境，云端安装现有wx-server-sdk依赖；不改变角色、开关、HTTP、密钥、套餐或生产。尚未上传，沿用D10等待本次具体包授权。
