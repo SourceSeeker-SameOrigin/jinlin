@@ -264,4 +264,18 @@ D43 必须区别“源码风格覆盖”“实际页面核查”“用户视觉�
 
 ### 定位只读核查
 
-已从 cloud1-d4gbpd8zx89564fb6 实际查询：communities 只有 demo_community（示例花园（测试）），无 location/locationGeo；该小区及 config/global 的 location=false；locationGeo_geo 地理索引存在。故当前不会请求自动定位。证据 cloud-location-check.json。没有修改云端坐标或开关；若需真实定位，测试小区/公开中心坐标与启用范围仍需用户确定。
+此前只读查询：communities 只有 demo_community（示例花园（测试）），无 location/locationGeo；该小区及 config/global 的 location=false；locationGeo_geo 地理索引存在。证据 cloud-location-check.json。该历史状态已被下述 D46 的用户批准配置覆盖。
+
+## D46 本轮批准与待准备项（2026-11-08）
+
+|维度|内容|
+|---|---|
+|What|全局定位开启、独立珺悦国际、状态栏/输入框对齐、完整README与27页产品介绍、69页验收册|
+|Why|用户明确要求；旧示例缺坐标且定位关闭；当前小区资料不足以验收真实门牌|
+|Who|用户决定真实资料、角色、费用和签收；代理实施获准配置与技术核验|
+|When|本轮配置与文档完成；部署、身份/业务准备后继续完整流程|
+|Where|jinlin开发分支；已授权开发云cloud1；不变更生产或合并main|
+|How|全局仅location改true；新增junyue_international并回读GeoPoint；实际微信上下文只读catalog查询；官方编译及逐页清单；完整证据见verification/2026-11-08-full-review|
+|How much|无新增套餐、服务或付费操作；剩余实景验收时长依赖资料/角色，未知|
+
+D15的配置部分已完成，真机定位与位置共享仍待验；示例小区显式关闭继续保留，新小区无真实楼栋。完整待准备与推荐方案见本轮证据目录的5W2H表，D05–D07仍按原决定暂缓。

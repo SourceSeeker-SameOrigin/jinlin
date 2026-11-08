@@ -1,1 +1,2 @@
 .ui-input,.picker{margin:12rpx 0;padding:16rpx;background:#F7F6F1;border-radius:12rpx}.ui-button{margin-top:16rpx}
+.ui-input{padding-top:0;padding-bottom:0}
