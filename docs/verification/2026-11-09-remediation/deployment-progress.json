@@ -18,13 +18,19 @@
     "merchant"
   ],
   "oldBatchStillPending": [
-    "provider",
     "idle",
     "board",
     "timer"
   ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-110ebe8/provider.zip in currently open provider upload dialog; do not click deploy",
+  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/membership.zip in currently open membership upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
-  "noRoleTriggerHttpKeyFeaturePlanChanges": true
+  "noRoleTriggerHttpKeyFeaturePlanChanges": true,
+  "oldBatchVerifiedThisRound": [
+    "user",
+    "provider"
+  ],
+  "nextFunction": "membership",
+  "browserPageId": 2,
+  "hashListener": "window.__jinlin110ebe8Proof"
 }

@@ -12,15 +12,23 @@
     "timer"
   ],
   "uploaded": [
-    "user"
+    "user",
+    "provider"
   ],
   "verified": [
-    "user"
+    "user",
+    "provider"
   ],
-  "nextFunction": "provider",
-  "nextPackage": "/tmp/jinlin-deploy-110ebe8/provider.zip",
+  "nextFunction": "membership",
+  "nextPackage": "/tmp/jinlin-deploy-fc2a313/membership.zip",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
-  "permissionsNotExpanded": true
+  "permissionsNotExpanded": true,
+  "nextPackageSource": "fc2a313",
+  "supersededByFc2a313": [
+    "order",
+    "membership",
+    "merchant"
+  ]
 }
