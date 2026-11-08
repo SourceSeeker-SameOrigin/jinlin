@@ -66,7 +66,7 @@ sequenceDiagram
 1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user完成1/8**，72个源码文件逐字节一致；证据 [user-cloud-readback.json](user-cloud-readback.json)。另7个为provider/order/membership/merchant/idle/board/timer，尚无本轮成功更新证据。
 2. CloudBase provider上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-110ebe8/provider.zip`。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
 3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant可在用户批准新包后由新包替代，避免先传旧包再覆盖。provider/idle/board/timer仍继续原批；user不需重复传。本轮新包须具体清单批准后上传，不能把原8包授权扩大到新源码。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。provider/idle/board/timer仍继续原批；user不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前0/7上传。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
 5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
@@ -105,3 +105,5 @@ sequenceDiagram
 | 体验版、合并、生产 | 先完成验收，再由用户批准 | 指定版本及成员、main依赖合并、DEV/PROD隔离、生产mock关闭、备份恢复 |
 
 以上“待验收”不是声称代码已没有缺陷；新缺陷按5W2H当面说明并按授权处理。原始材料/历史证据均保留。
+
+补充校验：Git空白检查排除了原始审计差异文件 `baseline-current.diff`，其中空白上下文行是有效patch格式，保持原样；其余本轮变更通过检查。

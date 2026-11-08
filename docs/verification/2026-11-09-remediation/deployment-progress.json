@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "fc2a3135ef784c4c4ecd718c70d5e33d3e4f6ecb",
+  "environmentId": "cloud1-d4gbpd8zx89564fb6",
+  "authorizedFunctions": [
+    "membership",
+    "order",
+    "payCallback",
+    "content",
+    "chat",
+    "merchant",
+    "admin"
+  ],
+  "uploaded": [],
+  "verified": [],
+  "supersedesOld110ebe8": [
+    "order",
+    "membership",
+    "merchant"
+  ],
+  "oldBatchStillPending": [
+    "provider",
+    "idle",
+    "board",
+    "timer"
+  ],
+  "nextUserAction": "Select /tmp/jinlin-deploy-110ebe8/provider.zip in currently open provider upload dialog; do not click deploy",
+  "lastObservedSelection": "empty",
+  "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
+  "noRoleTriggerHttpKeyFeaturePlanChanges": true
+}

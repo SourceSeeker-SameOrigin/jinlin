@@ -54,3 +54,5 @@
 - 2026-11-09 R07 用户批准 A：存在尚未到期的 active 月卡时，管理员不得删除该计划或改变其服务类型、排期、每日额度、有效天数；可调整新购常规价和首期价。服务端在保存事务内校验，拒绝时页面保留输入。没有有效月卡时仍须满足既有计划参数规则；不迁移历史权益、不自动作废月卡。并发购买/激活边界须在真实云事务验收中单独核查。
 
 - 2026-11-09 R08 用户批准 A：待付款月卡订单也锁定对应计划的服务类型、排期、额度和有效天数；订单实际关闭后解除这项锁定，有效月卡仍按 R07 保护。只调整新购价格仍允许。小区 `membershipRevision` 是内部整数版本：创建月卡订单、付款激活和保存计划均在各自事务中写同一小区版本；管理员先在事务外检查有效卡/待付款订单，再在事务内按 doc 重读并核对版本及计划快照。冲突返回 E_CONFLICT，保留输入、刷新后重试，不自动覆盖；不在 CloudBase 事务内使用 where。存量缺失版本按0开始，不迁移历史权益；新保护须在 membership、order、payCallback 更新后再部署 admin，旧写入端未替换前不能声称保护完整生效。真实云并发及性能仍须实测。
+
+- 2026-11-09 用户已明确授权 /tmp/jinlin-deploy-fc2a313/manifest.json 的7包（883229字节）：membership/order/payCallback/content/chat/merchant/admin，替代110ebe8旧批中的order/membership/merchant，更新既有开发环境并云端安装依赖。membership/order/payCallback先更新，admin最后；原provider/idle/board/timer继续既有授权。不得重复索取同批授权；不启用timer、不开放HTTP、不改角色/密钥/开关/套餐、不合并main。
