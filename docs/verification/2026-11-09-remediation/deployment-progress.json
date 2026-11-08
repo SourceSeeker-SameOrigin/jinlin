@@ -31,10 +31,8 @@
     "membership",
     "merchant"
   ],
-  "oldBatchStillPending": [
-    "timer"
-  ],
-  "nextUserAction": "Select /tmp/jinlin-deploy-110ebe8/timer.zip in currently open timer upload dialog; do not click deploy; code only, no trigger changes",
+  "oldBatchStillPending": [],
+  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/admin.zip in currently open admin upload dialog; do not click deploy",
   "lastObservedSelection": "empty",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
@@ -42,10 +40,11 @@
     "user",
     "provider",
     "idle",
-    "board"
+    "board",
+    "timer"
   ],
-  "nextFunction": "timer",
+  "nextFunction": "admin",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
-  "nextPackageSource": "110ebe8"
+  "nextPackageSource": "fc2a313"
 }

@@ -63,10 +63,10 @@ sequenceDiagram
 
 ## 部署事实与顺序
 
-1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider/idle/board直接部署完成4/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)、[idle](idle-cloud-readback.json)、[board](board-cloud-readback.json)。membership/order/merchant已由fc2a313新包替代部署，分别回读75/76/75文件一致，按原8项范围累计完成7项；timer尚待完成。
-2. CloudBase timer上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-110ebe8/timer.zip`（仅代码，不应用触发器）。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
+1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider/idle/board/timer直接部署完成5/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)、[idle](idle-cloud-readback.json)、[board](board-cloud-readback.json)、[timer](timer-cloud-readback.json)。membership/order/merchant已由fc2a313新包替代部署，分别回读75/76/75文件一致，按原8项范围累计完成8项（其中3项由新包替代）；timer只更新代码，触发器与运行验收未执行。
+2. CloudBase admin上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/admin.zip`（最后一个授权更新包）。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
 3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。timer仍继续原批；user/provider/idle/board不需重复传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback/content/chat/merchant完成6/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。原批5个直接更新及3个替代更新均已回读一致，不需重复上传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback/content/chat/merchant完成6/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
 5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
@@ -142,7 +142,7 @@ fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应�
 
 ## board部署后真实只读联调与发现的问题
 
-110ebe8原授权board已部署，72文件哈希全部一致。真实未绑定住户的求助/悬赏/出行帮带list均返回E_FEATURE_OFF，detail提示先绑定门牌。见[源码回读](board-cloud-readback.json)、[调用及页面证据](board-live-smoke.json)。页面三类标签可见，当前尺寸按钮文字居中，返回首页正常；整改前未绑定直达时显示“小区不能为空或超出长度限制”且仍显示发布按钮；用户后续批准A并已修复，见下节独立回归记录。无帖子/评论/举报/悬赏写入。控制台0错误、累计17警告，未宣称所有警告已清除。最新剩余原timer和新admin共2个更新，admin最后。
+110ebe8原授权board已部署，72文件哈希全部一致。真实未绑定住户的求助/悬赏/出行帮带list均返回E_FEATURE_OFF，detail提示先绑定门牌。见[源码回读](board-cloud-readback.json)、[调用及页面证据](board-live-smoke.json)。页面三类标签可见，当前尺寸按钮文字居中，返回首页正常；整改前未绑定直达时显示“小区不能为空或超出长度限制”且仍显示发布按钮；用户后续批准A并已修复，见下节独立回归记录。无帖子/评论/举报/悬赏写入。控制台0错误、累计17警告，未宣称所有警告已清除。该次board核验后剩余原timer和新admin共2个更新（最新进度见下节），admin最后。
 
 ### 已批准整改：未绑定直达列表的引导
 
@@ -166,4 +166,8 @@ fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应�
 - Jest52套592项通过；原29项隔离流程和16项手填回归再次通过。
 - [静态及官方编译](list-binding-static.json)：69页/14分包、WXML/WXSS全部通过、0问题；全页样式规则扫描0问题，不等于全页视觉验收。
 - [实际开发工具记录](list-binding-summary.json)：首次编译仍加载旧代码，清理此前已授权的编译缓存后重新编译；两页真实显示正确，实际点击绑定和取消返回正常，未自动跳转，发布按钮隐藏。
-- 本次只改小程序端，不需要重新上传board/idle云函数；剩余timer及admin授权包继续，timer只更新代码、不启用触发器。
+- 本次只改小程序端，不需要重新上传board/idle云函数；当时剩余timer及admin授权包继续，timer只更新代码、不启用触发器；最新进度见下节。
+
+## timer代码部署与配置只读核查
+
+110ebe8原授权timer已部署，72文件哈希全部一致；[源码及配置证据](timer-cloud-readback.json)。控制台状态正常，Node.js20.19、index.main、256MB、执行超时3秒；标准定时触发器与微信云开发触发器均显示暂无数据，HTTP路由暂无数据。仅上传代码及云端依赖安装，没有应用ZIP内触发器声明、修改配置或调用timer；不得记为关单、月卡任务、退款恢复、转账查询等运行验证通过。3秒超时及受控任务运行仍按原D09待决，在批准前保持停用。原8包范围现已完成全部代码更新（5个原包+3个批准替代包）；本轮新7包仍为6/7，仅剩admin，按顺序最后部署。
