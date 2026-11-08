@@ -25,13 +25,13 @@
     "board",
     "timer"
   ],
-  "nextFunction": "admin",
-  "nextPackage": "/tmp/jinlin-deploy-fc2a313/admin.zip",
+  "nextFunction": null,
+  "nextPackage": null,
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
   "permissionsNotExpanded": true,
-  "nextPackageSource": "fc2a313",
+  "nextPackageSource": null,
   "supersededByFc2a313": [
     "order",
     "membership",
@@ -44,5 +44,7 @@
   },
   "timerCodeOnly": true,
   "timerInvoked": false,
-  "timerTriggersObserved": []
+  "timerTriggersObserved": [],
+  "authorizedScopeCodeUpdatesComplete": true,
+  "businessAcceptanceComplete": false
 }

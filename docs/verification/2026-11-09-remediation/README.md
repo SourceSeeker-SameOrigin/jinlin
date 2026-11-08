@@ -2,14 +2,14 @@
 
 这是当前执行状态；[整改前完整审计](../../audit/2026-11-09/README.md)保留616条原始索引、34个任务、69页和40个场景，不用历史快照覆盖本页的新结果。原始规格ZIP未修改。当前分支 `fix/dev-integration`；main未合并。
 
-**结论：R01–R08代码与规格已更新，本地回归通过；云端版本仍不齐，完整69页UI和跨角色业务尚未验收。不能称项目已经交付完成，也不提供虚假的完成百分比。**
+**结论：R01–R08代码与规格已更新，本地回归通过；两批授权更新的12个函数已全部部署并回读886个源码文件一致，完整69页UI和跨角色业务尚未验收。不能称项目已经交付完成，也不提供虚假的完成百分比。**
 
 | 5W2H | 当前结论 |
 |---|---|
 | What | 补完整目录/工作台、后台导航/普通配置表单/物业只读、举报与广告位、收入口径、月卡权益保护；更新产品资料和验收证据。 |
 | Why | 解决原始审计F01–F14中已获批准的实现缺口，并防止本地测试与实际云端状态混淆。 |
 | Who | 代理负责实现和技术验证；用户决定运营参数、真实账号/权限、付费及最终验收。 |
-| When | 规格→代码→本地回归已完成；接下来按包清单部署→源码回读→真实角色和数据→逐页与跨端验收。 |
+| When | 规格→代码→本地回归→授权包部署与源码回读已完成；后续具备真实角色和数据后逐页与跨端验收。 |
 | Where | IdeaProjects/jinlin、本机微信开发者工具、仅 cloud1-d4gbpd8zx89564fb6 开发环境。 |
 | How | 每项分别记录代码、本地验证、实际部署、实景验证；遇新取舍直接在对话列5W2H，不只写在文档中。 |
 | How much | 52套592项单测、29项隔离入口回归、16项手填流程回归；69页/14分包结构与官方WXML/WXSS编译。无新增购买；云调用费用按已有套餐计量，本轮独立账单未知。 |
@@ -18,14 +18,14 @@
 
 | 决策 | 代码/规格 | 本地验证 | 云端/实景限制 |
 |---|---|---|---|
-| R01 后台导航、物业只读、日期与指标、待报价 | 已补13项后台导航、物业分成只读分支、日期和全类型月卡指标、pending_quote筛选 | 页面及实际云入口隔离回归通过 | 真实管理员/物业角色未配置；admin新包待部署 |
+| R01 后台导航、物业只读、日期与指标、待报价 | 已补13项后台导航、物业分成只读分支、日期和全类型月卡指标、pending_quote筛选 | 页面及实际云入口隔离回归通过 | admin已部署75文件一致，普通住户7项读取拒绝及看板拒绝/重试/返回实测通过；管理员/物业成功路径待资格 |
 | R02 完整目录与五工作台 | 首页4核心服务+19项扩展/能力目录，显示可用/未开通/待资料；我的展示5工作台与资格说明 | 路由完整、关闭不发业务请求、角色进入/普通用户拒绝通过 | 实际未绑定账号已看见目录/5工作台；管理/物业资格说明实点通过；不是获权或完整业务通过 |
-| R03 普通配置与楼栋编辑 | 补价格、班次、站点、月卡、费率、热线、关键词及全局时限表单；已有楼栋带ID更新 | 输入校验、现有楼栋编辑、失败保留、全局草稿保留、机密字段不返回、物业拒绝通过 | admin新包待部署；珺悦真实楼栋/单元由管理员录入，住户仍选择；未编造真实资料 |
-| R04 举报与管理契约 | 活动/商家/聊天举报入口，参与人/范围校验，operation管理字段；隐藏消息不泄露正文/会话摘要；管理员按案件查看并留审计 | 重复幂等、3个不同举报人阈值、商家隐藏、跨区/外人拒绝、禁言聊天拒绝、案件审计通过 | content/chat/merchant新包待部署；真实内容安全和多账号全链尚未验收。未声称所有UGC写路径的禁言规则全量通过 |
-| R05 两处广告位 | board_top、shops_top展示、私有图片签发、有效期/审核/宿主开关、站内跳转与计数 | 600秒签发参数、有效筛选、关闭拒绝、曝光去重/目标白名单通过 | content新包待部署；真实图片链接有效期/审核回调/真机重试待测；不自动确认广告收款 |
+| R03 普通配置与楼栋编辑 | 补价格、班次、站点、月卡、费率、热线、关键词及全局时限表单；已有楼栋带ID更新 | 输入校验、现有楼栋编辑、失败保留、全局草稿保留、机密字段不返回、物业拒绝通过 | admin已部署；珺悦真实楼栋/单元由管理员录入，住户仍选择；未编造真实资料 |
+| R04 举报与管理契约 | 活动/商家/聊天举报入口，参与人/范围校验，operation管理字段；隐藏消息不泄露正文/会话摘要；管理员按案件查看并留审计 | 重复幂等、3个不同举报人阈值、商家隐藏、跨区/外人拒绝、禁言聊天拒绝、案件审计通过 | content/chat/merchant均已部署并回读一致；真实内容安全和多账号全链尚未验收。未声称所有UGC写路径的禁言规则全量通过 |
+| R05 两处广告位 | board_top、shops_top展示、私有图片签发、有效期/审核/宿主开关、站内跳转与计数 | 600秒签发参数、有效筛选、关闭拒绝、曝光去重/目标白名单通过 | content已部署并回读一致；真实图片链接有效期/审核回调/真机重试待测；不自动确认广告收款 |
 | R06 收入口径 | 已付款服务费减成功服务费退款；商品款已收/退款/净额单列；保持创建日期范围，非平台利润 | 纯逻辑与实际admin入口金额对照通过 | 真实账本对账待数据和角色；不改支付及分账 |
-| R07 有效卡计划保护 | active且未到期时禁删计划及改服务/排期/额度/期限；新购价格可调 | 有效卡拒绝、价格可调、无有效卡可删通过 | 真实云事务仍待验证，须同时部署R08写入路径 |
-| R08 待付款权益保护 | 待付款月卡订单也锁权益；实际关闭后解除；下单/激活/配置共用membershipRevision冲突校验 | 查询与事务之间插入购卡/激活时拒绝旧保存；过期报价拒绝；免费购卡+激活及重放幂等通过 | membership/order/payCallback先更新，admin最后更新；旧写入端未替换前保护不能算生效。真实并发、热点写冲突率待测 |
+| R07 有效卡计划保护 | active且未到期时禁删计划及改服务/排期/额度/期限；新购价格可调 | 有效卡拒绝、价格可调、无有效卡可删通过 | 相关R08写入路径及admin均已部署，真实云事务仍待有角色和数据时验证 |
+| R08 待付款权益保护 | 待付款月卡订单也锁权益；实际关闭后解除；下单/激活/配置共用membershipRevision冲突校验 | 查询与事务之间插入购卡/激活时拒绝旧保存；过期报价拒绝；免费购卡+激活及重放幂等通过 | membership/order/payCallback已先更新，admin已最后更新并回读一致；真实并发、热点写冲突率待测，不以部署代替并发验收 |
 
 R07检查期间发现事务内where调用不符合官方SDK能力，已改为事务外筛选、事务内doc重读与共同版本写入；隔离替身现仅向事务暴露doc，不允许where。[官方事务能力说明](https://docs.cloudbase.net/database/transaction)。这仍不替代真实云端并发验证。
 
@@ -49,12 +49,12 @@ sequenceDiagram
 
 | 原缺口 | 当前状态 |
 |---|---|
-| F01/F05/F06/F10 | R01本地已整改；云admin和真实后台验收待完成 |
+| F01/F05/F06/F10 | R01本地已整改且admin已部署；真实后台成功路径待验收 |
 | F02/F03 | R02本地已整改，普通未绑定身份实景部分通过；有角色进入与业务待验 |
 | F04 | R03本地已整改；真实配置未录入，不能算后台运营验收通过 |
-| F07/F08 | R04本地已整改；新云包、内容安全、多账号待验 |
+| F07/F08 | R04本地已整改且相关新云包已部署；内容安全、多账号待验 |
 | F09 | R05本地已整改；真实广告/图片/点击核账待验 |
-| F11 | 原批user/provider均已部署并各回读72文件一致；membership/order已由新包替代部署，其余原4项未完成；真实绑定未提交 |
+| F11 | 两批授权范围全部更新：12个函数、886个源码文件一致，含原8项及3个批准替代；真实绑定未提交 |
 | F12 | 楼栋维护方式已确定为管理员录入；珺悦真实资料仍缺。定位已有启用/坐标证据，手机GPS及完整定位边界未验 |
 | F13 | 仍未关闭：69页逐页对稿、多角色、成功/空/错误/大字体/大小屏仍需完整验收 |
 | F14 | 当前入口、规格编号/电话字段、README、函数册、页面册、PPT已更新；旧审计/旧轮次明确标历史，不伪造旧测试结果 |
@@ -64,10 +64,10 @@ sequenceDiagram
 ## 部署事实与顺序
 
 1. 原 `110ebe8` 的8包授权仍有效，不重复索取授权。**user/provider/idle/board/timer直接部署完成5/8**，各72个源码文件逐字节一致；证据 [user](user-cloud-readback.json)、[provider](provider-cloud-readback.json)、[idle](idle-cloud-readback.json)、[board](board-cloud-readback.json)、[timer](timer-cloud-readback.json)。membership/order/merchant已由fc2a313新包替代部署，分别回读75/76/75文件一致，按原8项范围累计完成8项（其中3项由新包替代）；timer只更新代码，触发器与运行验收未执行。
-2. CloudBase admin上传窗口已打开，等待人工选择 `/tmp/jinlin-deploy-fc2a313/admin.zip`（最后一个授权更新包）。浏览器自动选文件被工具配置的工作区范围拦截；未用复制/搬移包绕过该限制。选择后即可沿用原授权部署、下载及逐文件比对。
-3. 本轮新增云行为需更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin最后部署。
-4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。原批5个直接更新及3个替代更新均已回读一致，不需重复上传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；授权不是部署完成，当前membership/order/payCallback/content/chat/merchant完成6/7部署及回读。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
-5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数仍须完成旧批更新。
+2. 最后一个admin包已完成选择文件哈希核对、部署及75文件源码回读。当前没有待选择或待上传的已授权包；见[去重汇总](deployment-summary.json)。
+3. 本轮新增云行为已更新 **membership、order、payCallback、content、chat、merchant、admin**：前三个落实月卡订单创建/付款激活的版本写入；content/chat/merchant落实举报、隐藏、广告；admin实现配置、指标及权益校验。admin已按顺序最后部署。
+4. 原批的order/membership/merchant已获用户批准由新包替代，避免先传旧包再覆盖。原批5个直接更新及3个替代更新均已回读一致，不需重复上传。本轮7包具体清单已由用户明确批准（883229字节，源码fc2a313）；当前7/7均完成部署及回读；源码一致不等于业务验收通过。见[清单](deployment-manifest.json)与[执行进度](deployment-progress.json)。
+5. 其余函数虽含同步生成的共享副本，但没有新增可达业务变化：mediaAccess新增分支仅content调用，chatFlow改动仅chat动作，ugc的merchant归属分支由content管理调用；mediaCallback没有调用该归属分支。membershipFlow的激活仅membership/order/payCallback可达；timer任务生成逻辑本轮未变。旧批已有修改的函数也已按授权更新或由批准新包替代。
 6. 不启用timer触发器、不开放HTTP、不授予角色、不配置密钥、不购套餐、不合并main。部署成功提示不等于源码一致，更不等于真实业务已验收。
 
 ## 本轮验证证据
@@ -108,6 +108,8 @@ sequenceDiagram
 
 补充校验：Git空白检查排除了原始审计差异文件 `baseline-current.diff`，其中空白上下文行是有效patch格式，保持原样；其余本轮变更通过检查。
 
+以下逐函数段落保留当时的执行顺序；其中“剩余/待部署”是当时状态，当前两批已全部完成，以顶部和最终汇总为准。
+
 ## provider部署后真实只读联调
 
 云端72文件与110ebe8授权包一致；当前真实住户的myStatus返回成功且无服务员资料，hall/myTasks/earnings均返回E_FORBIDDEN。见[调用证据](provider-live-smoke.json)。这验证了连接与无资格拒绝，不代表审核、接单、履约、收入成功路径已验收。该次provider核验后待部署为新7包加旧idle/board/timer，共10个函数更新（最新进度见下节），均已授权。
@@ -130,15 +132,15 @@ fc2a313的content已部署，75文件哈希全部一致。当前真实未绑定�
 
 ## chat部署后真实只读及页面联调
 
-fc2a313的chat已部署，75文件哈希全部一致。真实未绑定住户：list返回E_FEATURE_OFF，pull缺少会话参数返回E_INVALID_PARAM，adminPull返回E_FORBIDDEN。消息页显示功能未开放，点击重试完成加载后保留正确提示，返回订单页正常；当前模拟器尺寸重试文字上下居中。见[源码回读](chat-cloud-readback.json)、[调用与页面证据](chat-live-smoke.json)。控制台0错误、累计10警告（含SharedArrayBuffer弃用警告，未宣称所有警告已清除）。没有创建会话、发送消息或标记已读；收发、隐藏/禁言及管理员案件审核成功路径仍待配置和资格。该次chat核验后剩余新2包merchant/admin与旧idle/board/timer，共5个函数更新（最新进度见下节），均已授权；admin最后部署。
+fc2a313的chat已部署，75文件哈希全部一致。真实未绑定住户：list返回E_FEATURE_OFF，pull缺少会话参数返回E_INVALID_PARAM，adminPull返回E_FORBIDDEN。消息页显示功能未开放，点击重试完成加载后保留正确提示，返回订单页正常；当前模拟器尺寸重试文字上下居中。见[源码回读](chat-cloud-readback.json)、[调用与页面证据](chat-live-smoke.json)。控制台0错误、累计10警告（含SharedArrayBuffer弃用警告，未宣称所有警告已清除）。没有创建会话、发送消息或标记已读；收发、隐藏/禁言及管理员案件审核成功路径仍待配置和资格。该次chat核验后剩余新2包merchant/admin与旧idle/board/timer，共5个函数更新（最新进度见下节），均已授权；当时计划admin最后部署。
 
 ## merchant部署后真实只读及权限联调
 
-fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应旧包。当前真实未绑定住户的myApplication/listForCommunity返回E_FEATURE_OFF；myServices/merchantOrders返回商家未审核E_FORBIDDEN；adminList/adminServices返回管理权限E_FORBIDDEN；servicesForMerchant缺少商家参数返回E_INVALID_PARAM。实际进入商家订单页后，E_FORBIDDEN按既有api.js规则返回首页。见[源码回读](merchant-cloud-readback.json)、[调用证据](merchant-live-smoke.json)。控制台0错误、累计13警告，未宣称警告已全部清除。没有提交申请、审批或创建预约；审核通过后的服务管理、隐藏商家过滤、预约与交易成功路径仍待验。该次merchant核验后剩余idle/board/timer三个原授权包和新admin，共4个更新（最新进度见下节）；admin最后部署。
+fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应旧包。当前真实未绑定住户的myApplication/listForCommunity返回E_FEATURE_OFF；myServices/merchantOrders返回商家未审核E_FORBIDDEN；adminList/adminServices返回管理权限E_FORBIDDEN；servicesForMerchant缺少商家参数返回E_INVALID_PARAM。实际进入商家订单页后，E_FORBIDDEN按既有api.js规则返回首页。见[源码回读](merchant-cloud-readback.json)、[调用证据](merchant-live-smoke.json)。控制台0错误、累计13警告，未宣称警告已全部清除。没有提交申请、审批或创建预约；审核通过后的服务管理、隐藏商家过滤、预约与交易成功路径仍待验。该次merchant核验后剩余idle/board/timer三个原授权包和新admin，共4个更新（最新进度见下节）；当时计划admin最后部署。
 
 ## idle部署后真实只读及页面联调
 
-110ebe8原授权idle已部署，72文件哈希全部一致。真实未绑定住户list/mine/earnings返回E_FEATURE_OFF；detail返回先绑定门牌E_INVALID_PARAM；sales成功返回0条、hasMore=false；负数分页E_INVALID_PARAM。本人担保订单页正常空状态、卖家收入入口可见（未点击）、返回首页正常。见[源码回读](idle-cloud-readback.json)、[调用及页面证据](idle-live-smoke.json)。控制台0错误、累计15警告，未宣称警告已全部清除。没有发布、购买、交付、退款或结算；完整业务及有数据的权限/分页仍待验。该次idle核验后剩余原board/timer及新admin共3个更新（最新进度见下节），均已授权；admin最后部署。
+110ebe8原授权idle已部署，72文件哈希全部一致。真实未绑定住户list/mine/earnings返回E_FEATURE_OFF；detail返回先绑定门牌E_INVALID_PARAM；sales成功返回0条、hasMore=false；负数分页E_INVALID_PARAM。本人担保订单页正常空状态、卖家收入入口可见（未点击）、返回首页正常。见[源码回读](idle-cloud-readback.json)、[调用及页面证据](idle-live-smoke.json)。控制台0错误、累计15警告，未宣称警告已全部清除。没有发布、购买、交付、退款或结算；完整业务及有数据的权限/分页仍待验。该次idle核验后剩余原board/timer及新admin共3个更新（最新进度见下节），均已授权；当时计划admin最后部署。
 
 ## board部署后真实只读联调与发现的问题
 
@@ -170,4 +172,18 @@ fc2a313的merchant已部署，75文件哈希全部一致，替代110ebe8对应�
 
 ## timer代码部署与配置只读核查
 
-110ebe8原授权timer已部署，72文件哈希全部一致；[源码及配置证据](timer-cloud-readback.json)。控制台状态正常，Node.js20.19、index.main、256MB、执行超时3秒；标准定时触发器与微信云开发触发器均显示暂无数据，HTTP路由暂无数据。仅上传代码及云端依赖安装，没有应用ZIP内触发器声明、修改配置或调用timer；不得记为关单、月卡任务、退款恢复、转账查询等运行验证通过。3秒超时及受控任务运行仍按原D09待决，在批准前保持停用。原8包范围现已完成全部代码更新（5个原包+3个批准替代包）；本轮新7包仍为6/7，仅剩admin，按顺序最后部署。
+110ebe8原授权timer已部署，72文件哈希全部一致；[源码及配置证据](timer-cloud-readback.json)。控制台状态正常，Node.js20.19、index.main、256MB、执行超时3秒；标准定时触发器与微信云开发触发器均显示暂无数据，HTTP路由暂无数据。仅上传代码及云端依赖安装，没有应用ZIP内触发器声明、修改配置或调用timer；不得记为关单、月卡任务、退款恢复、转账查询等运行验证通过。3秒超时及受控任务运行仍按原D09待决，在批准前保持停用。原8包范围现已完成全部代码更新（5个原包+3个批准替代包）；该次timer核验后新7包为6/7；后续admin已完成，最终状态见下节。
+
+
+## admin最后部署与本轮最终汇总
+
+admin所选ZIP为122938字节，SHA-256与授权清单一致；官方CLI回读75/75源码文件一致。当前真实未绑定普通住户调用dashboard、managementConfig、getFeatures、listOrders、listProviders、listSettlements、notificationTemplates均返回E_FORBIDDEN。实际看板显示“无权查看管理看板”，不展示后台导航和财务数据；重新加载仍拒绝，返回闲置列表后保留主动绑定引导。当前模拟器重试文字居中。控制台0错误，警告累计13→15，未逐条清除或分类；不声称无警告。见[源码证据](admin-cloud-readback.json)、[实际调用与页面证据](admin-live-smoke.json)。
+
+| 批次/函数 | 源码版本 | 回读文件 | 状态 |
+|---|---|---|---|
+| user、provider、idle、board、timer | 110ebe8 | 各72，共360 | 5个原包已更新 |
+| membership、payCallback、content、chat、merchant、admin | fc2a313 | 各75，共450 | 6个新包已更新，admin最后 |
+| order | fc2a313 | 76 | 新包已更新 |
+| 两批去重合计 | 上述两个已授权版本 | 886/886一致 | 12个函数代码更新完成 |
+
+原8项中order/membership/merchant由批准的新包替代，因此原8项和新7项去重后是12项，不是15个函数。其余9个函数不在本次更新范围，不将此结果写成21个函数全部重新验收。没有调用timer/payCallback、启用触发器、授予角色、改密钥/套餐或合并main。完整未验收范围仍见本页清单及[交接表](../../TEST_HANDOFF.md)；真实绑定、管理配置、月卡并发、跨角色成功流程、69页完整UI、内容安全/通知和资金流程均不能因代码部署而标记通过。

@@ -16,7 +16,8 @@
     "payCallback",
     "content",
     "chat",
-    "merchant"
+    "merchant",
+    "admin"
   ],
   "verified": [
     "membership",
@@ -24,7 +25,8 @@
     "payCallback",
     "content",
     "chat",
-    "merchant"
+    "merchant",
+    "admin"
   ],
   "supersedesOld110ebe8": [
     "order",
@@ -32,8 +34,8 @@
     "merchant"
   ],
   "oldBatchStillPending": [],
-  "nextUserAction": "Select /tmp/jinlin-deploy-fc2a313/admin.zip in currently open admin upload dialog; do not click deploy",
-  "lastObservedSelection": "empty",
+  "nextUserAction": null,
+  "lastObservedSelection": "admin.zip SHA-256 matched authorized manifest before deployment",
   "deploymentOrderRule": "membership/order/payCallback before admin; admin last",
   "noRoleTriggerHttpKeyFeaturePlanChanges": true,
   "oldBatchVerifiedThisRound": [
@@ -43,8 +45,10 @@
     "board",
     "timer"
   ],
-  "nextFunction": "admin",
+  "nextFunction": null,
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
-  "nextPackageSource": "fc2a313"
+  "nextPackageSource": null,
+  "authorizedScopeCodeUpdatesComplete": true,
+  "businessAcceptanceComplete": false
 }
