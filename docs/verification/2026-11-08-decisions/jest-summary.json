@@ -1,10 +1,10 @@
 {
   "success": true,
-  "numTotalTestSuites": 48,
-  "numPassedTestSuites": 48,
+  "numTotalTestSuites": 49,
+  "numPassedTestSuites": 49,
   "numFailedTestSuites": 0,
-  "numTotalTests": 529,
-  "numPassedTests": 529,
+  "numTotalTests": 555,
+  "numPassedTests": 555,
   "numFailedTests": 0,
   "scope": "Jest shared logic only; no real cloud calls"
 }

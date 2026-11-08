@@ -62,7 +62,6 @@ async function listVisits(event, { openid, user }) {
   const resident = order.userOpenid === openid;
   const assigned = provider && order.providerId === provider._id && order.providerOpenid === openid;
   ensure(resident || assigned || user.roles.includes('admin'), '无权查看上门记录', 'E_FORBIDDEN');
-  await server.feature('pet', order.communityId);
   const result = await server.db.collection('visits').where({ parentOrderId: order._id }).orderBy('date', 'asc').orderBy('seq', 'asc').get();
   const list = result.data.map(item => ({ _id: item._id, date: item.date, seq: item.seq, status: item.status,
     photos: item.photos || [], videoFileId: item.videoFileId || '', doneAt: item.doneAt || null }));

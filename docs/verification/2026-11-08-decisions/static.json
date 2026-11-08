@@ -2,11 +2,11 @@
   "counts": {
     "pages": 69,
     "subpackages": 14,
-    "js": 180,
+    "js": 181,
     "json": 125,
     "wxml": 77,
     "wxss": 78,
-    "relativeRequires": 586,
+    "relativeRequires": 596,
     "componentRefs": 54,
     "staticRoutes": 105,
     "eventBindings": 501,

@@ -1,3 +1,4 @@
+const { requireOrderFeatures } = require('./orderFeatures');
 const { ensure, text, integer } = require('./validate');
 const { requireRole, requireCommunityAccess } = require('./auth');
 const { canWork } = require('./providerData');
@@ -65,6 +66,7 @@ function adminOrderActions(cloud, server) {
   }
   async function assign(event, { user, openid }) {
     const order = await managed(event, user);
+    await requireOrderFeatures(server, order);
     text(event.providerId, '服务员');
     const provider = await server.get('providers', event.providerId);
     canWork(provider, new Date(), order.minLevel);

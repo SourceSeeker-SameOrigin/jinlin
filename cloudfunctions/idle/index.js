@@ -267,8 +267,6 @@ async function buy(event, { user, openid }) {
 }
 
 async function sales(event, { openid, user }) {
-  await server.featureEntry('idle', user);
-  await server.feature('idleEscrow', user.communityId);
   const pageOffset = offset(event);
   const result = await db.collection('orders').where({ kind: 'idle_purchase', sellerOpenid: openid })
     .orderBy('createdAt', 'desc').skip(pageOffset).limit(20).get();

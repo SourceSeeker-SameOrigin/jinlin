@@ -1,3 +1,4 @@
+const { requireLedgerFeatures } = require('./orderFeatures');
 const https = require('https');
 const crypto = require('crypto');
 const { AppError } = require('./errors');
@@ -164,6 +165,7 @@ function createPayoutFlow(cloud, server) {
           (payeeType !== 'seller' || current.sellerOpenid === openid) &&
           !(current.settlementIds && current.settlementIds[payeeType]) && !current.payoutId,
         '部分收入已结算或锁定，请刷新后重试', 'E_CONFLICT');
+        await requireLedgerFeatures((collection, id) => read(transaction, collection, id), current);
         await transaction.collection('ledger').doc(current._id).update({ data: { payoutId: id } });
       }
       const outBillNo = 'J' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(7).toString('hex').toUpperCase();

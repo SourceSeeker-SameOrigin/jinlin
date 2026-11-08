@@ -1,3 +1,4 @@
+const { orderEnabled, requireOrderFeatures } = require('./lib/shared/orderFeatures');
 const cloud = require('wx-server-sdk');
 const { createServer } = require('./lib/shared/server');
 const { createOrderContext } = require('./lib/shared/orderContext');
@@ -47,10 +48,11 @@ async function create(event, { user }) {
 
 async function mockPay(event, { user }) {
   requireRole(user, ['resident']);
-  mockEnabled(await server.config());
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.userOpenid === user.openid, '无权操作该订单', 'E_FORBIDDEN');
+  await requireOrderFeatures(server, order);
+  mockEnabled(await server.config());
   ensure(order.payment.mode === 'mock', '该订单不支持模拟支付', 'E_FORBIDDEN');
   const paid = await payments.onPaid(order, { mode: 'mock', amount: totalFee(order), transactionId: 'mock_' + order._id });
   return { orderId: paid._id, status: paid.status };
@@ -107,12 +109,14 @@ async function detail(event, { user }) {
   const [provider, config, community] = await Promise.all([server.get('providers', order.providerId), server.config(),
     server.get('communities', order.communityId)]);
   const result = orderView(order, user, provider, config, new Date());
+  result.featureEnabled = orderEnabled(order, config, community);
+  result.canPay = result.canPay && result.featureEnabled;
   result.chatEnabled = isEnabled('chat', config, community) && Boolean(order.providerOpenid) &&
     ['accepted', 'in_service', 'delivered', 'disputed', 'completed'].includes(order.status);
   result.canChat = result.chatEnabled && (order.userOpenid === user.openid || order.providerOpenid === user.openid);
-  result.canShareLocation = order.providerOpenid === user.openid && ['accepted', 'in_service'].includes(order.status) &&
+  result.canShareLocation = result.featureEnabled && order.providerOpenid === user.openid && ['accepted', 'in_service'].includes(order.status) &&
     isEnabled('location', config, community);
-  result.canConfirm = order.userOpenid === user.openid && order.status === 'delivered';
+  result.canConfirm = result.featureEnabled && order.userOpenid === user.openid && order.status === 'delivered';
   result.canRate = order.userOpenid === user.openid && order.status === 'completed' && !order.rating;
   result.canComplain = order.userOpenid === user.openid && complaintAllowed(order, new Date(), config.complaintWindowHours);
   if (order.userOpenid === user.openid && ['accepted','in_service'].includes(order.status) && provider &&
@@ -131,6 +135,7 @@ async function retryPayment(event, { openid }) {
   text(event.orderId, '订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.userOpenid === openid, '无权操作该订单', 'E_FORBIDDEN');
+  await requireOrderFeatures(server, order);
   if (order.taskPostId) {
     const now = new Date();
     const post = await server.get('posts', order.taskPostId);

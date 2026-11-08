@@ -1,3 +1,4 @@
+const { requireLedgerFeatures } = require('./orderFeatures');
 const { requireRole, requireCommunityAccess } = require('./auth');
 const { ensure, text } = require('./validate');
 const { period, rowsForPayee, total, csv, settlementId, validatePayee, validateSettlementNote } = require('./settlementData');
@@ -91,6 +92,7 @@ function adminSettlementActions(cloud, server) {
             (row.payee !== 'seller' || ledgerRow.sellerOpenid === row.sellerOpenid) &&
             (row.payee !== 'merchant' || ledgerRow.merchantId === row.merchantId) && !ledgerRow.payoutId,
           '部分账目已结算，请刷新预览', 'E_CONFLICT');
+          await requireLedgerFeatures((collection, id) => read(transaction, collection, id), ledgerRow);
           const settlementIds = { ...(ledgerRow.settlementIds || {}), [row.payee]: id };
           await transaction.collection('ledger').doc(ledgerId).update({ data: { ['settlementIds.' + row.payee]: id } });
         }
@@ -121,6 +123,7 @@ function adminSettlementActions(cloud, server) {
         const settlementField = 'settlementIds.' + field;
         ensure(row && row.settled[field] === false && row.settlementIds[field] === current._id,
           '账本与结算单不一致，请联系管理员', 'E_CONFLICT');
+        await requireLedgerFeatures((collection, id) => read(transaction, collection, id), row);
         await transaction.collection('ledger').doc(row._id).update({ data: { ['settled.' + field]: true,
           [settlementField]: current._id } });
       }

@@ -1,3 +1,4 @@
+const { orderEnabled } = require('./lib/shared/orderFeatures');
 const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
@@ -41,10 +42,10 @@ async function apply(event, { user, openid }) {
   return { merchantId: id, status: 'pending' };
 }
 
-async function mine(openid) {
+async function mine(openid, checkFeature = true) {
   const merchant = await server.one('merchants', { staffOpenids: command.in([openid]) });
   ensure(merchant && merchant.status === 'approved', '商家账号尚未通过审核', 'E_FORBIDDEN');
-  await assertEnabled(merchant.communityIds[0]);
+  if (checkFeature) await assertEnabled(merchant.communityIds[0]);
   return merchant;
 }
 
@@ -227,8 +228,9 @@ async function quoteBooking(event, { openid }) {
   text(event.orderId, '预约订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.kind === 'merchant', '预约订单不存在');
-  const merchant = await mine(openid);
+  const merchant = await mine(openid, false);
   ensure(order.merchantId === merchant._id, '无权报价此订单', 'E_FORBIDDEN');
+  await assertEnabled(order.communityId);
   ensure(order.status === 'pending_quote', '该预约不在待报价状态', 'E_BAD_STATE');
   const amount = integer(event.amount, '报价金额', 1, 100000000);
   const detailValue = event.detail === undefined ? '' : event.detail;
@@ -250,11 +252,15 @@ async function quoteBooking(event, { openid }) {
 }
 
 async function merchantOrders(event, { openid }) {
-  const merchant = await mine(openid);
+  const merchant = await mine(openid, false);
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
   const rows = await db.collection('orders').where({ kind: 'merchant', merchantId: merchant._id })
     .orderBy('createdAt', 'desc').skip(offset).limit(20).get();
-  return { list: rows.data.map(merchantOrderView),
+  const config = await server.config();
+  const communities = new Map(await Promise.all([...new Set(rows.data.map(order => order.communityId))]
+    .map(async id => [id, await server.get('communities', id)])));
+  return { list: rows.data.map(order => ({ ...merchantOrderView(order),
+    featureEnabled: orderEnabled(order, config, communities.get(order.communityId)) })),
     hasMore: rows.data.length === 20 };
 }
 
@@ -262,8 +268,9 @@ async function merchantTransition(event, { openid }) {
   text(event.orderId, '预约订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.kind === 'merchant', '预约订单不存在');
-  const merchant = await mine(openid);
+  const merchant = await mine(openid, false);
   ensure(order.merchantId === merchant._id, '无权操作此预约', 'E_FORBIDDEN');
+  await assertEnabled(order.communityId);
   const target = event.actionName === 'accept' ? 'accepted' : event.actionName === 'start' ? 'in_service' : null;
   ensure(target && (target === 'accepted' ? order.status === 'paid' : order.status === 'accepted'), '预约状态不支持此操作', 'E_BAD_STATE');
   return require('./lib/shared/orderStore').conditionalTransition(server, order, target, openid,
@@ -275,8 +282,9 @@ async function completeBooking(event, { openid }) {
   text(event.orderId, '预约订单');
   const order = await server.get('orders', event.orderId);
   ensure(order && order.kind === 'merchant', '预约订单不存在');
-  const merchant = await mine(openid);
+  const merchant = await mine(openid, false);
   ensure(order.merchantId === merchant._id, '无权操作此预约', 'E_FORBIDDEN');
+  await assertEnabled(order.communityId);
   ensure(order.status === 'in_service', '请先接单并开始服务', 'E_BAD_STATE');
   requireLocksmithCheck(order);
   ensure(Array.isArray(event.photos) && event.photos.length >= 1 && event.photos.length <= 3 &&

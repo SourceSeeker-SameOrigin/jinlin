@@ -1,7 +1,7 @@
 {
-  "scope": "real entry code with read-only synthetic database; no cloud/identity changes",
-  "total": 56,
-  "passed": 56,
+  "scope": "real entry code with isolated synthetic database; selected cancellation/event creation writes only in memory, no cloud/identity changes",
+  "total": 78,
+  "passed": 78,
   "failed": 0,
   "results": [
     {
@@ -226,6 +226,94 @@
     },
     {
       "label": "idle hidden record is forbidden before feature lookup",
+      "status": "PASS"
+    },
+    {
+      "label": "order.retryPayment owned extension off blocks before payment/write",
+      "status": "PASS"
+    },
+    {
+      "label": "order.retryPayment unrelated record denied before feature",
+      "status": "PASS"
+    },
+    {
+      "label": "order.mockPay owned extension off blocks before payment/write",
+      "status": "PASS"
+    },
+    {
+      "label": "order.mockPay unrelated record denied before feature",
+      "status": "PASS"
+    },
+    {
+      "label": "order.confirm owned extension off blocks before payment/write",
+      "status": "PASS"
+    },
+    {
+      "label": "order.confirm unrelated record denied before feature",
+      "status": "PASS"
+    },
+    {
+      "label": "order.detail own historical extension readable, pay hidden and cancel retained",
+      "status": "PASS"
+    },
+    {
+      "label": "order.detail stranger remains forbidden with extension off",
+      "status": "PASS"
+    },
+    {
+      "label": "pet.listVisits historical record remains readable while off",
+      "status": "PASS"
+    },
+    {
+      "label": "idle.sales historical list remains readable while off",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.merchantOrders authorized history remains readable while off",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.quoteBooking uses own record feature after merchant permission",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.merchantTransition uses own record feature after merchant permission",
+      "status": "PASS"
+    },
+    {
+      "label": "merchant.completeBooking uses own record feature after merchant permission",
+      "status": "PASS"
+    },
+    {
+      "label": "provider.start blocks assigned extension while off",
+      "status": "PASS"
+    },
+    {
+      "label": "provider.deliver blocks assigned extension while off",
+      "status": "PASS"
+    },
+    {
+      "label": "order.cancel unpaid quote closes while merchants off without payment/network",
+      "status": "PASS"
+    },
+    {
+      "label": "event.cancelSignup free historical signup releases capacity while off",
+      "status": "PASS"
+    },
+    {
+      "label": "D39 administrator creates distinct event drafts with imported crypto while feature off",
+      "status": "PASS"
+    },
+    {
+      "label": "D39 ordinary resident cannot create event or invoke content service",
+      "status": "PASS"
+    },
+    {
+      "label": "D39 rejected content never creates an event record",
+      "status": "PASS"
+    },
+    {
+      "label": "D38 existing signup detail remains readable while off without QR generation or new signup",
       "status": "PASS"
     }
   ]

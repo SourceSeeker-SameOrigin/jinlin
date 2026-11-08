@@ -289,7 +289,7 @@ async function close(event, { user, openid }) {
   text(event.postId, '帖子');
   const post = await server.get('posts', event.postId);
   ensure(post && post.communityId === community._id && post.authorOpenid === openid, '无权关闭此内容', 'E_FORBIDDEN');
-  await server.feature('board', post.communityId);
+  if (post.type !== 'task') await server.feature('board', post.communityId);
   if (post.type === 'task') {
     const order = await server.get('orders', post.orderId);
     ensure(order && order.userOpenid === openid && ['pending_pay', 'paid'].includes(order.status),

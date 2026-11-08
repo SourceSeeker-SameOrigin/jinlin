@@ -26,5 +26,18 @@
   },
   "browser": "Local browser use is disabled in Work settings",
   "cloudRedeployed": false,
-  "scope": "UI text observed through CUA; 0 compile errors does not prove complete business acceptance"
+  "scope": "UI text observed through CUA; 0 compile errors does not prove complete business acceptance",
+  "reopen": {
+    "authorized": true,
+    "officialCli": "open succeeded",
+    "project": "/Users/waishixiaoxiaoya/IdeaProjects/jinlin",
+    "observed": "绑定页显示小区和楼栋，运行日志14分包",
+    "analysisAfterReopen": null,
+    "blocker": "两次点击详情入口返回 noWindowsAvailable"
+  },
+  "componentStyleWarning": {
+    "observed": "private-media 标签选择器警告",
+    "localFix": "button改为.retry类",
+    "runtimeRecheck": "待取得重新编译后的完整日志，不标已消除"
+  }
 }

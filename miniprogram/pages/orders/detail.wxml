@@ -1,7 +1,7 @@
 <view class="page">
   <empty-state wx:if="{{loading}}" message="正在加载订单…"/>
   <empty-state wx:if="{{error}}" message="{{error}}" retry bind:retry="load"/>
-  <block wx:if="{{order}}">
+  <block wx:if="{{order}}"><view wx:if="{{order.featureEnabled === false}}" class="card">该服务暂未开放，已有订单仍可查看并按原规则申请取消或退款。</view>
     <view class="card">
       <view class="page-title">{{order.statusText}}</view>
       <view wx:if="{{order.status === 'paid'}}">服务员接单后会给您打电话</view>

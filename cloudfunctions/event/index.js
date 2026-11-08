@@ -1,5 +1,7 @@
+const { isEnabled } = require('./lib/shared/features');
 const { fileInFolder } = require('./lib/shared/providerData');
 const cloud = require('wx-server-sdk');
+const crypto = require('crypto');
 const { createServer } = require('./lib/shared/server');
 const { atomic, read, insert } = require('./lib/shared/transaction');
 const { eventFields, signupId, signupOrderId, checkinCode, eventView } = require('./lib/shared/eventData');
@@ -52,9 +54,11 @@ async function detail(event, { user }) {
     (!item.moderationHidden || item.ownerOpenid === user.openid || user.roles.includes('admin')) &&
     (item.status !== 'draft' || item.ownerOpenid === user.openid || user.roles.includes('admin')),
     '活动不存在', 'E_FORBIDDEN');
-  await enabled(user.communityId);
   let signup = await read(db, 'signups', signupId(item._id, user.openid));
-  if (signup && signup.status === 'signed' && !signup.checkinQrFileId) {
+  const [settings, community] = await Promise.all([server.config(), server.get('communities', user.communityId)]);
+  const featureEnabled = isEnabled('events', settings, community);
+  if (!signup) ensure(featureEnabled, '该功能暂未开放', 'E_FEATURE_OFF');
+  if (featureEnabled && signup && signup.status === 'signed' && !signup.checkinQrFileId) {
     try {
       const qr = await cloud.openapi.wxacode.getUnlimited({ scene: 'e=' + signup.checkinCode,
         page: 'events/detail/detail', checkPath: false, envVersion: 'develop', width: 430 });
@@ -65,11 +69,12 @@ async function detail(event, { user }) {
       signup = await server.get('signups', signup._id);
     } catch (error) { console.error('活动签到码生成失败', signup._id, error.code || 'E_INTERNAL'); }
   }
-  if (signup && signup.status === 'signed' && signup.checkinQrFileId) {
+  if (featureEnabled && signup && signup.status === 'signed' && signup.checkinQrFileId) {
     const urls = await cloud.getTempFileURL({ fileList: [signup.checkinQrFileId] });
     signup = { ...signup, checkinQrUrl: urls.fileList && urls.fileList[0] && urls.fileList[0].tempFileURL || null };
   }
-  return viewFor(item, user, signup);
+  const result = viewFor(item, user, signup);
+  return { ...result, featureEnabled, canSignup: featureEnabled && result.canSignup };
 }
 
 async function create(event, { user, openid }) {
@@ -244,7 +249,6 @@ async function cancelSignup(event, { openid }) {
   ensure(signupItem && ['pending_pay', 'signed'].includes(signupItem.status), '报名记录不存在或已结束');
   const item = await server.get('events', event.eventId);
   ensure(item && new Date() < item.signupDeadline, '报名截止后不能取消');
-  await enabled(item.communityIds[0]);
   if (signupItem.status === 'pending_pay') {
     const order = await server.get('orders', signupItem.orderId);
     ensure(order && order.userOpenid === openid, '报名订单不存在', 'E_CONFIG');
@@ -285,7 +289,6 @@ async function listSignups(event, { user }) {
   requireRole(user, ['admin', 'property', 'merchant']); text(event.eventId, '活动');
   const item = await server.get('events', event.eventId);
   ensure(item && (user.roles.includes('admin') || item.ownerOpenid === user.openid && item.communityIds.includes(user.communityId)), '无权查看报名名单', 'E_FORBIDDEN');
-  await enabled(item.communityIds[0]);
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
   const rows = await db.collection('signups').where({ eventId: item._id, status: command.in(['signed', 'checked_in']) })
     .orderBy('createdAt', 'asc').skip(offset).limit(50).get();
@@ -326,7 +329,6 @@ async function cancelEvent(event, { user, openid }) {
   const item = await server.get('events', event.eventId);
   ensure(item && ['published', 'cancelled'].includes(item.status) &&
     (user.roles.includes('admin') || item.ownerOpenid === openid && item.communityIds.includes(user.communityId)), '无权取消该活动', 'E_FORBIDDEN');
-  await enabled(item.communityIds[0]);
   const now = new Date(), jobId = 'event_cancel_' + item._id;
   await atomic(db, async transaction => {
     const current = await read(transaction, 'events', item._id);
@@ -361,7 +363,6 @@ async function retryCancellation(event, { user, openid }) {
   const item = await server.get('events', event.eventId);
   ensure(item && item.status === 'cancelled' &&
     (user.roles.includes('admin') || item.ownerOpenid === openid && item.communityIds.includes(user.communityId)), '无权重试该活动退款', 'E_FORBIDDEN');
-  await enabled(item.communityIds[0]);
   return cancellation.retryFailed(item._id);
 }
 
