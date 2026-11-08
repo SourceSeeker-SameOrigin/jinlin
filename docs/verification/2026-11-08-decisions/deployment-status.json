@@ -29,6 +29,14 @@
       "code": "EISDIR",
       "message": "illegal operation on a directory, read",
       "sourceVerified": "72 files match authorized ZIP exactly"
+    },
+    {
+      "function": "order",
+      "method": "CloudBase web ZIP upload with default dependency installation",
+      "reportedSuccess": true,
+      "codeVersionVerified": false,
+      "warning": "Cloud invocation permissions must be synchronized and uploaded through WeChat developer tools",
+      "lastModifiedAfterReload": "2026-11-08 15:46:16"
     }
   ],
   "readback": {
@@ -37,14 +45,29 @@
       "status": "Active",
       "timeout": 3,
       "runtime": "Nodejs20.19",
-      "lastModifiedBeforeUpdate": "2026-11-07 22:07:22"
+      "lastModifiedBeforeUpdate": "2026-11-07 22:07:22",
+      "lastModifiedAfterUpdate": "2026-11-08 15:46:16",
+      "sourceMismatch": "Online editor index.js still begins with wx-server-sdk require; approved ZIP begins with orderFeatures import; persists after page reload",
+      "smokeTest": {
+        "input": {
+          "action": "quote"
+        },
+        "requestId": "ab748859-db48-11f1-9a90-52540008de27",
+        "result": {
+          "ok": false,
+          "code": "E_FORBIDDEN",
+          "message": "请在微信小程序内登录"
+        },
+        "durationMs": 24,
+        "scope": "Module load and unauthenticated rejection only; no business acceptance"
+      }
     },
     "newCodeVerified": false
   },
   "remainingFunctionsNotAttempted": 17,
   "browser": "Original CUA provider remains blocked; user-approved Chrome DevTools page reading and clicking work",
   "nativeUi": "AX/menu actions available; coordinate clicks return noWindowsAvailable",
-  "boundary": "No confirmed updated function, no timer enabled, no HTTP exposure, no key/role changes, no package upgrade, no main merge",
+  "boundary": "Web upload reported success for order; source version unresolved; remaining17 untouched; no timer/HTTP/role/key/package/main changes",
   "connectionDiagnosis": {
     "browserProvider": "Still blocked before listing browsers",
     "hostAppSettings": "Tool explicitly forbids automating com.openai.codex; settings were not inspected or changed",
@@ -54,6 +77,11 @@
     "approvedAlternative": "Existing ECC Chrome DevTools; no installation, new port or credentials",
     "alternativeResult": "Connected; official target environment function list shows 21 functions; order upload dialog opened",
     "fileUploadBlock": "upload_file rejected both /tmp/jinlin-deploy-1514833/order.zip and an identical copy under the current user workspace as outside configured workspace roots; configured roots not returned",
-    "nextStep": "User selects original order.zip through native file chooser; continue existing deployment authorization"
+    "nextStep": "User approved one retry after browser File SHA256 and byte count match; awaiting manual re-selection"
+  },
+  "platformReportedSuccessfulUpdates": 1,
+  "codeReadbackDownload": {
+    "method": "Official CLI functions download",
+    "result": "Two attempts failed with code 17 invalid output path, including after creating destination directory; no source downloaded"
   }
 }
