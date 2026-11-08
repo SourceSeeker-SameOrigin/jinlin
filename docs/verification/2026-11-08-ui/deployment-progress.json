@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "110ebe8b562cb1b8304a056e89bac5994b00e95d",
+  "environment": "cloud1-d4gbpd8zx89564fb6",
+  "authorizedPackages": [
+    "user",
+    "provider",
+    "order",
+    "membership",
+    "merchant",
+    "idle",
+    "board",
+    "timer"
+  ],
+  "uploaded": [],
+  "verified": [],
+  "nextFunction": "user",
+  "nextPackage": "/tmp/jinlin-deploy-110ebe8/user.zip",
+  "browserPageId": 2,
+  "hashListener": "window.__jinlin110ebe8Proof",
+  "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
+  "permissionsNotExpanded": true
+}

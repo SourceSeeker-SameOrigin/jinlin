@@ -1,7 +1,7 @@
 {
   "sourceCommit": "110ebe8b562cb1b8304a056e89bac5994b00e95d",
   "uploaded": false,
-  "status": "prepared, awaiting specific upload authorization",
+  "status": "authorized; 0/8 deployed; waiting for user ZIP selection in existing CloudBase user upload dialog",
   "destination": "Tencent Cloud official CloudBase",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "operation": "update existing function code, cloud install dependencies; no role, trigger, HTTP, key or plan changes",
@@ -72,5 +72,9 @@
     }
   ],
   "totalBytes": 964651,
-  "functionCount": 8
+  "functionCount": 8,
+  "authorization": {
+    "approved": true,
+    "scope": "8 packages approved in current conversation; code only, no triggers/HTTP/roles/flags/keys/billing/main merge"
+  }
 }
