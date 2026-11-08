@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="page-title">申请驿站账号</view>
+  <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/express.png"/><view class="masthead-copy"><view class="page-title">申请驿站账号</view><view class="masthead-subtitle">送到门口，每一户都记清</view></view></view>
   <view wx:if="{{loading}}" class="card">正在加载…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
   <view wx:if="{{application}}" class="card">

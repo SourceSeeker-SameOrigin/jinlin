@@ -1,2 +1,2 @@
 .date-row { display: flex; justify-content: space-between; padding: 12rpx 0; }
-input { display: inline-block; width: 120rpx; padding: 8rpx; background: #f6f8f7; }
+.ui-input { display: inline-block; width: 120rpx; padding: 8rpx; background: #F5F6F0; }

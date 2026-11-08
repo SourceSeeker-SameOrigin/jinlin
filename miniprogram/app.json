@@ -144,9 +144,9 @@
   ],
   "window": {
     "navigationBarTitleText": "近邻帮",
-    "navigationBarBackgroundColor": "#1F7A5C",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#f7f8f7"
+    "navigationBarBackgroundColor": "#F7F6F1",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F7F6F1"
   },
   "requiredPrivateInfos": [
     "getLocation",
@@ -158,9 +158,9 @@
     }
   },
   "tabBar": {
-    "color": "#777777",
+    "color": "#687466",
     "selectedColor": "#1F7A5C",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#FFFFFF",
     "list": [
       {
         "pagePath": "pages/index/index",
@@ -180,7 +180,8 @@
         "iconPath": "assets/tab/me.png",
         "selectedIconPath": "assets/tab/me-selected.png"
       }
-    ]
+    ],
+    "borderStyle": "white"
   },
   "usingComponents": {
     "private-media": "/components/private-media/index"

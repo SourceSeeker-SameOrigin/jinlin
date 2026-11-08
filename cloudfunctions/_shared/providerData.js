@@ -20,7 +20,7 @@ function application(event, user, community) {
   ensure(typeof event.idLast4 === 'string' && /^\d{3}[\dXx]$/.test(event.idLast4), '请填写身份证后四位');
   integer(event.appliedLevel, '申请等级', 1, 2);
   ensure(event.agreed === true, '请先同意服务规范');
-  ensure(/^1\d{10}$/.test(user.phone || ''), '请先授权手机号');
+  ensure(/^1\d{10}$/.test(user.phone || ''), '请先填写联系电话');
   fileInFolder(event.kycFileId, 'kyc/' + user._id);
   fileInFolder(event.avatarFileId, 'providers/' + user._id);
   return { realName: event.realName.trim(), idLast4: event.idLast4.toUpperCase(), phone: user.phone,

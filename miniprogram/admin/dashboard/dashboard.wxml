@@ -1,9 +1,9 @@
 <view class="page">
-  <view class="page-title">管理看板</view>
-  <navigator url="/admin/features/features">功能开关</navigator>
-  <navigator url="/admin/coupons/coupons">优惠券模板管理</navigator>
-  <navigator url="/admin/content/content">公告与广告管理</navigator>
-  <navigator url="/admin/reports/reports">内容举报审核</navigator><navigator url="/admin/merchants/merchants">商家入驻与服务审核</navigator><navigator wx:if="{{isAdmin}}" url="/admin/stations/stations">驿站账号审核</navigator><navigator wx:if="{{isAdmin}}" url="/admin/exports/exports">数据导出</navigator><navigator url="/admin/recycle/recycle">回收企业月度对账</navigator>
+  <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/admin.png"/><view class="masthead-copy"><view class="page-title">管理看板</view><view class="masthead-subtitle">社区运营 · 按权限管理</view></view></view>
+  <navigator class="management-link" url="/admin/features/features"><image class="menu-icon" src="/assets/icons/admin.png"/><text class="menu-copy">功能开关</text><text class="chevron">›</text></navigator>
+  <navigator class="management-link" url="/admin/coupons/coupons"><image class="menu-icon" src="/assets/icons/coupon.png"/><text class="menu-copy">优惠券模板管理</text><text class="chevron">›</text></navigator>
+  <navigator class="management-link" url="/admin/content/content"><image class="menu-icon" src="/assets/icons/notice.png"/><text class="menu-copy">公告与广告管理</text><text class="chevron">›</text></navigator>
+  <navigator class="management-link" url="/admin/reports/reports"><image class="menu-icon" src="/assets/icons/notice.png"/><text class="menu-copy">内容举报审核</text><text class="chevron">›</text></navigator><navigator class="management-link" url="/admin/merchants/merchants"><image class="menu-icon" src="/assets/icons/shop.png"/><text class="menu-copy">商家入驻与服务审核</text><text class="chevron">›</text></navigator><navigator class="management-link" wx:if="{{isAdmin}}" url="/admin/stations/stations"><image class="menu-icon" src="/assets/icons/express.png"/><text class="menu-copy">驿站账号审核</text><text class="chevron">›</text></navigator><navigator class="management-link" wx:if="{{isAdmin}}" url="/admin/exports/exports"><image class="menu-icon" src="/assets/icons/legal.png"/><text class="menu-copy">数据导出</text><text class="chevron">›</text></navigator><navigator class="management-link" url="/admin/recycle/recycle"><image class="menu-icon" src="/assets/icons/recycle.png"/><text class="menu-copy">回收企业月度对账</text><text class="chevron">›</text></navigator>
   <view wx:if="{{loading}}">正在加载数据…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
   <picker wx:if="{{communities.length}}" range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="chooseCommunity">

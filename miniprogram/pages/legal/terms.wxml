@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="page-title">服务协议</view>
+  <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/shield.png"/><view class="masthead-copy"><view class="page-title">服务协议</view><view class="masthead-subtitle">了解规则，安心使用服务</view></view></view>
   <view class="card">
     <view class="section-title">服务范围</view>
     <view>近邻帮在已开通的小区提供取快递、扔垃圾、周边代买和帮把手服务。门口任务由获准的邻居帮手或认证服务员履行，入户任务仅由认证服务员履行。</view>

@@ -68,7 +68,7 @@ function addressSnapshot(user, community, building, selected = null) {
     '请重新绑定本小区门牌');
   ensure(building.units.includes(user.unit), '请选择有效单元');
   text(user.room, '门牌号', 30);
-  ensure(/^1\d{10}$/.test(user.phone || ''), '请先授权手机号并绑定门牌');
+  ensure(/^1\d{10}$/.test(user.phone || ''), '请先填写联系电话并绑定门牌');
   return { buildingName: building.name, unit: user.unit, room: user.room };
 }
 

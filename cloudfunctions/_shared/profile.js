@@ -20,6 +20,8 @@ function parseScene(scene) {
 function publicUser(user) {
   return {
     _id: user._id, phone: maskPhone(user.phone), hasPhone: Boolean(user.phone), roles: user.roles,
+    phoneSource: ['manual', 'wechat'].includes(user.phoneSource) ? user.phoneSource : 'unknown',
+    phoneVerified: Boolean(user.phone && user.phoneSource === 'wechat' && user.phoneVerified === true),
     pointsBalance: user.pointsBalance || 0,
     communityId: user.communityId || null, buildingId: user.buildingId || null,
     buildingName: user.buildingName || '',
@@ -38,6 +40,15 @@ function providerSummary(provider) {
     communityId: provider.communityId, onDuty: provider.onDuty, insuranceUntil: provider.insuranceUntil } : null;
 }
 
+function contactPhone(input, user) {
+  if (input === undefined || input === '') {
+    ensure(typeof user.phone === 'string' && /^1\d{10}$/.test(user.phone), '请填写有效联系电话');
+    return { phone: user.phone, phoneSource: user.phoneSource || 'unknown', phoneVerified: user.phoneSource === 'wechat' && user.phoneVerified === true };
+  }
+  ensure(typeof input === 'string' && /^1\d{10}$/.test(input.trim()), '请输入11位有效联系电话');
+  return { phone: input.trim(), phoneSource: 'manual', phoneVerified: false };
+}
+
 function validateAddress(input, community, building) {
   text(input.communityId, '小区');
   text(input.buildingId, '楼栋');
@@ -51,4 +62,4 @@ function validateAddress(input, community, building) {
   return { communityId: community._id, buildingId: building._id, unit: input.unit, room: input.room.trim() };
 }
 
-module.exports = { parseScene, publicUser, publicCommunity, providerSummary, validateAddress };
+module.exports = { parseScene, publicUser, publicCommunity, providerSummary, validateAddress, contactPhone };

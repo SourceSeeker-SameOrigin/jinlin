@@ -111,5 +111,5 @@ function fixture({ bound = true, global = false, local = false, roles = ['reside
   const result=await f.call('event','detail',{eventId:'e'});assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.data.canSignup,false);assert.equal(result.data.featureEnabled,false);assert.equal(f.writes.length,0);
  });
  const report={scope:'real entry code with isolated synthetic database; selected cancellation/event creation writes only in memory, no cloud/identity changes',total:results.length,passed:results.filter(x=>x.status==='PASS').length,failed:results.filter(x=>x.status==='FAIL').length,results};
- fs.writeFileSync('docs/verification/2026-11-08-decisions/feature-boundaries.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));process.exitCode=report.failed?1:0;
+ fs.writeFileSync(process.argv[2] || 'docs/verification/2026-11-08-decisions/feature-boundaries.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));process.exitCode=report.failed?1:0;
 })();

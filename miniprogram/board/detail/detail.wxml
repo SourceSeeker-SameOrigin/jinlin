@@ -1,7 +1,7 @@
 <view class="page">
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button></view>
   <block wx:if="{{post}}">
-    <view class="card"><view wx:if="{{post.sourceCommunityName}}" class="muted">来自 {{post.sourceCommunityName}}</view><view class="page-title">{{post.title}}</view><view>{{post.content}}</view><view wx:if="{{post.type === 'task'}}" class="notice">悬赏 ¥{{post.rewardText}} · 服务时间 {{post.slotText}} · {{post.needEnterHome ? '需进入家中（限认证服务员）' : '无需进入家中'}}</view>
+    <view class="card"><view wx:if="{{post.sourceCommunityName}}" class="muted">来自 {{post.sourceCommunityName}}</view><view class="page-masthead"><image class="masthead-icon" src="/assets/icons/board.png"/><view class="masthead-copy"><view class="page-title">{{post.title}}</view><view class="masthead-subtitle">邻里互助，让小事有回应</view></view></view><view>{{post.content}}</view><view wx:if="{{post.type === 'task'}}" class="notice">悬赏 ¥{{post.rewardText}} · 服务时间 {{post.slotText}} · {{post.needEnterHome ? '需进入家中（限认证服务员）' : '无需进入家中'}}</view>
       <view wx:if="{{post.carry}}">{{post.carry.direction === 'request' ? '求帮带' : '我能帮带'}} · {{post.carry.destination}} · {{post.carry.destinationType === 'overseas' ? '境外' : '境内'}}</view>
       <view wx:if="{{post.carry}}">出发 {{post.departText}}<text wx:if="{{post.returnText}}"> · 返程 {{post.returnText}}</text></view>
       <view wx:if="{{post.carry && post.carry.destinationType === 'overseas'}}" class="notice">仅限个人自用、不加价、按海关规定如实申报；居民旅客境外获取物品免税额度为 5000 元，超出部分需申报纳税。</view>

@@ -3,10 +3,10 @@
   <empty-state wx:if="{{error}}" message="{{error}}" retry bind:retry="load"/>
   <block wx:if="{{order}}"><view wx:if="{{order.featureEnabled === false}}" class="card">该服务暂未开放，已有订单仍可查看并按原规则申请取消或退款。</view>
     <view class="card">
-      <view class="page-title">{{order.statusText}}</view>
+      <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/orders.png"/><view class="masthead-copy"><view class="page-title">{{order.statusText}}</view><view class="masthead-subtitle">邻里互助，安心到家</view></view></view>
       <view wx:if="{{order.status === 'paid'}}">服务员接单后会给您打电话</view>
       <view>{{order.serviceName}} · ¥{{amount}}</view>
-      <button wx:if="{{order.canChat}}" bindtap="openChat">站内聊天<text wx:if="{{unread}}"> · {{unread}} 条未读</text></button>
+      <button class="ui-button" wx:if="{{order.canChat}}" bindtap="openChat">站内聊天<text wx:if="{{unread}}"> · {{unread}} 条未读</text></button>
       <view wx:if="{{order.pricing.couponDiscount}}">优惠券抵扣 ¥{{couponDiscountText}}</view>
       <view wx:if="{{pointsRedeemed}}">环保积分抵扣 {{pointsRedeemed}} 分</view>
       <view class="muted">订单号：{{order.orderNo}}</view>
@@ -15,13 +15,13 @@
     <view class="card" wx:if="{{order.serviceCode === 'visit' && !order.visitReport && (order.status === 'paid' || order.status === 'accepted' || order.status === 'in_service')}}">
       <view class="section-title">探访报告提醒</view>
       <view class="muted">每次探访单独授权一次通知；未授权时，报告仍会显示在此订单详情。</view>
-      <button wx:if="{{!order.visitReportNotifyAuthorized}}" bindtap="subscribeVisitReport" disabled="{{busy}}">订阅本次探访报告</button>
+      <button class="ui-button" wx:if="{{!order.visitReportNotifyAuthorized}}" bindtap="subscribeVisitReport" disabled="{{busy}}">订阅本次探访报告</button>
       <view wx:else>已订阅本次报告提醒</view>
     </view>
     <view class="card" wx:if="{{order.serviceCode === 'vacant' && !order.vacantReport && (order.status === 'paid' || order.status === 'accepted' || order.status === 'in_service')}}">
       <view class="section-title">空置房巡检报告提醒</view>
       <view class="muted">每次巡检单独授权一次通知；未授权时报告仍可在订单详情查看。</view>
-      <button wx:if="{{!order.visitReportNotifyAuthorized}}" bindtap="subscribeVacantReport" disabled="{{busy}}">订阅本次巡检报告</button>
+      <button class="ui-button" wx:if="{{!order.visitReportNotifyAuthorized}}" bindtap="subscribeVacantReport" disabled="{{busy}}">订阅本次巡检报告</button>
       <view wx:else>已订阅本次报告提醒</view>
     </view>
     <view class="card" wx:if="{{order.serviceCode === 'visit' && order.visitReport}}">
@@ -42,7 +42,7 @@
     </view>
     <view class="card" wx:if="{{order.serviceCode === 'pet'}}">
       <view class="section-title">上门喂宠记录</view>
-      <button bindtap="openPetReports">查看每次上门记录</button>
+      <button class="ui-button" bindtap="openPetReports">查看每次上门记录</button>
     </view>
     <view class="card">
       <view class="section-title">服务信息</view>
@@ -64,7 +64,7 @@
       <private-media wx:if="{{order.provider.avatarFileId}}" media-class="avatar" src="{{order.provider.avatarFileId}}" mode="aspectFill"/>
       <view>{{order.provider.name}} · {{order.provider.level === 2 ? '认证服务员' : '邻居帮手'}}</view>
       <view>{{order.provider.phone}}</view>
-      <button wx:if="{{order.provider.canCall}}" bindtap="callProvider">联系服务员</button>
+      <button class="ui-button" wx:if="{{order.provider.canCall}}" bindtap="callProvider">联系服务员</button>
     </view>
     <view class="card" wx:if="{{order.photos.length}}">
       <view class="section-title">完成照片</view>
@@ -78,21 +78,21 @@
       <view class="section-title">服务进度</view>
       <status-timeline items="{{timeline}}"/>
     </view>
-    <button wx:if="{{order.canPay}}" type="primary" bindtap="pay" loading="{{busy}}" disabled="{{busy}}">继续支付</button>
-    <button wx:if="{{order.canCancel}}" bindtap="cancel" disabled="{{busy}}">取消订单</button>
-    <view class="card" wx:if="{{order.canConfirm}}"><button type="primary" data-action="confirm" bindtap="serviceAction" disabled="{{busy}}">确认服务完成</button></view>
+    <button class="ui-button" wx:if="{{order.canPay}}" type="primary" bindtap="pay" loading="{{busy}}" disabled="{{busy}}">继续支付</button>
+    <button class="ui-button" wx:if="{{order.canCancel}}" bindtap="cancel" disabled="{{busy}}">取消订单</button>
+    <view class="card" wx:if="{{order.canConfirm}}"><button class="ui-button" type="primary" data-action="confirm" bindtap="serviceAction" disabled="{{busy}}">确认服务完成</button></view>
     <view class="card" wx:if="{{order.canRate}}">
       <view class="section-title">评价服务</view>
       <view>评分（1—5 分）</view>
       <input type="number" value="{{ratingScore}}" data-field="ratingScore" bindinput="form" maxlength="1"/>
       <textarea value="{{ratingText}}" data-field="ratingText" bindinput="form" maxlength="100" placeholder="写下服务感受（选填）"/>
-      <button data-action="rate" bindtap="serviceAction" disabled="{{busy}}">提交评价</button>
+      <button class="ui-button" data-action="rate" bindtap="serviceAction" disabled="{{busy}}">提交评价</button>
     </view>
     <view class="card" wx:if="{{order.canComplain}}">
       <view class="section-title">申请售后</view>
       <picker range="{{complaintReasons}}" value="{{complaintIndex}}" data-field="complaintIndex" bindchange="form"><view class="picker">{{complaintReasons[complaintIndex]}}</view></picker>
       <textarea value="{{complaintText}}" data-field="complaintText" bindinput="form" maxlength="500" placeholder="请描述遇到的问题"/>
-      <button data-action="complain" bindtap="serviceAction" disabled="{{busy}}">提交投诉</button>
+      <button class="ui-button" data-action="complain" bindtap="serviceAction" disabled="{{busy}}">提交投诉</button>
     </view>
     <view class="card" wx:if="{{order.rating}}">已评价 {{order.rating.score}} 分<view>{{order.rating.text}}</view></view>
     <view class="card" wx:if="{{order.complaint}}">
@@ -100,6 +100,6 @@
       <view>{{order.complaint.text}}</view>
       <view wx:if="{{order.complaint.resolution}}">处理结果：{{order.complaint.resolution.note}}</view>
     </view>
-    <button bindtap="load">刷新订单</button>
+    <button class="ui-button" bindtap="load">刷新订单</button>
   </block>
 </view>

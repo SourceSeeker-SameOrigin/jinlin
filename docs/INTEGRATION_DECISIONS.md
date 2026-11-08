@@ -244,3 +244,24 @@ payout、pet、provider、station均完成浏览器选包哈希校验、网页�
 证据：[binding-flow-before.json](verification/2026-11-08-decisions/binding-flow-before.json)、[binding-flow.json](verification/2026-11-08-decisions/binding-flow.json)、[binding-ui.json](verification/2026-11-08-decisions/binding-ui.json)。刷新最终包分析显示总364KB、主包107KB（工具取整）；最终运行0错误、7条工具/基础库警告，不能写成零告警。此前文件索引导致旧源码仍在模拟器运行，已沿用用户批准的索引和编译缓存刷新恢复；不清授权/登录/数据缓存。
 
 边界：D41不改变D01资格要求。个人主体账号真实手机号授权、真实地址保存成功仍未通过；D05–D07继续暂缓。上述修复与已批准规格无新增待决事项。
+
+
+## D43–D45：最新批准的设计、电话与绑定一致性
+
+本节覆盖前述 D01/D41 强制微信手机号前置的历史说明。原压缩包保留；开发分支未合并 main。
+
+| 维度 | 当前决定与验证范围 |
+|---|---|
+| What | D43 全部69页严格对照批准设计稿；D44 开发/生产允许手填未验证联系电话；D45 绑定资料与事件事务提交、赠券异常独立提示及本人幂等重试 |
+| Why | 用户指出页面与稿不符；个人主体号码授权阻塞；隔离测试复现资料已保存但事件失败导致整体报错 |
+| Who | 用户明确批准上述规则；代理实现、测试；真实号码/角色资料由用户提供或本人验收 |
+| When | 本地先完成源文件/组件/流程验证，再按D10具体新包授权部署；真实业务验收依前置推进 |
+| Where | jinlin 的 fix/dev-integration、PR21；开发工具与既有开发云；未改生产或合并main |
+| How | SPEC D43–D45及SPEC_EXT E20.3/E20.4；69页逐项清单、实际截图与隔离测试见 verification/2026-11-08-ui；无真实身份伪造或测试替身入云 |
+| How much | 无新依赖/购买/套餐升级；新素材影响包体需使用最新统计；云调用实际费用未知 |
+
+D43 必须区别“源码风格覆盖”“实际页面核查”“用户视觉验收”和“真实业务闭环”，没有数据或角色的页面不能写成全部验收通过。D44 不授予角色、不放开支付/内容安全。D45 原复现见 user-entry-before-d45.json，修复故障与重试结果见 user-entry.json；云端新代码尚未部署。
+
+### 定位只读核查
+
+已从 cloud1-d4gbpd8zx89564fb6 实际查询：communities 只有 demo_community（示例花园（测试）），无 location/locationGeo；该小区及 config/global 的 location=false；locationGeo_geo 地理索引存在。故当前不会请求自动定位。证据 cloud-location-check.json。没有修改云端坐标或开关；若需真实定位，测试小区/公开中心坐标与启用范围仍需用户确定。

@@ -3,7 +3,7 @@
   <block wx:if="{{item}}">
     <view class="card">
       <view wx:if="{{item.sourceCommunityName}}" class="muted">来自 {{item.sourceCommunityName}}</view>
-      <view class="page-title">{{item.title}}</view><view class="price">¥{{item.priceText}}<text wx:if="{{item.negotiable}}" class="muted"> · 可议价</text></view>
+      <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/idle.png"/><view class="masthead-copy"><view class="page-title">{{item.title}}</view><view class="masthead-subtitle">闲置流转，物尽其用</view></view></view><view class="price">¥{{item.priceText}}<text wx:if="{{item.negotiable}}" class="muted"> · 可议价</text></view>
       <view class="muted">{{item.conditionText}} · {{item.timeText}}</view><view class="muted">{{item.category}}</view>
       <view class="desc">{{item.desc}}</view>
       <private-media wx:for="{{item.images}}" wx:key="*this" src="{{item}}" media-class="photo" mode="aspectFill" data-url="{{item}}" bindtap="preview"/>
