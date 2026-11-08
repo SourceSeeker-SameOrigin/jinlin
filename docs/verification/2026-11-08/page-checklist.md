@@ -4,20 +4,20 @@
 
 | # | 页面路径 | 本轮运行证据 | 用户验收/日期/证据 |
 |---|---|---|---|
-| 1 | `pages/index/index` | 待验收（本轮仅静态检查） | 待填写 |
+| 1 | `pages/index/index` | 再次编译后首页自动进入绑定；已绑定首页待验收 | 待填写 |
 | 2 | `pages/bind/bind` | 本轮显示小区/楼栋/单元及禁用按钮；完整绑定阻塞 | 待填写 |
 | 3 | `pages/service/express` | 待验收（本轮仅静态检查） | 待填写 |
 | 4 | `pages/service/trash` | 待验收（本轮仅静态检查） | 待填写 |
 | 5 | `pages/service/buy` | 待验收（本轮仅静态检查） | 待填写 |
 | 6 | `pages/service/help` | 待验收（本轮仅静态检查） | 待填写 |
-| 7 | `pages/orders/list` | 本轮已完成/售后空列表通过；有订单状态待验收 | 待填写 |
+| 7 | `pages/orders/list` | 进行中/已完成/售后三组空列表通过；有订单状态待验收 | 待填写 |
 | 8 | `pages/orders/detail` | 待验收（本轮仅静态检查） | 待填写 |
-| 9 | `pages/membership/index` | 待验收（本轮仅静态检查） | 待填写 |
-| 10 | `pages/me/me` | 已导航，最终渲染被Mac锁定中断 | 待填写 |
+| 9 | `pages/membership/index` | 未绑定账号进入后自动跳绑定页；购买未测 | 待填写 |
+| 10 | `pages/me/me` | 实际加载完成、无错误；未绑定提示及普通住户入口正确 | 待填写 |
 | 11 | `pages/legal/privacy` | 本轮打开及返回通过；内容审核待D14 | 待填写 |
 | 12 | `pages/legal/terms` | 本轮正文显示通过；内容审核待D14 | 待填写 |
-| 13 | `provider/apply/apply` | 待验收（本轮仅静态检查） | 待填写 |
-| 14 | `provider/workbench/workbench` | 待验收（本轮仅静态检查） | 待填写 |
+| 13 | `provider/apply/apply` | 实际加载1个小区、无申请、协议未勾；未输入或提交 | 待填写 |
+| 14 | `provider/workbench/workbench` | 实际加载结束、无服务员、无任务，显示申请入口 | 待填写 |
 | 15 | `provider/hall/hall` | 待验收（本轮仅静态检查） | 待填写 |
 | 16 | `provider/task/task` | 待验收（本轮仅静态检查） | 待填写 |
 | 17 | `provider/earnings/earnings` | 待验收（本轮仅静态检查） | 待填写 |
