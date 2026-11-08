@@ -19,8 +19,8 @@
     "user",
     "provider"
   ],
-  "nextFunction": "order",
-  "nextPackage": "/tmp/jinlin-deploy-fc2a313/order.zip",
+  "nextFunction": "payCallback",
+  "nextPackage": "/tmp/jinlin-deploy-fc2a313/payCallback.zip",
   "browserPageId": 2,
   "hashListener": "window.__jinlin110ebe8Proof",
   "autoFileSelection": "Tool denied both /tmp and IdeaProjects paths as outside configured workspace roots; native Chrome contains no target CloudBase window",
@@ -32,6 +32,7 @@
     "merchant"
   ],
   "fulfilledByReplacement": {
-    "membership": "fc2a313"
+    "membership": "fc2a313",
+    "order": "fc2a313"
   }
 }
