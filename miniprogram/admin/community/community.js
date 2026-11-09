@@ -1,7 +1,7 @@
 const api = require('../../utils/api');
 const form = require('./form');
 Page({
-  data: { loading:true,saving:false,error:'',canReload:false,community:null,communities:[],communityIndex:0,authorized:false,priceRows:[],globalRows:[],keywordRows:[],planOptions:form.PLANS,
+  data: { loading:true,saving:false,error:'',canReload:false,refreshCommunityId:'',refreshError:'',community:null,communities:[],communityIndex:0,authorized:false,priceRows:[],globalRows:[],keywordRows:[],planOptions:form.PLANS,
     helpModeIndex:0,helpModes:['按每15分钟计价','按次计价（超时不自动扣费）'],stations:[],dutyWindows:[],canteens:[],plans:[],recycleRows:[],buildingId:'',buildingName:'',buildingUnits:'',petCertRequired:false },
   onLoad(){return this.load();},
   async load() {
@@ -14,7 +14,7 @@ Page({
     const result=await api.call('admin','managementConfig',{communityId:(this.data.communities[index]||{})._id},{loading:false,silent:true});
     if(sequence!==this.sequence)return;
     const c=result.community,g=result.global;
-    this.setData({communities:result.communities,community:c,communityIndex:Math.max(0,result.communities.findIndex(v=>c&&v._id===c._id))});
+    this.setData({refreshCommunityId:'',refreshError:'',communities:result.communities,community:c,communityIndex:Math.max(0,result.communities.findIndex(v=>c&&v._id===c._id))});
     if(!this.globalLoaded){this.globalLoaded=true;this.setData({hotline:g.hotline||'',globalRows:form.fields(form.GLOBAL_FIELDS,g),keywordRows:form.KEYWORDS.map(([key,label])=>({key,label,value:(g[key]||[]).join('\n')}))});}
     if(!c)return;
     this.setData({name:c.name,city:c.city||'',district:c.district||'',address:c.address||'',propertyName:c.propertyName||'',federationGroupId:c.federationGroupId||'',
@@ -39,17 +39,40 @@ Page({
       wx.pageScrollTo({ scrollTop: 0, duration: 200 });
     });
   },
-  async saveCommunity(){if(!this.data.authorized||this.data.saving||!this.data.community)return;this.setData({saving:true,error:'',canReload:false});try{
+  async refreshSavedCommunity(communityId) {
+    this.setData({ refreshCommunityId: communityId, refreshError: '' });
+    try {
+      const result = await api.call('admin', 'managementConfig', { communityId }, { loading: false, silent: true });
+      if (!this.data.community || this.data.community._id !== communityId) return;
+      if (!result.community || result.community._id !== communityId) throw new Error('小区回读结果不匹配');
+      // Refresh canonical data only: editable drafts, including other forms, stay intact.
+      this.setData({ community: result.community, communities: result.communities,
+        communityIndex: Math.max(0, result.communities.findIndex(item => item._id === communityId)),
+        refreshCommunityId: '', refreshError: '' });
+    } catch (error) {
+      if (!this.data.community || this.data.community._id !== communityId) return;
+      this.setData({ refreshError: '已保存，刷新失败，请重试刷新。', canReload: false }, () => {
+        wx.pageScrollTo({ scrollTop: 0, duration: 200 });
+      });
+    }
+  },
+  async retrySavedRefresh() {
+    if (!this.data.authorized || this.data.saving || !this.data.refreshCommunityId) return;
+    this.setData({ saving: true });
+    try { await this.refreshSavedCommunity(this.data.refreshCommunityId); }
+    finally { this.setData({ saving: false }); }
+  },
+  async saveCommunity(){if(!this.data.authorized||this.data.saving||this.data.refreshCommunityId||!this.data.community)return;this.setData({saving:true,error:'',canReload:false});try{
     const d=this.data,prices=form.pricePatch(d.community.prices,d.priceRows,d.helpModeIndex===1?'per_visit':'per15min');
     if(d.holidayDates.trim() || prices.pet&&prices.pet.holidayDates) {prices.pet=prices.pet||{};prices.pet.holidayDates=d.holidayDates.split(/[,，\s]+/).filter(Boolean);}
     for(const row of d.recycleRows){if(![row.pointsPerKg,row.purchaseFenPerKg,row.recyclerId].some(v=>v!==undefined&&String(v)!==''))continue;prices.recycle=prices.recycle||{};prices.recycle.categories=prices.recycle.categories||{};prices.recycle.categories[row.key]={pointsPerKg:form.number(row.pointsPerKg,'积分'),purchaseFenPerKg:form.number(row.purchaseFenPerKg,'收购价'),recyclerId:(row.recyclerId||'').trim()};}
     const requiredCerts=(d.community.requiredCerts||[]).filter(v=>v!=='pet');if(d.petCertRequired)requiredCerts.push('pet');
     const rates=form.copy(d.community.rates);if(d.platformRate!==''||d.propertyRate!==''){if(d.platformRate===''||d.propertyRate==='')throw new Error('请同时填写平台和物业费率');rates.platform=Number(d.platformRate);rates.property=Number(d.propertyRate);}
     const payload={communityId:d.community._id,name:d.name,city:d.city,district:d.district,address:d.address,propertyName:d.propertyName,prices,dutyWindows:d.dutyWindows,stations:d.stations,canteens:d.canteens.map(v=>({...v,merchantId:v.merchantId||null})),cardPlans:form.plans(d.plans),requiredCerts,federationGroupId:d.federationGroupId.trim()||null,...(Object.keys(rates).length?{rates}:{}),...(d.location?{location:d.location}:{})};
-    await api.call('admin','updateCommunity',payload);wx.showToast({title:'小区配置已保存',icon:'success'});await this.selectCommunity(d.communityIndex);
+    await api.call('admin','updateCommunity',payload);wx.showToast({title:'小区配置已保存',icon:'success'});await this.refreshSavedCommunity(d.community._id);
   }catch(e){this.showSaveError(e.message||'保存失败，输入已保留');}finally{this.setData({saving:false});}},
-  async saveGlobal(){if(!this.data.authorized||this.data.saving)return;this.setData({saving:true,error:'',canReload:false});try{const patch={hotline:this.data.hotline.trim()};for(const row of this.data.globalRows)if(row.value!=='')patch[row.key]=form.number(row.value,row.label);for(const row of this.data.keywordRows)patch[row.key]=[...new Set(row.value.split('\n').map(v=>v.trim()).filter(Boolean))];await api.call('admin','updateConfig',patch);wx.showToast({title:'全局配置已保存',icon:'success'});}catch(e){this.showSaveError(e.message||'保存失败，输入已保留');}finally{this.setData({saving:false});}},
+  async saveGlobal(){if(!this.data.authorized||this.data.saving||this.data.refreshCommunityId)return;this.setData({saving:true,error:'',canReload:false});try{const patch={hotline:this.data.hotline.trim()};for(const row of this.data.globalRows)if(row.value!=='')patch[row.key]=form.number(row.value,row.label);for(const row of this.data.keywordRows)patch[row.key]=[...new Set(row.value.split('\n').map(v=>v.trim()).filter(Boolean))];await api.call('admin','updateConfig',patch);wx.showToast({title:'全局配置已保存',icon:'success'});}catch(e){this.showSaveError(e.message||'保存失败，输入已保留');}finally{this.setData({saving:false});}},
   editBuilding(event){const b=(this.data.community.buildings||[]).find(v=>v._id===event.currentTarget.dataset.id);if(b)this.setData({buildingId:b._id,buildingName:b.name,buildingUnits:b.units.join('，')});},
   newBuilding(){this.setData({buildingId:'',buildingName:'',buildingUnits:''});},
-  async addBuilding(){if(!this.data.authorized||this.data.saving||!this.data.community)return;this.setData({saving:true,error:'',canReload:false});try{const units=this.data.buildingUnits.split(/[,，\n]+/).map(v=>v.trim()).filter(Boolean);await api.call('admin','upsertBuilding',{communityId:this.data.community._id,buildingId:this.data.buildingId||undefined,name:this.data.buildingName.trim(),units});const r=await api.call('admin','managementConfig',{communityId:this.data.community._id},{loading:false,silent:true});this.setData({'community.buildings':r.community.buildings,buildingId:'',buildingName:'',buildingUnits:''});wx.showToast({title:'楼栋已保存',icon:'success'});}catch(e){this.showSaveError(e.message||'楼栋保存失败');}finally{this.setData({saving:false});}}
+  async addBuilding(){if(!this.data.authorized||this.data.saving||this.data.refreshCommunityId||!this.data.community)return;this.setData({saving:true,error:'',canReload:false});try{const units=this.data.buildingUnits.split(/[,，\n]+/).map(v=>v.trim()).filter(Boolean);const communityId=this.data.community._id;const saved=await api.call('admin','upsertBuilding',{communityId,buildingId:this.data.buildingId||undefined,name:this.data.buildingName.trim(),units});this.setData({buildingId:saved.buildingId});wx.showToast({title:'楼栋已保存',icon:'success'});await this.refreshSavedCommunity(communityId);}catch(e){this.showSaveError(e.message||'楼栋保存失败');}finally{this.setData({saving:false});}}
 });
