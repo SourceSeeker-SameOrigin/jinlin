@@ -1,3 +1,5 @@
+> QA29新包授权：源码3f8537e的event包（128987字节、76文件）已获用户明确批准，待选包部署；清单位于 docs/verification/2026-11-09-all-pages/deploy-3f8537e-manifest.json。旧批timer授权继续有效，当前上传窗口已准备。
+
 > 部署授权更新：源码73194f8的content/event/timer三包（382461字节）已获用户批准；包及逐文件SHA-256见 [清单](verification/2026-11-09-all-pages/deploy-73194f8-manifest.json)。content、event已分别部署并76/76文件回读一致；event只读管理/报名列表/跨区拒绝已复验。timer待选包部署；QA29新event修复已本地通过40项，尚未部署。
 
 # 近邻帮：本轮测试交接与完整待验收清单
