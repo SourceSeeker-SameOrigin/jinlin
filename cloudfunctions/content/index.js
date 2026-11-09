@@ -191,7 +191,7 @@ async function listNotices(event, { user }) {
 
 async function saveNotice(event, { user, openid }) {
   requireRole(user, ['property','admin']);
-  text(event.communityId, '小区'); text(event.title, '公告标题', 1, 80); text(event.body, '公告正文', 1, 2000);
+  text(event.communityId, '小区'); text(event.title, '公告标题', 80); text(event.body, '公告正文', 2000);
   ensureCanPublish(user);
   const community = await server.get('communities', event.communityId);
   ensure(community && community.status === 'active', '小区不存在或已停用');
@@ -260,17 +260,17 @@ async function markAdReceived(event, { user, openid }) {
 }
 
 async function saveAd(event, { user, openid }) {
-  requireRole(user, ['admin']); text(event.title, '广告标题', 1, 80);
+  requireRole(user, ['admin']); text(event.title, '广告标题', 80);
   ensure(['home_banner','board_top','shops_top'].includes(event.slot), '广告位不正确');
   const status = event.status === undefined ? 'draft' : event.status;
   ensure(['draft','live'].includes(status), '广告状态不正确');
   ensure(Array.isArray(event.communityIds) && event.communityIds.length > 0 && event.communityIds.length <= 100, '请选择投放小区');
-  text(event.imageFileId, '广告图片', 1, 500);
+  text(event.imageFileId, '广告图片', 500);
   const config = await server.config();
   const title = await checkText(cloud, event.title, { blacklist: config.contentBlacklist || [], type: 'ad', openid });
   const startAt = dateValue(event.startAt, '开始时间'); const endAt = dateValue(event.endAt, '结束时间');
   ensure(endAt > startAt, '广告结束时间必须晚于开始时间');
-  const communityIds = [...new Set(event.communityIds.map(id => text(id, '小区 ID', 1, 100)))];
+  const communityIds = [...new Set(event.communityIds.map(id => text(id, '小区 ID', 100)))];
   for (const id of communityIds) ensure(await server.get('communities', id), '投放小区不存在');
   const record = { slot: event.slot, title, imageFileId: event.imageFileId, target: safeTarget(event.target),
     communityIds, startAt, endAt, price: integer(event.price || 0, '广告金额', 0, 100000000),

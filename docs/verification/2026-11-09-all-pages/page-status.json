@@ -774,9 +774,11 @@
     "route": "admin/content/content",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "公告标题正文常驻字段与小区选择已看；广告此前上下屏已看，未发布",
-    "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [],
+    "liveUIThisRun": "示例小区公告表单/参数实际核对；提交后系统错误，QA28本地已修待部署",
+    "successFlowThisRun": "真实发布失败，列表空；QA28正常与非法输入26项隔离回归通过，发布/撤下待部署",
+    "newFindings": [
+      "QA28已批准修复，未部署"
+    ],
     "userAcceptance": "待用户签收",
     "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收",
     "criteria": {
@@ -787,7 +789,7 @@
       "U5": "当前所述加载/空态/错误/禁用样本已核对；其他状态未全验",
       "U6": "部分核对，未完整通过；见liveUIThisRun",
       "U7": "部分核对，未完整通过；见liveUIThisRun",
-      "F1": "未完整通过；需按真实角色、数据和功能前置逐项执行",
+      "F1": "真实发布失败，列表空；QA28正常与非法输入26项隔离回归通过，发布/撤下待部署",
       "F2": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F3": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F4": "未完整通过；需按真实角色、数据和功能前置逐项执行",
@@ -1324,11 +1326,9 @@
     "route": "events/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
-    "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [
-      "QA25已批准并修复"
-    ],
+    "liveUIThisRun": "QA25缺编号提示实景；真实跨区ID直达回首页，非正常详情页通过",
+    "successFlowThisRun": "跨区detail服务端E_FORBIDDEN、signup拒绝；真实同区详情和报名成功仍待身份",
+    "newFindings": [],
     "userAcceptance": "待用户签收",
     "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收",
     "criteria": {
@@ -1339,7 +1339,7 @@
       "U5": "当前所述加载/空态/错误/禁用样本已核对；其他状态未全验",
       "U6": "部分核对，未完整通过；见liveUIThisRun",
       "U7": "部分核对，未完整通过；见liveUIThisRun",
-      "F1": "未完整通过；需按真实角色、数据和功能前置逐项执行",
+      "F1": "跨区detail服务端E_FORBIDDEN、signup拒绝；真实同区详情和报名成功仍待身份",
       "F2": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F3": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F4": "未完整通过；需按真实角色、数据和功能前置逐项执行",
@@ -1353,13 +1353,9 @@
     "route": "events/manage/manage",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "活动表单上下屏/日期打开取消确认，缺开始日期提交滚顶且无列表重试已实测；未发布",
-    "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [
-      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验",
-      "QA13 固定默认日期，已批准并完成本地修复，实景待验",
-      "QA14已批准A并修复：表单错误滚动可见且隐藏列表重试；9项隔离及部分实景通过"
-    ],
+    "liveUIThisRun": "QA26小区picker实际切换、上下表单/发布与取消卡片已核对；390宽度",
+    "successFlowThisRun": "示例花园0元/容量1活动真实创建发布、空报名名单读取及零报名取消通过；任务queued未执行",
+    "newFindings": [],
     "userAcceptance": "待用户签收",
     "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收",
     "criteria": {
@@ -1370,7 +1366,7 @@
       "U5": "当前所述加载/空态/错误/禁用样本已核对；其他状态未全验",
       "U6": "部分核对，未完整通过；见liveUIThisRun",
       "U7": "部分核对，未完整通过；见liveUIThisRun",
-      "F1": "未完整通过；需按真实角色、数据和功能前置逐项执行",
+      "F1": "示例花园0元/容量1活动真实创建发布、空报名名单读取及零报名取消通过；任务queued未执行",
       "F2": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F3": "未完整通过；需按真实角色、数据和功能前置逐项执行",
       "F4": "未完整通过；需按真实角色、数据和功能前置逐项执行",

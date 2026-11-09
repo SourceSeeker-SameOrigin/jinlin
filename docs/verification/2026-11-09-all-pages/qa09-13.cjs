@@ -72,9 +72,10 @@ const clone = value => JSON.parse(JSON.stringify(value));
     assert(xml('admin/merchants/merchants').includes("selected.status === 'pending'"));
   });
   await test('QA11 活动/报名原状态与操作值不变', async () => {
-    const r = runtime(async (name, action) => action === 'detail' ? { fee: 120, mySignup: { status: 'pending_pay' } } : { list: [{ status: 'published' }] });
+    const r = runtime(async (name, action) => action === 'getCommunity' ? { _id: 'fixture_community' } : action === 'detail' ? { fee: 120, mySignup: { status: 'pending_pay' } } : { list: [{ status: 'published' }] });
     const d = r.instance(file('events/detail/detail.js')); d.onLoad({ id: 'fixture' }); await d.load();
     assert.equal(d.data.item.mySignup.status, 'pending_pay'); assert.equal(d.data.item.feeText, '¥1.20');
+    r.app.globalData.user = { roles: ['property'], communityId: 'fixture_community' };
     const p = r.instance(file('events/manage/manage.js')); await p.load();
     assert.equal(p.data.list[0].status, 'published'); p.typeChange({ detail: { value: '1' } }); assert.equal(p.data.type, 'charity');
     p.typeChange({ detail: { value: '0' } }); assert.equal(p.data.type, 'interest');
@@ -107,17 +108,17 @@ const clone = value => JSON.parse(JSON.stringify(value));
   for (const field of ['startDate', 'endDate', 'deadlineDate']) await test('QA13 缺少日期阻止创建 ' + field, async () => {
     const r = runtime(); const p = r.instance(file('events/manage/manage.js'));
     assert.equal(p.data.startDate + p.data.endDate + p.data.deadlineDate, '');
-    p.setData({ ...dates, [field]: '' }); await p.createActivity();
+    p.setData({ ready: true, loading: false, communityId: 'fixture_community', ...dates, [field]: '' }); await p.createActivity();
     assert(p.data.error.startsWith('请选择')); assert.equal(r.requests.length, 0); assert.equal(p.data.busy, false);
   });
   for (const patch of [{ startDate: '2027-02-29' }, { endDate: '2028-02-30' }, { deadlineTime: '24:01' }]) await test('QA13 无效日历输入拒绝 ' + JSON.stringify(patch), async () => {
-    const r = runtime(); const p = r.instance(file('events/manage/manage.js')); p.setData({ ...dates, ...patch }); await p.createActivity();
+    const r = runtime(); const p = r.instance(file('events/manage/manage.js')); p.setData({ ready: true, loading: false, communityId: 'fixture_community', ...dates, ...patch }); await p.createActivity();
     assert(p.data.error); assert.equal(r.requests.length, 0);
   });
   for (const type of ['interest', 'charity']) await test('QA11/13 选定日期提交原北京时间和金额参数 ' + type, async () => {
-    const r = runtime(async (name, action) => action === 'create' ? { eventId: 'fixture_event' } : { list: [] });
+    const r = runtime(async (name, action) => action === 'create' ? { eventId: 'fixture_event' } : { list: [{ _id: 'fixture_community' }] });
     r.app.globalData.user = { roles: ['resident', 'admin'], communityId: 'fixture_community' };
-    const p = r.instance(file('events/manage/manage.js')); p.setData({ ...dates, type, title: '合成活动', fee: '12.34', sponsorName: '合成赞助', sponsorAmount: '1.23' });
+    const p = r.instance(file('events/manage/manage.js')); p.setData({ ready: true, loading: false, communityId: 'fixture_community', ...dates, type, title: '合成活动', fee: '12.34', sponsorName: '合成赞助', sponsorAmount: '1.23' });
     await p.createActivity(); assert.equal(p.data.error, '');
     const request = r.requests.find(x => x[1] === 'create')[2];
     assert.equal(request.startAt.toISOString(), '2028-02-29T02:00:00.000Z');

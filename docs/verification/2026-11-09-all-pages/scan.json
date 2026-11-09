@@ -792,6 +792,7 @@
       "route": "events/manage/manage",
       "filesComplete": true,
       "handlers": [
+        "chooseCommunity",
         "load",
         "input",
         "typeChange",
@@ -3306,8 +3307,8 @@
       "scenario": "network_failure",
       "calls": [
         {
-          "name": "event",
-          "action": "adminList"
+          "name": "catalog",
+          "action": "listCommunities"
         }
       ],
       "errors": {
@@ -3322,8 +3323,8 @@
       "scenario": "feature_off",
       "calls": [
         {
-          "name": "event",
-          "action": "adminList"
+          "name": "catalog",
+          "action": "listCommunities"
         }
       ],
       "errors": {
@@ -3338,8 +3339,8 @@
       "scenario": "unbound_network_failure",
       "calls": [
         {
-          "name": "event",
-          "action": "adminList"
+          "name": "catalog",
+          "action": "listCommunities"
         }
       ],
       "errors": {

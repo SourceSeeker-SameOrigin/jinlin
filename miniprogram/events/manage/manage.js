@@ -14,16 +14,44 @@ Page({
   data: { loading: true, error: '', errorFromForm: false, list: [], scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
     startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
     types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
-    sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false },
+    sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false,
+    communities: [], communityIndex: 0, communityId: '', ready: false },
   onShow() { this.load(); },
   async load() {
-    this.setData({ loading: true, error: '', errorFromForm: false });
+    const sequence = this.loadSequence = (this.loadSequence || 0) + 1;
+    this.setData({ loading: true, ready: false, error: '', errorFromForm: false, list: [], attendees: [], scanCode: '' });
     try {
       const user = await getApp().ensureSession();
-      const result = await api.call('event', 'adminList', {}, { loading: false, silent: true });
-      this.setData({ list: result.list, isAdmin: user.roles.includes('admin') });
-    } catch (error) { this.setData({ error: error.message || '活动管理加载失败' }); }
-    finally { this.setData({ loading: false }); }
+      const isAdmin = user.roles.includes('admin');
+      if (!isAdmin && !user.roles.some(role => ['property', 'merchant'].includes(role))) throw new Error('仅管理员、物业或商家可管理活动');
+      const communities = [];
+      if (isAdmin) {
+        let result;
+        do {
+          result = await api.call('catalog', 'listCommunities', { offset: communities.length }, { loading: false, silent: true });
+          communities.push(...result.list);
+        } while (result.hasMore);
+      } else {
+        if (!user.communityId) throw new Error('尚未分配活动管理小区');
+        communities.push(await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true }));
+      }
+      if (sequence !== this.loadSequence) return;
+      const selectedId = isAdmin ? this.data.communityId || user.communityId : user.communityId;
+      const communityIndex = Math.max(0, communities.findIndex(item => item._id === selectedId));
+      const communityId = (communities[communityIndex] || {})._id || '';
+      this.setData({ isAdmin, communities, communityIndex, communityId });
+      if (!communityId) throw new Error('请先配置并选择管理小区');
+      const result = await api.call('event', 'adminList', { communityId }, { loading: false, silent: true });
+      if (sequence === this.loadSequence) this.setData({ list: result.list, ready: true });
+    } catch (error) { if (sequence === this.loadSequence) this.setData({ error: error.message || '活动管理加载失败' }); }
+    finally { if (sequence === this.loadSequence) this.setData({ loading: false }); }
+  },
+  async chooseCommunity(event) {
+    if (!this.data.isAdmin || this.data.loading || this.data.busy) return;
+    const community = this.data.communities[Number(event.detail.value)];
+    if (!community || community._id === this.data.communityId) return;
+    this.setData({ communityId: community._id });
+    await this.load();
   },
   async publish(event) {
     const item = this.data.list.find(row => row._id === event.currentTarget.dataset.id);
@@ -41,7 +69,8 @@ Page({
   input(event) { const field = event.currentTarget.dataset.field; this.setData({ [field]: event.detail.value }); },
   typeChange(event) { this.setData({ type: this.data.types[Number(event.detail.value)] || 'interest' }); },
   async createActivity() {
-    if (this.data.busy) return;
+    if (this.data.busy || this.data.loading || !this.data.ready || !this.data.communityId) return;
+    const communityId = this.data.communityId;
     this.setData({ busy: true, error: '', errorFromForm: true });
     try {
       const toDate = (date, time, label) => {
@@ -56,7 +85,7 @@ Page({
       const signupDeadline = toDate(this.data.deadlineDate, this.data.deadlineTime, '报名截止');
       const user = await getApp().ensureSession();
       const created = await api.call('event', 'create', { title: this.data.title, desc: this.data.desc, location: this.data.location,
-        type: this.data.type, fee: this.data.type === 'charity' ? 0 : amountFen(this.data.fee, '活动费用'), capacity: Number(this.data.capacity), communityIds: [user.communityId],
+        type: this.data.type, fee: this.data.type === 'charity' ? 0 : amountFen(this.data.fee, '活动费用'), capacity: Number(this.data.capacity), communityIds: [user.roles.includes('admin') ? communityId : user.communityId],
         sponsors: user.roles.includes('admin') && this.data.sponsorName && Number(this.data.sponsorAmount) > 0 ? [{ name: this.data.sponsorName,
           amount: amountFen(this.data.sponsorAmount, '赞助金额'), note: this.data.sponsorNote }] : [],
         startAt, endAt, signupDeadline });

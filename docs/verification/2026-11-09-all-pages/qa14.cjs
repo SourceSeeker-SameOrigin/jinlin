@@ -10,7 +10,8 @@ function setup(call) {
   const setData = p.setData;
   p.setData = function (patch, done) { setData.call(this, patch); if (done) done(); };
   r.wx.pageScrollTo = options => { assert(p.data.error); scrolls.push(options); };
-  p.setData({ ...dates, title: '合成草稿', desc: '保留说明', location: '合成地点', fee: '12.34' });
+  r.app.globalData.user = { roles: ['property'], communityId: 'fixture_community' };
+  p.setData({ ready: true, loading: false, communityId: 'fixture_community', ...dates, title: '合成草稿', desc: '保留说明', location: '合成地点', fee: '12.34' });
   return { r, p, scrolls };
 }
 async function test(name, fn) {
@@ -42,7 +43,7 @@ async function test(name, fn) {
   });
   await test('列表失败仍可重试，成功后清除错误并保留草稿', async () => {
     let fail = true;
-    const { p, scrolls } = setup(async () => { if (fail) throw Error('列表失败'); return { list: [] }; });
+    const { p, scrolls } = setup(async () => { if (fail) throw Error('列表失败'); return { _id: 'fixture_community', list: [] }; });
     p.setData({ errorFromForm: true }); await p.load();
     assert.equal(p.data.errorFromForm, false); assert.equal(p.data.error, '列表失败');
     fail = false; await p.load(); assert.equal(p.data.error, ''); assert.equal(p.data.title, '合成草稿');

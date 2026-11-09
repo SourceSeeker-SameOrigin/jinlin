@@ -1,5 +1,7 @@
 # 全页面 UI 与功能验收册
 
+> 最新：首批与QA26–QA28详见[本轮记录](../verification/2026-11-09-all-pages/README.md)。P50真实示例活动管理通过所列样本；P29公告待QA28部署；不是69页完整通过。
+
 本册按 app.json 枚举全部69页。目标是逐页视觉符合设计、逐流程功能闭环；当前不是全量通过报告。原40个规格场景、15个关闭回归和4个真实支付场景继续以 [TEST_HANDOFF](../TEST_HANDOFF.md) 为准，不能被本册替代。
 
 > QA07追加：四核心服务（P03–P06）新无人值班提示、实际报价、换行与底部价格栏已在当前模拟器尺寸核对；重新编译后四页累计0错误，原渲染错误未复现但根因未定。其余视觉/交互标准与用户签收仍待验收，见[实景证据](../verification/2026-11-09-remediation/qa07-live-pages.json)。
@@ -74,7 +76,7 @@
 |P26|内容举报审核<br>admin/reports/reports|管理员；物业按接口与小区限制|核心或按操作关联模块|举报空列表及三类标签可见；QA18读取失败隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P27|聊天记录审计<br>admin/chat/chat|管理员；物业按接口与小区限制|核心或按操作关联模块|无案件参数错误/重试，未出现虚假审计成功；真实案件未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P28|优惠券模板管理<br>admin/coupons/coupons|管理员；物业按接口与小区限制|核心或按操作关联模块|优惠券表单上下屏中文标签/单位已看；未创建发券|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
-|P29|公告与广告管理<br>admin/content/content|管理员；物业按接口与小区限制|核心或按操作关联模块|公告标题正文常驻字段与小区选择已看；广告此前上下屏已看，未发布|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P29|公告与广告管理<br>admin/content/content|管理员；物业按接口与小区限制|核心或按操作关联模块|示例小区公告表单/参数实际核对；提交后系统错误，QA28本地已修待部署|真实发布失败，列表空；QA28正常与非法输入26项隔离回归通过，发布/撤下待部署|待确认|
 |P30|商家入驻审核<br>admin/merchants/merchants|管理员；物业按接口与小区限制|核心或按操作关联模块|待审核商家筛选与空列表已看；未审核|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P31|回收企业月度对账<br>admin/recycle/recycle|管理员；物业按接口与小区限制|核心或按操作关联模块|回收月结日期/小区/导出入口已看；未导出|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P32|数据导出<br>admin/exports/exports|管理员；物业按接口与小区限制|核心或按操作关联模块|管理导出读取完成后表单已看；未生成文件|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
@@ -94,8 +96,8 @@
 |P46|卖家交付<br>idle/sale/sale|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P47|卖家收入<br>idle/income/income|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|QA19真实关闭错误仅重试，不显示默认零收入或结算操作|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P48|社区活动<br>events/list/list|真实微信用户，业务页需对应绑定/参与关系|events|活动列表功能关闭提示已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
-|P49|活动详情<br>events/detail/detail|真实微信用户，业务页需对应绑定/参与关系|events|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
-|P50|活动管理<br>events/manage/manage|管理员／物业／商家|events|活动表单上下屏/日期打开取消确认，缺开始日期提交滚顶且无列表重试已实测；未发布|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P49|活动详情<br>events/detail/detail|真实微信用户，业务页需对应绑定/参与关系|events|QA25缺编号提示实景；真实跨区ID直达回首页，非正常详情页通过|跨区detail服务端E_FORBIDDEN、signup拒绝；真实同区详情和报名成功仍待身份|待确认|
+|P50|活动管理<br>events/manage/manage|管理员／物业／商家|events|QA26小区picker实际切换、上下表单/发布与取消卡片已核对；390宽度|示例花园0元/容量1活动真实创建发布、空报名名单读取及零报名取消通过；任务queued未执行|待确认|
 |P51|上门喂宠<br>pet/order|真实微信用户，业务页需对应绑定/参与关系|pet|喂宠上下屏数量行、任务换行；QA24实际价格栏¥--、确认禁用及底部不遮挡已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P52|喂宠上门清单<br>pet/work|该订单已接单服务员|pet|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 |P53|喂宠服务记录<br>pet/reports|真实微信用户，业务页需对应绑定/参与关系|pet|QA25缺编号提示/按钮实景通过；按钮实际返回我的订单|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
@@ -348,6 +350,7 @@
 - 页面操作清点：input、chooseImage、togglePinned、saveNotice、endNotice、adSlotChange、adTargetTypeChange、adPathChange、adStatusChange、saveAd、confirmAdReceived、endAd。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：content.endAd、content.endNotice、content.listAds、content.listNotices、content.markAdReceived、content.saveAd、content.saveNotice。
 - 本轮检查：静态引用通过；3组均无未捕获异常（非成功业务验收）。本轮实景UI/成功流程未验证，用户签收待完成。
+- QA28最新：实际选择示例花园、填表并点击发布后返回服务错误，未发布成功；5处校验参数已修复，本地26项通过。等待content部署后复验发布/读取/撤下；广告完整流程仍未验收。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P30 商家入驻审核
@@ -508,6 +511,7 @@
 - 页面操作清点：load、signup、cancelSignup、reportContent。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：content.report、event.cancelSignup、event.detail、event.signup、event.templates、order.detail、order.mockPay、order.subscriptionTemplates。
 - 本轮检查：静态引用通过；3组均无未捕获异常（非成功业务验收）。本轮实景UI/成功流程未验证，用户签收待完成。 新发现：QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验。
+- 最新：真实珺悦身份请求示例活动detail/signup分别被E_FORBIDDEN/E_INVALID_PARAM拒绝；真实编号直达页面因本人小区活动关闭返回首页。仅记录跨区接口拒绝，不计正常详情/报名成功；同区住户和双微信验收待身份就绪。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P50 活动管理
@@ -517,6 +521,7 @@
 - 后端关联：event.adminList、event.cancelEvent、event.checkin、event.create、event.listSignups、event.publish、event.retryCancellation、event.review。
 - 本轮检查：静态引用通过；3组均无未捕获异常（非成功业务验收）。本轮实景UI/成功流程未验证，用户签收待完成。 新发现：QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验；QA13 固定默认日期，已批准并完成本地修复，实景待验。
 - 实景追加：bfcf067，iPhone12/13 Pro 75%；用户导航后上半屏中文字段/元人单位/卡片已核对，三个日期请选择日期及默认时刻仅AX确认；0错误/8警告。下半屏、选择器、提交与非空流程仍待验，见qa11-13-event-live.json。
+- QA26最新：管理员真实小区选择器切换示例花园、创建并发布0元/容量1活动、读取空报名及点击取消均已核对，保留珺悦绑定。页面显示已取消0/1，后台任务queued 0/0；未执行timer。QA27免费报名取消仅本地通过，event/timer新代码未部署；签到、同区报名与多尺寸仍待验。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P51 上门喂宠
