@@ -173,7 +173,11 @@ module.exports = function serviceForm(serviceCode) {
         detail = { dates: form.dates, visitsPerDay: Number(form.visitsPerDay), pets, tasks: form.tasks,
           entry: ['password','key_handover','property_keybox'][Number(form.entryIndex)], entryPassword: form.entryPassword };
       }
-      if (serviceCode === 'help') detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc, blocks: Number(form.blocks) };
+      if (serviceCode === 'help') {
+        const help = community.prices && community.prices.help || {};
+        detail = { category: ['carry', 'elder', 'other'][Number(form.categoryIndex)], desc: form.desc,
+          ...(help.billingMode === 'per_visit' ? { billingMode: 'per_visit', includedMinutes: help.includedMinutes } : { blocks: Number(form.blocks) }) };
+      }
       const address = this.data.addresses[this.data.addressIndex];
       const params = { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
         slot: serviceCode === 'escort' ? undefined : (this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined) };

@@ -26,9 +26,9 @@ Page({
         } catch (_) { this.chatConversationId = null; }
       }
       const labels = { stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数',
-        sorted: '已分类', shop: '店名', canteenName: '合作食堂', items: '清单', goodsCap: '预付金额', category: '类别', desc: '描述', blocks: '时长块数', merchantName: '商家', title: '服务', unit: '单位', priceType: '价格方式',
+        sorted: '已分类', shop: '店名', canteenName: '合作食堂', items: '清单', goodsCap: '预付金额', category: '类别', desc: '描述', blocks: '时长块数', billingMode: '计价方式', includedMinutes: '包含时长（分钟）', overtimePolicy: '超时规则', merchantName: '商家', title: '服务', unit: '单位', priceType: '价格方式',
         title: '悬赏任务', needEnterHome: '需要进入家中', hospital: '医院', department: '科室', date: '日期', start: '开始时间', pickup: '需要接送' };
-      const values = { door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
+      const values = { per_visit: '按次计价', per15min: '每15分钟计价', new_order: '不自动扣费，另行确认新订单', door: '放门口', hand: '当面交', carry: '搬重物', elder: '陪老人办事', other: '其他' };
       const detailRows = Object.entries(order.detail || {}).filter(([key]) => labels[key]).map(([key, value]) => ({ label: labels[key],
         value: key === 'goodsCap' ? '¥' + yuan(value) : Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : values[value] || String(value) }));
       if (order.recycleSummary) detailRows.push({ label: '称重和积分', value: order.recycleSummary.breakdown.map(item => item.category + ' ' + item.kg + ' kg / ' + item.points + ' 分').join('；') });

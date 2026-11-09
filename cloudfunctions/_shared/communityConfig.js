@@ -4,6 +4,9 @@ const { cardPlan } = require('./membershipData');
 function validatePrices(prices) {
   record(prices, '价格');
   function visit(value, path) {
+    if (path === 'help.billingMode') {
+      ensure(['per15min','per_visit'].includes(value), '帮把手计价方式不正确'); return;
+    }
     if (path === 'pet.holidayDates') {
       ensure(Array.isArray(value), '节假日须为日期列表'); value.forEach(parseDate); return;
     }
@@ -13,6 +16,7 @@ function validatePrices(prices) {
     } else integer(value, '价格或数量 ' + path, 0);
   }
   visit(prices, '');
+  if (prices.help && prices.help.billingMode !== undefined) require('./helpPricing').helpConfig(prices.help);
   if (prices.buy && prices.buy.goodsCapMin !== undefined && prices.buy.goodsCapMax !== undefined)
     ensure(prices.buy.goodsCapMin <= prices.buy.goodsCapMax, '代买预付下限不能高于上限');
   for (const [key,min,max] of [['express.maxParcels',1,10],['help.maxBlocks',1,8],['pet.holidaySurcharge',0,10000]]) {

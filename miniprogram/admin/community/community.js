@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const form = require('./form');
 Page({
   data: { loading:true,saving:false,error:'',community:null,communities:[],communityIndex:0,authorized:false,priceRows:[],globalRows:[],keywordRows:[],planOptions:form.PLANS,
-    stations:[],dutyWindows:[],canteens:[],plans:[],recycleRows:[],buildingId:'',buildingName:'',buildingUnits:'',petCertRequired:false },
+    helpModeIndex:0,helpModes:['按每15分钟计价','按次计价（超时不自动扣费）'],stations:[],dutyWindows:[],canteens:[],plans:[],recycleRows:[],buildingId:'',buildingName:'',buildingUnits:'',petCertRequired:false },
   onLoad(){return this.load();},
   async load() {
     this.setData({loading:true,error:'',authorized:false});
@@ -20,7 +20,7 @@ Page({
     this.setData({name:c.name,city:c.city||'',district:c.district||'',address:c.address||'',propertyName:c.propertyName||'',federationGroupId:c.federationGroupId||'',
       platformRate:c.rates&&c.rates.platform!==undefined?String(c.rates.platform):'',propertyRate:c.rates&&c.rates.property!==undefined?String(c.rates.property):'',
       location:c.location||null,locationText:c.location?`${c.location.lat}, ${c.location.lng}`:'未设置',petCertRequired:(c.requiredCerts||[]).includes('pet'),
-      stations:form.copy(c.stations||[]),canteens:form.copy(c.canteens||[]),dutyWindows:form.copy(c.dutyWindows||[]),priceRows:form.fields(form.PRICE_FIELDS,c.prices||{}),
+      helpModeIndex:c.prices&&c.prices.help&&c.prices.help.billingMode==='per_visit'?1:0,stations:form.copy(c.stations||[]),canteens:form.copy(c.canteens||[]),dutyWindows:form.copy(c.dutyWindows||[]),priceRows:form.fields(form.PRICE_FIELDS,c.prices||{}),
       holidayDates:(c.prices&&c.prices.pet&&c.prices.pet.holidayDates||[]).join('\n'),
       recycleRows:form.CATEGORIES.map(([key,label])=>({key,label,...((c.prices&&c.prices.recycle&&c.prices.recycle.categories||{})[key]||{})})),
       plans:(c.cardPlans||[]).map(v=>({original:v,kindIndex:form.PLANS.findIndex(t=>t.code===v.code),name:v.name,price:String(v.price),firstPeriodPrice:String(v.firstPeriodPrice),days:String(v.days),dailyParcelQuota:v.dailyParcelQuota||'',weekdays:(v.schedule&&v.schedule.weekdays||[]).join(',')})),buildingId:'',buildingName:'',buildingUnits:''});
@@ -31,10 +31,11 @@ Page({
   addRow(event){const list=event.currentTarget.dataset.list;const defaults={stations:{code:'',name:''},canteens:{code:'',name:'',merchantId:''},dutyWindows:{start:'',end:''},plans:{original:{},kindIndex:0,name:'垃圾月卡',price:'',firstPeriodPrice:'',days:'',dailyParcelQuota:'',weekdays:''}};if(defaults[list])this.setData({[list]:[...this.data[list],defaults[list]]});},
   removeRow(event){const {list,index}=event.currentTarget.dataset;if(['stations','canteens','dutyWindows','plans'].includes(list))this.setData({[list]:this.data[list].filter((_,i)=>i!==Number(index))});},
   choosePlan(event){const i=Number(event.currentTarget.dataset.index),kindIndex=Number(event.detail.value);this.setData({[`plans[${i}].kindIndex`]:kindIndex,[`plans[${i}].name`]:form.PLANS[kindIndex].name});},
+  chooseHelpMode(event){const index=Number(event.detail.value);if(!this.data.saving&&[0,1].includes(index))this.setData({helpModeIndex:index});},
   togglePetCert(event){this.setData({petCertRequired:event.detail.value});},
   async chooseLocation(){try{const point=await new Promise((resolve,reject)=>wx.chooseLocation({success:resolve,fail:reject}));this.setData({location:{lat:point.latitude,lng:point.longitude},locationText:point.name||`${point.latitude}, ${point.longitude}`});}catch(e){if(!String(e.errMsg).includes('cancel'))this.setData({error:'无法选择小区位置，请确认定位授权'});}},
   async saveCommunity(){if(!this.data.authorized||this.data.saving||!this.data.community)return;this.setData({saving:true,error:''});try{
-    const d=this.data,prices=form.pricePatch(d.community.prices,d.priceRows);
+    const d=this.data,prices=form.pricePatch(d.community.prices,d.priceRows,d.helpModeIndex===1?'per_visit':'per15min');
     if(d.holidayDates.trim() || prices.pet&&prices.pet.holidayDates) {prices.pet=prices.pet||{};prices.pet.holidayDates=d.holidayDates.split(/[,，\s]+/).filter(Boolean);}
     for(const row of d.recycleRows){if(![row.pointsPerKg,row.purchaseFenPerKg,row.recyclerId].some(v=>v!==undefined&&String(v)!==''))continue;prices.recycle=prices.recycle||{};prices.recycle.categories=prices.recycle.categories||{};prices.recycle.categories[row.key]={pointsPerKg:form.number(row.pointsPerKg,'积分'),purchaseFenPerKg:form.number(row.purchaseFenPerKg,'收购价'),recyclerId:(row.recyclerId||'').trim()};}
     const requiredCerts=(d.community.requiredCerts||[]).filter(v=>v!=='pet');if(d.petCertRequired)requiredCerts.push('pet');

@@ -12,3 +12,8 @@ test('R07 only entitlement changes lock active plans; prices and names remain ed
 
 
 test('R08 revision accepts legacy absence but rejects corrupt or exhausted counters',()=>{const {nextMembershipRevision}=require('../membershipRevision');expect(nextMembershipRevision({})).toBe(1);expect(nextMembershipRevision({membershipRevision:5})).toBe(6);for(const value of [null,-1,0.5,'1',Number.MAX_SAFE_INTEGER])expect(()=>nextMembershipRevision({membershipRevision:value})).toThrow();});
+
+test('D13 管理配置接受完整按次计价，拒绝缺失价格或包含时长',()=>{
+  expect(()=>validatePrices({help:{billingMode:'per_visit',perVisit:3900,includedMinutes:30}})).not.toThrow();
+  for(const help of [{billingMode:'per_visit',perVisit:3900},{billingMode:'per_visit',includedMinutes:30},{billingMode:'other'},{billingMode:'per_visit',perVisit:3900,includedMinutes:0}])expect(()=>validatePrices({help})).toThrow();
+});

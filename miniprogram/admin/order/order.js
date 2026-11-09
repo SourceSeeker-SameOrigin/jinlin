@@ -13,8 +13,8 @@ Page({
       const readOnly = !user.roles.includes('admin');
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
       const details = Object.entries(order.detail || {}).map(([key, value]) => ({ key,
-        label: ({ stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数', sorted: '已分类', shop: '店名', items: '代买清单', goodsCap: '商品预付（分）', category: '类别', desc: '描述', blocks: '时长块数' })[key] || key,
-        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : String(value) }));
+        label: ({ stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数', sorted: '已分类', shop: '店名', items: '代买清单', goodsCap: '商品预付（分）', category: '类别', desc: '描述', blocks: '时长块数', billingMode: '计价方式', includedMinutes: '包含时长（分钟）', overtimePolicy: '超时规则' })[key] || key,
+        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : ({per_visit:'按次计价',per15min:'每15分钟计价',new_order:'不自动扣费，另行确认新订单'})[value] || String(value) }));
       this.setData({ order, readOnly, details, slotText: slotText(order.slot), amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
         canCancel: ['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status) &&
           (order.kind !== 'membership_purchase' || order.status === 'pending_pay'),

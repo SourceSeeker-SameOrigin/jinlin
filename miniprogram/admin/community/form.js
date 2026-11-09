@@ -1,7 +1,7 @@
 const PRICE_FIELDS = [
  ['express.base','快递首件（分）'],['express.extraParcel','快递续件（分）'],['express.largeSurcharge','快递大件加价（分）'],['express.maxParcels','快递最多件数'],
  ['trash.single','单次扔垃圾（分）'],['buy.serviceFee','代买服务费（分）'],['buy.goodsCapMin','代买预付下限（分）'],['buy.goodsCapMax','代买预付上限（分）'],
- ['help.per15min','帮把手每15分钟（分）'],['help.maxBlocks','帮把手最多档数'],['firstOrderPrice','首单服务价（分）'],['membershipTaskPayout','垃圾月卡每次报酬（分）'],
+ ['help.perVisit','帮把手每次（分）'],['help.includedMinutes','帮把手每次包含分钟数'],['help.per15min','帮把手每15分钟（分）'],['help.maxBlocks','帮把手最多档数'],['firstOrderPrice','首单服务价（分）'],['membershipTaskPayout','垃圾月卡每次报酬（分）'],
  ['meal.serviceFee','助老送餐服务费（分）'],['meal.goodsCapMax','餐费预付上限（分）'],['visit.taskPayout','每次探访报酬（分）'],['escort.perBlock','陪诊每2小时（分）'],
  ['pet.perVisitCat','每只猫每次（分）'],['pet.perVisitDog','每只狗每次（分）'],['pet.perVisitOther','其他宠物每只每次（分）'],['pet.holidaySurcharge','喂宠节假日加价（万分比）'],
  ['vacantHome.perVisitPayout','每次空置房巡检报酬（分）'],['stationDelivery.perPiece','驿站每件收费（分）'],['stationDelivery.perPiecePayout','驿站每件服务员报酬（分）'],
@@ -16,7 +16,7 @@ const read=(value,path)=>path.split('.').reduce((v,k)=>v&&v[k],value);
 function write(value,path,next) { const keys=path.split('.');let cur=value;keys.slice(0,-1).forEach(k=>{if(!cur[k])cur[k]={};cur=cur[k];});cur[keys[keys.length-1]]=next; }
 function number(value,label) { if(typeof value==='string'&&!/^\d+$/.test(value.trim()) || !Number.isSafeInteger(Number(value)) || Number(value)<0) throw new Error(label+'请填写非负整数'); return Number(value); }
 function fields(defs,source) { return defs.map(([key,label])=>({key,label,value:read(source,key)===undefined?'':String(read(source,key))})); }
-function pricePatch(original,rows) { const prices=copy(original); for(const row of rows) if(row.value!=='')write(prices,row.key,number(row.value,row.label)); return prices; }
+function pricePatch(original,rows,helpMode) { const prices=copy(original); for(const row of rows) if(row.value!=='')write(prices,row.key,number(row.value,row.label)); if(helpMode !== undefined && prices.help) { prices.help.billingMode=helpMode; if(helpMode==='per_visit'){delete prices.help.per15min;delete prices.help.maxBlocks;}else{delete prices.help.perVisit;delete prices.help.includedMinutes;} } return prices; }
 function plans(rows) { return rows.map(row=>{const selected=PLANS[row.kindIndex];const result={...copy(row.original),code:selected.code,serviceCode:selected.serviceCode,name:row.name.trim(),price:number(row.price,'月卡价格'),firstPeriodPrice:number(row.firstPeriodPrice,'首期价格'),days:number(row.days,'有效天数')};delete result.dailyParcelQuota;delete result.schedule;
  if(result.serviceCode==='express')result.dailyParcelQuota=number(row.dailyParcelQuota,'每日件数');
  if(result.serviceCode==='trash')result.schedule={type:'daily'};
