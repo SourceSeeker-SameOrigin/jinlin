@@ -2,7 +2,7 @@
   "sourceCommit": "73194f8f337717a8a58930f29a9ae8264de3e061",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "content and event deployed, 76 source files verified each; timer awaiting selection",
+  "status": "All three authorized functions deployed; 228/228 source files verified",
   "deployOrder": [
     "content",
     "event",
@@ -294,7 +294,12 @@
       "next": "QA29 new source pending separate deployment authorization"
     },
     "timer": {
-      "status": "upload window ready; waiting for manual file selection; do not apply triggers or invoke"
+      "status": "deployed and verified",
+      "matches": 76,
+      "sdkVersion": "4.0.2",
+      "triggers": 0,
+      "httpDomains": 0,
+      "invoked": false
     }
   }
 }
