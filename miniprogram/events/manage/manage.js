@@ -11,13 +11,13 @@ function amountFen(value, field) {
 }
 
 Page({
-  data: { loading: true, error: '', list: [], scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
+  data: { loading: true, error: '', errorFromForm: false, list: [], scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
     startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
     types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
     sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false },
   onShow() { this.load(); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, error: '', errorFromForm: false });
     try {
       const user = await getApp().ensureSession();
       const result = await api.call('event', 'adminList', {}, { loading: false, silent: true });
@@ -29,20 +29,20 @@ Page({
     const item = this.data.list.find(row => row._id === event.currentTarget.dataset.id);
     if (item && getApp().globalData.user.roles.includes('admin') && item.reviewRequested) {
       try { await api.call('event', 'review', { eventId: item._id, approved: true }); await this.load(); }
-      catch (error) { this.setData({ error: error.message || '审核失败' }); }
+      catch (error) { this.setData({ error: error.message || '审核失败', errorFromForm: false }); }
     } else await this.action('publish', event.currentTarget.dataset.id);
   },
   async cancel(event) { await this.action('cancelEvent', event.currentTarget.dataset.id); },
   async retryCancellation(event) { await this.action('retryCancellation', event.currentTarget.dataset.id); },
   async action(action, eventId) {
     try { await api.call('event', action, { eventId }); await this.load(); }
-    catch (error) { this.setData({ error: error.message || '操作失败' }); }
+    catch (error) { this.setData({ error: error.message || '操作失败', errorFromForm: false }); }
   },
   input(event) { const field = event.currentTarget.dataset.field; this.setData({ [field]: event.detail.value }); },
   typeChange(event) { this.setData({ type: this.data.types[Number(event.detail.value)] || 'interest' }); },
   async createActivity() {
     if (this.data.busy) return;
-    this.setData({ busy: true, error: '' });
+    this.setData({ busy: true, error: '', errorFromForm: true });
     try {
       const toDate = (date, time, label) => {
         if (!date) throw new Error('请选择' + label + '日期');
@@ -62,7 +62,11 @@ Page({
         startAt, endAt, signupDeadline });
       await api.call('event', 'publish', { eventId: created.eventId });
       this.setData({ title: '', desc: '', location: '' }); await this.load();
-    } catch (error) { this.setData({ error: error.message || '活动创建失败' }); }
+    } catch (error) {
+      this.setData({ error: error.message || '活动创建失败', errorFromForm: true }, () => {
+        wx.pageScrollTo({ scrollTop: 0, duration: 200 });
+      });
+    }
     finally { this.setData({ busy: false }); }
   },
   async scan() {
@@ -72,18 +76,18 @@ Page({
       if (!code && result.path) code = decodeURIComponent((result.path.split('scene=')[1] || '').split('&')[0]);
       if (code.startsWith('e=')) code = code.slice(2);
       this.setData({ scanCode: code || '' });
-    } catch (error) { this.setData({ error: error.errMsg || '扫码失败' }); }
+    } catch (error) { this.setData({ error: error.errMsg || '扫码失败', errorFromForm: false }); }
   },
   async checkin(event) {
     const eventId = event.currentTarget.dataset.id;
-    if (!this.data.scanCode) return this.setData({ error: '请先扫描活动签到码' });
+    if (!this.data.scanCode) return this.setData({ error: '请先扫描活动签到码', errorFromForm: false });
     try { await api.call('event', 'checkin', { eventId, checkinCode: this.data.scanCode }); this.setData({ scanCode: '', error: '' }); }
-    catch (error) { this.setData({ error: error.message || '签到失败' }); }
+    catch (error) { this.setData({ error: error.message || '签到失败', errorFromForm: false }); }
   },
   async showSignups(event) {
     try {
       const result = await api.call('event', 'listSignups', { eventId: event.currentTarget.dataset.id }, { loading: false, silent: true });
       this.setData({ attendees: result.list || [] });
-    } catch (error) { this.setData({ error: error.message || '报名名单加载失败' }); }
+    } catch (error) { this.setData({ error: error.message || '报名名单加载失败', errorFromForm: false }); }
   }
 });

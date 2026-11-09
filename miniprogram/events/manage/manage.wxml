@@ -6,7 +6,7 @@
 <view class="masthead-subtitle">相聚社区，共享邻里时光</view>
 </view>
 </view>
-<view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button>
+<view wx:if="{{error}}" class="error">{{error}}<button wx:if="{{!errorFromForm}}" bindtap="load">重试</button>
 </view>
 <view class="card">
 <view class="section-title">创建活动</view>
