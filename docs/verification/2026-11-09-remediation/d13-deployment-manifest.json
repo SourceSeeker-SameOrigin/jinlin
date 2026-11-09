@@ -2,7 +2,7 @@
   "sourceCommit": "02a4470508d9384802c8b5d0261091a4e309a771",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "authorized; order deployed and 77/77 files verified; admin awaiting manual selection",
+  "status": "both deployed and verified; 153/153 source files match; approved community configuration applied and real quotes verified",
   "deployOrder": [
     "order",
     "admin"
@@ -201,7 +201,10 @@
       "sdkVersion": "4.0.2"
     },
     "admin": {
-      "status": "awaiting manual file selection; browser hash capture ready"
+      "status": "deployed and verified",
+      "matches": 76,
+      "sdkVersion": "4.0.2"
     }
-  }
+  },
+  "liveVerification": "d13-live-config-quotes.json"
 }

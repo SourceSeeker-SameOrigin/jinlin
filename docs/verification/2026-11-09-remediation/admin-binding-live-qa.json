@@ -74,9 +74,9 @@
   "d13": {
     "parametersConfirmed": true,
     "codeTestedLocally": true,
-    "cloudDeployed": false,
-    "cloudConfigApplied": false,
-    "realQuoteAndFulfillment": "pending"
+    "cloudDeployed": true,
+    "cloudConfigApplied": true,
+    "realQuoteAndFulfillment": "4 real cloud quotes and 4 page quotes passed; fulfillment pending; see d13-live-config-quotes.json"
   },
   "limitations": [
     "Programmatic runtime navigation does not prove every physical navigation control",
