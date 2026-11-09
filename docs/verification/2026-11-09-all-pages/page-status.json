@@ -238,10 +238,11 @@
     "route": "admin/community/community",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "本轮未新增完整UI验收；既有证据见逐页验收册，不能以隔离加载代替实景",
+    "liveUIThisRun": "已导航到小区配置标题，完整表单及QA15交互随后遇到锁屏，未新增实景通过项",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA15待决：保存失败后重新加载覆盖未保存小区/楼栋输入，隔离复现；真实配置未操作"
+      "QA15已批准A并完成本地修复，9项回归通过，实际界面待验",
+      "QA16保存成功后回读失败可能重复新增楼栋，隔离复现、待决"
     ],
     "userAcceptance": "待用户签收"
   },
