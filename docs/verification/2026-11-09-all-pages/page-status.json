@@ -554,7 +554,7 @@
     "route": "events/manage/manage",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
+    "liveUIThisRun": "部分已核对：用户打开页面，代理核对上半屏截图及三日期空态AX；下半屏布局/点击/成功业务仍待验",
     "successFlowThisRun": "未验证",
     "newFindings": [
       "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验",

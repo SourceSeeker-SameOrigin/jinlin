@@ -514,6 +514,7 @@
 - 页面操作清点：load、input、typeChange、createActivity、scan、publish、showSignups、checkin、cancel、retryCancellation。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：event.adminList、event.cancelEvent、event.checkin、event.create、event.listSignups、event.publish、event.retryCancellation、event.review。
 - 本轮检查：静态引用通过；3组均无未捕获异常（非成功业务验收）。本轮实景UI/成功流程未验证，用户签收待完成。 新发现：QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验；QA13 固定默认日期，已批准并完成本地修复，实景待验。
+- 实景追加：bfcf067，iPhone12/13 Pro 75%；用户导航后上半屏中文字段/元人单位/卡片已核对，三个日期请选择日期及默认时刻仅AX确认；0错误/8警告。下半屏、选择器、提交与非空流程仍待验，见qa11-13-event-live.json。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P51 上门喂宠

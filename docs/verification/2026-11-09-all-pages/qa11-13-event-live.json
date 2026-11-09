@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-09",
+  "sourceCommit": "bfcf067",
+  "route": "events/manage/manage",
+  "device": "微信开发者工具 iPhone 12/13 Pro 75%",
+  "entry": "用户手工Console导航，代理读取AX和截图",
+  "readOnly": true,
+  "observed": {
+    "routeConfirmed": true,
+    "upperScreen": [
+      "活动管理绿色页头及白色表单卡片",
+      "活动标题/说明/地点常驻中文标签",
+      "兴趣活动类型中文显示",
+      "报名费用（元）及名额（人）标签",
+      "上半屏输入文字未观察到裁切或重叠"
+    ],
+    "axOnly": [
+      "开始/结束/报名截止三个日期均为请选择日期",
+      "默认时刻10:00/12:00/23:59",
+      "赞助名称/金额（元）/说明常驻标签",
+      "保存并提交活动审核及扫描签到码按钮"
+    ],
+    "console": {
+      "errors": 0,
+      "warningsInitial": 7,
+      "warningsLatest": 8
+    }
+  },
+  "notVerified": [
+    "下半屏日期/按钮实际布局",
+    "日期选择器点击及选择返回",
+    "缺日期点击提交提示与输入保留",
+    "有效日期提交/活动创建发布",
+    "非空活动/退款/报名状态",
+    "其他屏宽/大字体/真机",
+    "用户视觉签收"
+  ],
+  "screenshot": "当前会话工具截图，未保存本地截图文件",
+  "interactionIncident": {
+    "description": "前轮只读QA_CHANNEL命令因焦点错误进入AGENTS.md未保存编辑缓冲，当前截图确认",
+    "diskVerifiedUnchanged": true,
+    "gitWorktreeClean": true,
+    "resolution": "已告知用户并请求仅恢复误插入位置；未确认缓冲已恢复；停止自动输入"
+  }
+}
