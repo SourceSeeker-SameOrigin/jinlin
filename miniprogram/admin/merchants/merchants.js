@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const { yuan } = require('../../utils/money');
 Page({
   data: { loading: true, busy: false, error: '', list: [], selected: null, services: [], statusIndex: 0,
     statuses: ['pending', 'approved', 'rejected', 'suspended', ''],
@@ -24,7 +25,7 @@ Page({
     const sequence = this.inspectSequence = (this.inspectSequence || 0) + 1;
     try { const result = await api.call('merchant', 'adminServices', { merchantId: merchant._id }, { loading: false, silent: true });
       if (sequence !== this.inspectSequence) return;
-      this.setData({ selected: merchant, services: result.list || [] }); }
+      this.setData({ selected: merchant, services: (result.list || []).map(item => ({ ...item, priceText: yuan(item.price) })) }); }
     catch (error) { if (sequence === this.inspectSequence) this.setData({ error: error.message || '服务加载失败' }); } },
   async review(event) { const approved = event.currentTarget.dataset.approved === 'true'; const merchant = this.data.selected;
     if (!merchant || merchant.status !== 'pending' || this.data.busy) return; this.setData({ busy: true, error: '' }); try {

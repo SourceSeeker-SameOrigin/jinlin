@@ -1,10 +1,12 @@
 const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
+const { yuan } = require('../../utils/money');
 Page({
   data: { loading: true, busy: false, error: '', list: [], title: '', desc: '', priceTypeIndex: 0, types: ['固定价', '预约后报价'], price: '', unit: '次', images: [] },
   onShow() { this.load(); },
   async load() { this.setData({ loading: true, error: '' }); try {
-    const result = await api.call('merchant', 'myServices', {}, { loading: false, silent: true }); this.setData({ list: result.list || [] });
+    const result = await api.call('merchant', 'myServices', {}, { loading: false, silent: true });
+    this.setData({ list: (result.list || []).map(item => ({ ...item, priceText: yuan(item.price) })) });
   } catch (error) { this.setData({ error: error.message || '服务加载失败' }); } finally { this.setData({ loading: false }); } },
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   chooseType(event) { this.setData({ priceTypeIndex: Number(event.detail.value) }); },

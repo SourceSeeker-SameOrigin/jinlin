@@ -1,9 +1,10 @@
 const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
+const { merchantStatusNames } = require('../../utils/status-labels');
 const CATEGORIES = ['housekeeping', 'repair', 'laundry', 'locksmith', 'haul', 'canteen', 'recycler', 'other'];
 const LABELS = ['家政', '维修', '洗衣', '开锁', '清运', '食堂', '回收企业', '其他'];
 Page({
-  data: { busy: false, error: '', categories: LABELS, categoryIndex: 0, name: '', licenseName: '', creditCode: '', contactName: '', phone: '', licenseFileId: '' },
+  data: { busy: false, error: '', categories: LABELS, categoryIndex: 0, name: '', licenseName: '', creditCode: '', contactName: '', phone: '', licenseFileId: '', merchantStatusNames },
   onLoad() { this.load(); },
   async load() {
     try {

@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "e155129",
+  "sourceCommit": "QA09-QA13 fixes based on 5b13305; see containing Git commit",
   "jest": {
     "suites": 52,
     "passed": 605,
@@ -33,6 +33,25 @@
     }
   ],
   "liveAcceptanceThisRun": false,
-  "applicationChanged": false,
-  "deployedThisRun": false
+  "applicationChanged": true,
+  "deployedThisRun": false,
+  "frontendOnly": true,
+  "qa09to13": {
+    "total": 26,
+    "passed": 26,
+    "timezones": [
+      "UTC",
+      "America/Los_Angeles",
+      "Asia/Shanghai"
+    ]
+  },
+  "isolatedPageLifecycle": {
+    "total": 207,
+    "uncaught": 0
+  },
+  "staticCompile": {
+    "wxml": 77,
+    "wxss": 78,
+    "issues": 0
+  }
 }

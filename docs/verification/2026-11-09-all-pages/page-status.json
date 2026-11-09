@@ -5,7 +5,7 @@
     "route": "pages/index/index",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -16,7 +16,7 @@
     "route": "pages/bind/bind",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -27,7 +27,7 @@
     "route": "pages/service/express",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -38,7 +38,7 @@
     "route": "pages/service/trash",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -49,7 +49,7 @@
     "route": "pages/service/buy",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -60,7 +60,7 @@
     "route": "pages/service/help",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -71,7 +71,7 @@
     "route": "pages/orders/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -82,7 +82,7 @@
     "route": "pages/orders/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -93,7 +93,7 @@
     "route": "pages/membership/index",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -104,7 +104,7 @@
     "route": "pages/me/me",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -115,7 +115,7 @@
     "route": "pages/legal/privacy",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -126,10 +126,10 @@
     "route": "pages/legal/terms",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA10 帮把手协议过时，待决未改"
+      "QA10 帮把手协议过时，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -139,7 +139,7 @@
     "route": "provider/apply/apply",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -150,7 +150,7 @@
     "route": "provider/workbench/workbench",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -161,7 +161,7 @@
     "route": "provider/hall/hall",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -172,7 +172,7 @@
     "route": "provider/task/task",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -183,7 +183,7 @@
     "route": "provider/earnings/earnings",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -194,7 +194,7 @@
     "route": "admin/dashboard/dashboard",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -205,7 +205,7 @@
     "route": "admin/orders/orders",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -216,7 +216,7 @@
     "route": "admin/order/order",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -227,7 +227,7 @@
     "route": "admin/providers/providers",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -238,7 +238,7 @@
     "route": "admin/community/community",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -249,7 +249,7 @@
     "route": "admin/posters/posters",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -260,7 +260,7 @@
     "route": "admin/settlements/settlements",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -271,7 +271,7 @@
     "route": "admin/features/features",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -282,7 +282,7 @@
     "route": "admin/reports/reports",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -293,10 +293,10 @@
     "route": "admin/chat/chat",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA12 审计成功提示，待决未改"
+      "QA12 审计成功提示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -306,7 +306,7 @@
     "route": "admin/coupons/coupons",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -317,7 +317,7 @@
     "route": "admin/content/content",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -328,10 +328,10 @@
     "route": "admin/merchants/merchants",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -341,7 +341,7 @@
     "route": "admin/recycle/recycle",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -352,7 +352,7 @@
     "route": "admin/exports/exports",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -363,7 +363,7 @@
     "route": "admin/stations/stations",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -374,7 +374,7 @@
     "route": "chat/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -385,7 +385,7 @@
     "route": "chat/room/room",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -396,7 +396,7 @@
     "route": "coupons/center/center",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -407,7 +407,7 @@
     "route": "coupons/mine/mine",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -418,7 +418,7 @@
     "route": "board/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -429,7 +429,7 @@
     "route": "board/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -439,11 +439,11 @@
     "title": "发布需求",
     "route": "board/create/create",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "失败：ymd is not a function",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA09 日期函数缺失，待决未改"
+      "QA09 日期函数缺失，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -453,7 +453,7 @@
     "route": "idle/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -464,7 +464,7 @@
     "route": "idle/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -475,7 +475,7 @@
     "route": "idle/create/create",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -486,7 +486,7 @@
     "route": "idle/mine/mine",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -497,7 +497,7 @@
     "route": "idle/sales/sales",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -508,7 +508,7 @@
     "route": "idle/sale/sale",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -519,7 +519,7 @@
     "route": "idle/income/income",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -530,7 +530,7 @@
     "route": "events/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -541,10 +541,10 @@
     "route": "events/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -554,11 +554,11 @@
     "route": "events/manage/manage",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改",
-      "QA13 固定默认日期，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验",
+      "QA13 固定默认日期，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -568,7 +568,7 @@
     "route": "pet/order",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -579,7 +579,7 @@
     "route": "pet/work",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -590,7 +590,7 @@
     "route": "pet/reports",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -601,10 +601,10 @@
     "route": "merchant/apply/apply",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -614,10 +614,10 @@
     "route": "merchant/workbench/workbench",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -627,10 +627,10 @@
     "route": "merchant/services/services",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [
-      "QA11 中文/标签/金额展示，待决未改"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
     ],
     "userAcceptance": "待用户签收"
   },
@@ -640,7 +640,7 @@
     "route": "merchant/orders/orders",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -651,7 +651,7 @@
     "route": "shops/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -662,7 +662,7 @@
     "route": "shops/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -673,7 +673,7 @@
     "route": "shops/booking/booking",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -684,7 +684,7 @@
     "route": "station/apply/apply",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -695,7 +695,7 @@
     "route": "station/workbench/workbench",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -706,7 +706,7 @@
     "route": "station/create/create",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -717,7 +717,7 @@
     "route": "station/worker/worker",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -728,7 +728,7 @@
     "route": "station/batch/batch",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -739,7 +739,7 @@
     "route": "elder/meal",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -750,7 +750,7 @@
     "route": "elder/escort",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -761,7 +761,7 @@
     "route": "recycle/order/order",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"
@@ -772,7 +772,7 @@
     "route": "notices/list/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "未执行：锁屏/自动化监听边界阻塞",
+    "liveUIThisRun": "未完成：窗口可读，但自动点击/输入未确认执行；已请求用户导航",
     "successFlowThisRun": "未验证",
     "newFindings": [],
     "userAcceptance": "待用户签收"

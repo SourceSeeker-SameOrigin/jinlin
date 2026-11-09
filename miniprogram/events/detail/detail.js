@@ -3,8 +3,9 @@ const api = require('../../utils/api');
 const { pay } = require('../../utils/payment');
 const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
+const { signupStatusNames } = require('../../utils/status-labels');
 Page({
-  data: { loading: true, busy: false, error: '', item: null },
+  data: { loading: true, busy: false, error: '', item: null, signupStatusNames },
   onLoad(options) { this.eventId = options.id; },
   onShow() { this.load(); },
   async reportContent(event) {

@@ -1,1 +1,28 @@
-<view class="page"><view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button></view><view wx:if="{{item}}" class="card"><view class="page-masthead"><image class="masthead-icon" src="/assets/icons/events.png"/><view class="masthead-copy"><view class="page-title">{{item.title}}</view><view class="masthead-subtitle">相聚社区，共享邻里时光</view></view></view><view>{{item.startText}} 至 {{item.endText}}</view><view>地点：{{item.location}}</view><view>费用：{{item.feeText}}</view><view>剩余名额：{{item.remaining}}</view><view>报名截止：{{item.deadlineText}}</view><view class="content">{{item.desc}}</view><private-media wx:for="{{item.images}}" wx:key="*this" src="{{item}}" mode="widthFix"/><view wx:if="{{item.mySignup}}" class="muted">报名状态：{{item.mySignup.status}}<text wx:if="{{item.mySignup.checkinCode}}"> · 签到码 {{item.mySignup.checkinCode}}</text></view><private-media wx:if="{{item.mySignup.checkinQrUrl}}" media-class="qr" src="{{item.mySignup.checkinQrUrl}}" mode="aspectFit"/><button wx:if="{{item.canSignup && item.remaining > 0}}" type="primary" loading="{{busy}}" bindtap="signup">报名</button><button wx:if="{{item.mySignup.status === 'pending_pay'}}" type="primary" loading="{{busy}}" bindtap="signup">继续支付</button><button wx:if="{{item.mySignup.status === 'signed' || item.mySignup.status === 'pending_pay'}}" loading="{{busy}}" bindtap="cancelSignup">取消报名</button></view><view wx:if="{{loading}}" class="card">正在加载…</view><button wx:if="{{item}}" class="ui-button" bindtap="reportContent">举报活动</button></view>
+<view class="page">
+<view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button>
+</view>
+<view wx:if="{{item}}" class="card">
+<view class="page-masthead">
+<image class="masthead-icon" src="/assets/icons/events.png"/>
+<view class="masthead-copy">
+<view class="page-title">{{item.title}}</view>
+<view class="masthead-subtitle">相聚社区，共享邻里时光</view>
+</view>
+</view>
+<view>{{item.startText}} 至 {{item.endText}}</view>
+<view>地点：{{item.location}}</view>
+<view>费用：{{item.feeText}}</view>
+<view>剩余名额：{{item.remaining}}</view>
+<view>报名截止：{{item.deadlineText}}</view>
+<view class="content">{{item.desc}}</view>
+<private-media wx:for="{{item.images}}" wx:key="*this" src="{{item}}" mode="widthFix"/>
+<view wx:if="{{item.mySignup}}" class="muted">报名状态：{{signupStatusNames[item.mySignup.status] || '状态待确认'}}<text wx:if="{{item.mySignup.checkinCode}}"> · 签到码 {{item.mySignup.checkinCode}}</text>
+</view>
+<private-media wx:if="{{item.mySignup.checkinQrUrl}}" media-class="qr" src="{{item.mySignup.checkinQrUrl}}" mode="aspectFit"/>
+<button wx:if="{{item.canSignup && item.remaining > 0}}" type="primary" loading="{{busy}}" bindtap="signup">报名</button>
+<button wx:if="{{item.mySignup.status === 'pending_pay'}}" type="primary" loading="{{busy}}" bindtap="signup">继续支付</button>
+<button wx:if="{{item.mySignup.status === 'signed' || item.mySignup.status === 'pending_pay'}}" loading="{{busy}}" bindtap="cancelSignup">取消报名</button>
+</view>
+<view wx:if="{{loading}}" class="card">正在加载…</view>
+<button wx:if="{{item}}" class="ui-button" bindtap="reportContent">举报活动</button>
+</view>

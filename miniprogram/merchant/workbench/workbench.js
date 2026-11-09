@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
+const { merchantStatusNames } = require('../../utils/status-labels');
 Page({
-  data: { loading: true, error: '', merchant: null },
+  data: { loading: true, error: '', merchant: null, merchantStatusNames },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });

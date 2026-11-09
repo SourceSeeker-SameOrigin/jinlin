@@ -1,4 +1,6 @@
 const api = require('../../utils/api');
+const { ymd } = require('../../utils/time');
+const { eventStatusNames, signupStatusNames, refundJobStatusNames } = require('../../utils/status-labels');
 
 function amountFen(value, field) {
   const match = /^\s*(\d+)(?:\.(\d{1,2}))?\s*$/.exec(String(value));
@@ -10,8 +12,9 @@ function amountFen(value, field) {
 
 Page({
   data: { loading: true, error: '', list: [], scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
-    startDate: '2026-12-01', startTime: '10:00', endDate: '2026-12-01', endTime: '12:00', deadlineDate: '2026-11-30', deadlineTime: '23:59',
-    types: ['interest', 'charity'], sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false },
+    startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
+    types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
+    sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -41,14 +44,22 @@ Page({
     if (this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try {
+      const toDate = (date, time, label) => {
+        if (!date) throw new Error('请选择' + label + '日期');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error(label + '日期或时间不正确');
+        const value = new Date(date + 'T' + time + ':00+08:00');
+        if (!Number.isFinite(value.getTime()) || ymd(value) !== date) throw new Error(label + '日期不存在');
+        return value;
+      };
+      const startAt = toDate(this.data.startDate, this.data.startTime, '活动开始');
+      const endAt = toDate(this.data.endDate, this.data.endTime, '活动结束');
+      const signupDeadline = toDate(this.data.deadlineDate, this.data.deadlineTime, '报名截止');
       const user = await getApp().ensureSession();
-      const toDate = (date, time) => new Date(date + 'T' + time + ':00+08:00');
       const created = await api.call('event', 'create', { title: this.data.title, desc: this.data.desc, location: this.data.location,
         type: this.data.type, fee: this.data.type === 'charity' ? 0 : amountFen(this.data.fee, '活动费用'), capacity: Number(this.data.capacity), communityIds: [user.communityId],
         sponsors: user.roles.includes('admin') && this.data.sponsorName && Number(this.data.sponsorAmount) > 0 ? [{ name: this.data.sponsorName,
           amount: amountFen(this.data.sponsorAmount, '赞助金额'), note: this.data.sponsorNote }] : [],
-        startAt: toDate(this.data.startDate, this.data.startTime), endAt: toDate(this.data.endDate, this.data.endTime),
-        signupDeadline: toDate(this.data.deadlineDate, this.data.deadlineTime) });
+        startAt, endAt, signupDeadline });
       await api.call('event', 'publish', { eventId: created.eventId });
       this.setData({ title: '', desc: '', location: '' }); await this.load();
     } catch (error) { this.setData({ error: error.message || '活动创建失败' }); }

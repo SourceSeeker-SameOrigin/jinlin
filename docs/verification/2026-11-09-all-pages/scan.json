@@ -2961,28 +2961,49 @@
     {
       "route": "board/create/create",
       "scenario": "network_failure",
-      "calls": [],
-      "errors": {},
-      "loading": true,
-      "uncaught": "ymd is not a function",
+      "calls": [
+        {
+          "name": "catalog",
+          "action": "getCommunity"
+        }
+      ],
+      "errors": {
+        "error": "合成网络失败"
+      },
+      "loading": false,
+      "uncaught": null,
       "navigation": []
     },
     {
       "route": "board/create/create",
       "scenario": "feature_off",
-      "calls": [],
-      "errors": {},
-      "loading": true,
-      "uncaught": "ymd is not a function",
+      "calls": [
+        {
+          "name": "catalog",
+          "action": "getCommunity"
+        }
+      ],
+      "errors": {
+        "error": "此功能暂未开放"
+      },
+      "loading": false,
+      "uncaught": null,
       "navigation": []
     },
     {
       "route": "board/create/create",
       "scenario": "unbound_network_failure",
-      "calls": [],
-      "errors": {},
-      "loading": true,
-      "uncaught": "ymd is not a function",
+      "calls": [
+        {
+          "name": "catalog",
+          "action": "getCommunity"
+        }
+      ],
+      "errors": {
+        "error": "合成网络失败"
+      },
+      "loading": false,
+      "uncaught": null,
       "navigation": []
     },
     {
