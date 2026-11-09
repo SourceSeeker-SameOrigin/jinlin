@@ -277,12 +277,24 @@ async function checkin(event, { user }) {
   const item = await server.get('events', event.eventId);
   ensure(item && (user.roles.includes('admin') || item.ownerOpenid === user.openid), '无权为该活动签到', 'E_FORBIDDEN');
   await enabled(item.communityIds[0]);
+  ensure(item.status === 'published', '活动未发布或已结束，不能签到', 'E_CONFLICT');
   const signupItem = await server.one('signups', { eventId: item._id, checkinCode: event.checkinCode });
   ensure(signupItem && signupItem.status === 'signed', '签到码无效或已签到', 'E_CONFLICT');
-  const result = await db.collection('signups').where({ _id: signupItem._id, status: 'signed' })
-    .update({ data: { status: 'checked_in', checkedInAt: new Date() } });
-  ensure(result.stats.updated === 1, '报名状态已变化，请重试', 'E_CONFLICT');
-  return { signupId: signupItem._id, status: 'checked_in' };
+  return atomic(db, async transaction => {
+    const currentEvent = await read(transaction, 'events', item._id);
+    ensure(currentEvent && (user.roles.includes('admin') || currentEvent.ownerOpenid === user.openid),
+      '无权为该活动签到', 'E_FORBIDDEN');
+    ensure(currentEvent.status === 'published', '活动状态已变化，不能签到', 'E_CONFLICT');
+    const current = await read(transaction, 'signups', signupItem._id);
+    ensure(current && current.eventId === item._id && current.checkinCode === event.checkinCode && current.status === 'signed',
+      '签到码无效或报名状态已变化', 'E_CONFLICT');
+    const revision = integer(currentEvent.checkinRevision === undefined ? 0 : currentEvent.checkinRevision,
+      '签到版本', 0, Number.MAX_SAFE_INTEGER - 1);
+    // Both check-in and cancellation write this event document, so they cannot commit from conflicting snapshots.
+    await transaction.collection('events').doc(item._id).update({ data: { checkinRevision: revision + 1 } });
+    await transaction.collection('signups').doc(current._id).update({ data: { status: 'checked_in', checkedInAt: new Date() } });
+    return { signupId: current._id, status: 'checked_in' };
+  });
 }
 
 async function listSignups(event, { user }) {

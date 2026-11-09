@@ -108,10 +108,15 @@ Page({
     } catch (error) { this.setData({ error: error.errMsg || '扫码失败', errorFromForm: false }); }
   },
   async checkin(event) {
+    if (this.data.busy || this.data.loading || !this.data.ready) return;
     const eventId = event.currentTarget.dataset.id;
+    const item = this.data.list.find(row => row._id === eventId);
+    if (!item || item.status !== 'published') return this.setData({ error: '活动未发布或已结束，不能签到', errorFromForm: false });
     if (!this.data.scanCode) return this.setData({ error: '请先扫描活动签到码', errorFromForm: false });
+    this.setData({ busy: true, error: '', errorFromForm: false });
     try { await api.call('event', 'checkin', { eventId, checkinCode: this.data.scanCode }); this.setData({ scanCode: '', error: '' }); }
     catch (error) { this.setData({ error: error.message || '签到失败', errorFromForm: false }); }
+    finally { this.setData({ busy: false }); }
   },
   async showSignups(event) {
     try {

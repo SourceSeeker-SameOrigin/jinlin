@@ -1353,9 +1353,11 @@
     "route": "events/manage/manage",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA26小区picker实际切换、上下表单/发布与取消卡片已核对；390宽度",
-    "successFlowThisRun": "示例花园0元/容量1活动真实创建发布、空报名名单读取及零报名取消通过；任务queued未执行",
-    "newFindings": [],
+    "liveUIThisRun": "QA26小区picker实际切换、上下表单/发布与取消卡片已核对；390宽度；QA29取消卡片不显示签到按钮，刷新实景已核对",
+    "successFlowThisRun": "示例花园0元/容量1活动真实创建发布、空报名名单读取及零报名取消通过；任务queued未执行；event旧批76文件云回读及只读列表/跨区拒绝通过；QA29本地40项通过，新代码未部署",
+    "newFindings": [
+      "QA29已批准修复；真实云并发与签到成功待验"
+    ],
     "userAcceptance": "待用户签收",
     "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收",
     "criteria": {
