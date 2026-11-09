@@ -2,7 +2,7 @@
   "sourceCommit": "3f8537e90310d110b6a9d3af15bacf3cdb252b7d",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "explicitly authorized; awaiting selected file and deployment",
+  "status": "deployed and verified: 76/76 files; live cancelled-event check-in rejected",
   "purpose": "QA29 published-only event check-in and transaction conflict protection",
   "operation": "Update existing event ordinary function and cloud install dependencies; code only",
   "totalBytes": 128987,
@@ -110,5 +110,29 @@
     "zipCrcAndSourceHashes": "passed",
     "liveUI": "Cancelled card hides check-in button; success and concurrency not verified live"
   },
-  "authorization": "User approved option A in conversation: upload existing event function code and cloud install dependencies, within stated limits."
+  "authorization": "User approved option A in conversation: upload existing event function code and cloud install dependencies, within stated limits.",
+  "progress": {
+    "event": {
+      "status": "deployed and verified",
+      "matches": 76,
+      "sdkVersion": "4.0.2",
+      "cloudRejection": "E_CONFLICT / 活动未发布或已结束，不能签到",
+      "liveBeforeAfter": "cancelled / 0 signups unchanged",
+      "configuration": {
+        "status": "normal",
+        "runtime": "Node.js 20.19",
+        "handler": "index.main",
+        "memoryMB": 256,
+        "timeoutSeconds": 3,
+        "modifiedAtBeijing": "2026-11-09 23:56:11",
+        "triggers": 0,
+        "httpDomains": 0,
+        "environmentVariables": "none shown"
+      },
+      "remaining": [
+        "real successful check-in",
+        "real cloud concurrency"
+      ]
+    }
+  }
 }

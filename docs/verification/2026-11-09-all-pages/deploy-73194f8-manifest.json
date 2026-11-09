@@ -291,7 +291,7 @@
       "status": "deployed and verified",
       "matches": 76,
       "live": "readonly management, empty signup list, cross-community detail denial, invalid offset denial",
-      "next": "QA29 new source pending separate deployment authorization"
+      "next": "QA29 event source 3f8537e separately deployed and 76/76 verified; see deploy-3f8537e-manifest.json"
     },
     "timer": {
       "status": "deployed and verified",

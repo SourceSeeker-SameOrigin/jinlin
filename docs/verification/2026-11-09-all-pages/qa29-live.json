@@ -1,5 +1,5 @@
 {
-  "scope": "Actual local frontend with existing cloud record; not QA29 cloud deployment",
+  "scope": "Actual frontend with existing cancelled activity; QA29 event now deployed and separately cloud-verified",
   "route": "events/manage/manage",
   "viewportWidth": 390,
   "selectedCommunity": "demo_community",
@@ -17,7 +17,7 @@
   },
   "limitations": [
     "Published success and other states covered locally only",
-    "Real cloud concurrency and resident check-in pending",
-    "QA29 event cloud code still pending package authorization"
-  ]
+    "Real cloud concurrency and resident check-in pending"
+  ],
+  "cloudEvidence": "qa29-cloud-live.json"
 }
