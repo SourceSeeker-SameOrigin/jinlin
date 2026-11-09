@@ -2,7 +2,7 @@
   "sourceCommit": "73194f8f337717a8a58930f29a9ae8264de3e061",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "authorized; console login restored; content awaiting manual file selection; no functions deployed",
+  "status": "content deployed and source verified; event awaiting manual file selection; timer pending",
   "deployOrder": [
     "content",
     "event",
@@ -283,10 +283,12 @@
   },
   "progress": {
     "content": {
-      "status": "upload window open; manual selection required; hash listener ready"
+      "status": "deployed and verified",
+      "matches": 76,
+      "live": "approved text notice publish/read/end verified"
     },
     "event": {
-      "status": "pending"
+      "status": "upload window open; manual selection required; hash listener ready"
     },
     "timer": {
       "status": "pending; do not apply triggers or invoke"

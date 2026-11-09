@@ -1,6 +1,6 @@
 # 全页面 UI 与功能验收册
 
-> 最新：首批与QA26–QA28详见[本轮记录](../verification/2026-11-09-all-pages/README.md)。P50真实示例活动管理通过所列样本；P29公告待QA28部署；不是69页完整通过。
+> 最新：首批与QA26–QA28详见[本轮记录](../verification/2026-11-09-all-pages/README.md)。P50真实示例活动管理通过所列样本；P29的content已部署，纯文字公告发布/读取/结束通过所列样本；不是69页完整通过。
 
 本册按 app.json 枚举全部69页。目标是逐页视觉符合设计、逐流程功能闭环；当前不是全量通过报告。原40个规格场景、15个关闭回归和4个真实支付场景继续以 [TEST_HANDOFF](../TEST_HANDOFF.md) 为准，不能被本册替代。
 
@@ -350,7 +350,7 @@
 - 页面操作清点：input、chooseImage、togglePinned、saveNotice、endNotice、adSlotChange、adTargetTypeChange、adPathChange、adStatusChange、saveAd、confirmAdReceived、endAd。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：content.endAd、content.endNotice、content.listAds、content.listNotices、content.markAdReceived、content.saveAd、content.saveNotice。
 - 本轮检查：静态引用通过；3组均无未捕获异常（非成功业务验收）。本轮实景UI/成功流程未验证，用户签收待完成。
-- QA28最新：实际选择示例花园、填表并点击发布后返回服务错误，未发布成功；5处校验参数已修复，本地26项通过。等待content部署后复验发布/读取/撤下；广告完整流程仍未验收。
+- QA28最新：content云端76/76文件回读一致；真实示例花园公告发布、完整内容回读、结束后列表移除且无错误已通过。390宽表单和非空公告已核对；同区普通住户查看、图片公告、广告完整流程与多尺寸仍未验收。
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P30 商家入驻审核

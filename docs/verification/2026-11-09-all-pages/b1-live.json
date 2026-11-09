@@ -44,7 +44,13 @@
     "submitted": true,
     "visibleError": "服务开小差了，请稍后再试",
     "listAfterFailure": [],
-    "status": "QA28 confirmed by matching local entry reproduction; fixed locally, live publish/retract pending content deployment"
+    "status": "QA28 deployed; actual text notice published, read back and ended",
+    "initialFailure": "服务开小差了，请稍后再试",
+    "id": "4dc64f446af1e5a600303657670aee68",
+    "published": true,
+    "ended": true,
+    "listAfterEnd": [],
+    "currentError": ""
   },
   "limitations": [
     "same-community resident signup/cancel not performed",
@@ -54,7 +60,7 @@
     "390-width UI partial; multisize and final user acceptance pending"
   ],
   "cloudConsole": {
-    "status": "login expired",
+    "status": "login restored",
     "message": "User login state expired"
   },
   "D05": "paused",
