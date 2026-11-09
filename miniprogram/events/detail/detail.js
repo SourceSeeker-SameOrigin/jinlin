@@ -5,16 +5,21 @@ const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
 const { signupStatusNames } = require('../../utils/status-labels');
 Page({
-  data: { loading: true, busy: false, error: '', item: null, signupStatusNames },
-  onLoad(options) { this.eventId = options.id; },
+  data: { missingRecord: false, loading: true, busy: false, error: '', item: null, signupStatusNames },
+  onLoad(options = {}) {
+    this.eventId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.eventId, loading: !!this.eventId });
+  },
   onShow() { this.load(); },
   async reportContent(event) {
+    if (!this.eventId) return;
     if(this.reporting)return;this.reporting=true;
     try { await reportAction.submit('event',this.eventId); }
     catch(error){this.setData({error:error.message||'举报提交失败'});}
     finally{this.reporting=false;}
   },
   async load() {
+    if (!this.eventId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -26,6 +31,7 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   async signup() {
+    if (!this.eventId) return;
     if (this.data.busy || !this.data.item || !this.data.item.canSignup && this.data.item.mySignup.status !== 'pending_pay') return;
     this.setData({ busy: true, error: '' });
     try {
@@ -42,6 +48,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async cancelSignup() {
+    if (!this.eventId) return;
     if (this.data.busy) return;
     const modal = await new Promise(resolve => wx.showModal({ title: '取消报名', content: '确认取消本次报名吗？截止前将按规则全额退款。', success: resolve }));
     if (!modal.confirm) return;

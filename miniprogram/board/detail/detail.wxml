@@ -1,3 +1,5 @@
+<view wx:if="{{missingRecord}}" class="page"><view class="card"><view class="section-title">缺少需求编号</view><view class="muted">请从需求广场选择记录后重新进入。</view><navigator url="/board/list/list" open-type="redirect"><button class="ui-button">前往需求广场</button></navigator></view></view>
+<block wx:else>
 <view class="page">
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button></view>
   <block wx:if="{{post}}">
@@ -15,3 +17,5 @@
   </block>
   <view wx:if="{{loading}}">正在加载…</view>
 </view>
+
+</block>

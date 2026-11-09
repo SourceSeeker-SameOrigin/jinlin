@@ -1,10 +1,10 @@
 const api = require('../../utils/api');
 const STATUS = { pending: '审核中', approved: '已通过', rejected: '未通过' };
 Page({
-  data: { loading: true, busy: false, error: '', communities: [], communityIndex: 0, stationIndex: 0, application: null },
+  data: { loading: true, busy: false, error: '', loadError: false, communities: [], communityIndex: 0, stationIndex: 0, application: null },
   onShow() { this.load(); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, error: '', loadError: false });
     try {
       await getApp().ensureSession();
       const [options, mine] = await Promise.all([
@@ -14,7 +14,7 @@ Page({
       const communities = options.list || [];
       this.setData({ communities, application: mine.application,
         communityIndex: Math.max(0, communities.findIndex(item => item._id === (mine.application && mine.application.communityId))), stationIndex: 0 });
-    } catch (error) { this.setData({ error: error.message || '驿站申请信息加载失败' }); }
+    } catch (error) { this.setData({ error: error.message || '驿站申请信息加载失败', loadError: true }); }
     finally { this.setData({ loading: false }); }
   },
   chooseCommunity(event) { this.setData({ communityIndex: Number(event.detail.value), stationIndex: 0 }); },

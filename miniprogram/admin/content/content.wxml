@@ -9,8 +9,8 @@
   </view>
   <view wx:if="{{authorized && communityId}}" class="card">
     <view class="section-title">发布本小区公告</view>
-    <input class="ui-input" placeholder="标题" data-field="title" value="{{title}}" bindinput="input" />
-    <textarea class="ui-textarea" placeholder="公告正文" data-field="body" value="{{body}}" bindinput="input" />
+    <view class="field"><view class="label">公告标题</view><input class="ui-input" placeholder="标题" data-field="title" value="{{title}}" bindinput="input" /></view>
+    <view class="field"><view class="label">公告正文</view><textarea class="ui-textarea" placeholder="公告正文" data-field="body" value="{{body}}" bindinput="input" /></view>
     <button size="mini" data-field="imageFileId" bindtap="chooseImage">选择公告图片（选填）</button><view wx:if="{{imageFileId}}" class="muted">已上传，发布后异步审核</view>
     <picker mode="date" data-field="endAt" bindchange="input"><view class="picker">有效期至：{{endAt || '请选择日期'}}</view></picker>
     <view class="row"><text>置顶</text><switch checked="{{pinned}}" bindchange="togglePinned" /></view>

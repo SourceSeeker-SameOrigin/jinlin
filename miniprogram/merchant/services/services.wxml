@@ -24,12 +24,12 @@
 <view class="label">计价单位</view>
 <input class="ui-input" placeholder="计价单位" data-field="unit" value="{{unit}}" bindinput="input"/>
 </view>
-<button bindtap="photos">上传服务图片（最多 9 张）</button>
+<button bindtap="photos" disabled="{{!ready || loading || busy}}">上传服务图片（最多 9 张）</button>
 <private-media wx:for="{{images}}" wx:key="*this" src="{{item}}" media-class="photo"/>
-<button type="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存为待审核服务</button>
+<button type="primary" bindtap="save" loading="{{busy}}" disabled="{{!ready || loading || busy}}">保存为待审核服务</button>
 <view class="muted">新服务默认下架；图片通过内容安全审核后，管理员才能上架。</view>
 </view>
-<view wx:if="{{error}}" class="error">{{error}}</view>
+<view wx:if="{{error}}" class="error">{{error}}<button wx:if="{{loadError}}" bindtap="load" disabled="{{loading}}">重新加载</button></view>
 <view class="card" wx:for="{{list}}" wx:key="_id">
 <view class="section-title">{{item.title}} · {{item.status === 'on' ? '已上架' : (item.status === 'off' ? '已下架' : '状态待确认')}}</view>
 <view>{{item.desc}}</view>

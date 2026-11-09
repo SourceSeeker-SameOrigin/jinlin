@@ -8,6 +8,6 @@
     <view class="row"><button class="ui-button" data-index="{{index}}" data-status="rejected" bindtap="review" disabled="{{busy}}">拒绝</button><button class="ui-button" type="primary" data-index="{{index}}" data-status="approved" bindtap="review" disabled="{{busy}}">通过并授权</button></view>
   </view>
   <view wx:if="{{loading}}" class="card">正在加载…</view>
-  <view wx:if="{{!loading && !rows.length}}" class="card">暂无待审核申请</view>
+  <view wx:if="{{!loading && !error && !rows.length}}" class="card">暂无待审核申请</view>
 </view>
 <privacy-popup/>

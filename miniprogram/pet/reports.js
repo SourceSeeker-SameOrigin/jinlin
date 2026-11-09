@@ -1,9 +1,13 @@
 const api = require('../utils/api');
 Page({
-  data: { loading: true, error: '', visits: [] },
-  onLoad(options) { this.orderId = options.id; },
+  data: { missingRecord: false, loading: true, error: '', visits: [] },
+  onLoad(options = {}) {
+    this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
+  },
   onShow() { this.load(); },
   async load() {
+    if (!this.orderId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();

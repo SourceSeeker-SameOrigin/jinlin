@@ -2,10 +2,14 @@ const api = require('../../utils/api');
 const { display } = require('../../utils/time');
 const { yuan } = require('../../utils/money');
 Page({
-  data: { loading: true, busy: false, error: '', post: null, comments: [], commentText: '' },
-  onLoad(options) { this.postId = options.id; },
+  data: { missingRecord: false, loading: true, busy: false, error: '', post: null, comments: [], commentText: '' },
+  onLoad(options = {}) {
+    this.postId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.postId, loading: !!this.postId });
+  },
   onShow() { this.load(); },
   async load() {
+    if (!this.postId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -24,6 +28,7 @@ Page({
   },
   input(event) { this.setData({ commentText: event.detail.value }); },
   async comment() {
+    if (!this.postId) return;
     if (this.data.busy || !this.data.commentText.trim()) return;
     this.commentRequestId = this.commentRequestId || Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
     this.setData({ busy: true, error: '' });
@@ -36,6 +41,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async report() {
+    if (!this.postId) return;
     const answer = await new Promise(resolve => wx.showModal({ title: '举报内容', content: '确认举报这条内容吗？', success: resolve }));
     if (!answer.confirm) return;
     try {
@@ -44,6 +50,7 @@ Page({
     } catch (error) { this.setData({ error: error.message || '举报失败' }); }
   },
   async reportComment(event) {
+    if (!this.postId) return;
     const commentId = event.currentTarget.dataset.id;
     const answer = await new Promise(resolve => wx.showModal({ title: '举报评论', content: '确认举报这条评论吗？', success: resolve }));
     if (!answer.confirm) return;
@@ -53,13 +60,17 @@ Page({
     } catch (error) { this.setData({ error: error.message || '举报失败' }); }
   },
   async close() {
+    if (!this.postId) return;
     const answer = await new Promise(resolve => wx.showModal({ title: '关闭内容', content: '关闭后将不再接受评论。确定吗？', success: resolve }));
     if (!answer.confirm) return;
     try { await api.call('board', 'close', { postId: this.postId }); await this.load(); }
     catch (error) { this.setData({ error: error.message || '关闭失败' }); }
   },
-  continuePayment() { if (this.data.post && this.data.post.orderId) wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(this.data.post.orderId) }); },
-  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.post.imageUrls }); },
-  onShareAppMessage() { return { title: this.data.post && this.data.post.title || '近邻帮需求',
+  continuePayment() {
+    if (!this.postId) return; if (this.data.post && this.data.post.orderId) wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(this.data.post.orderId) }); },
+  preview(event) {
+    if (!this.postId) return; require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.post.imageUrls }); },
+  onShareAppMessage() {
+    if (!this.postId) return { title: '需求广场', path: '/board/list/list' }; return { title: this.data.post && this.data.post.title || '近邻帮需求',
     path: '/board/detail/detail?id=' + encodeURIComponent(this.postId) }; }
 });

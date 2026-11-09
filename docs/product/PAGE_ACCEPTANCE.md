@@ -46,75 +46,75 @@
 
 |编号|页面/路径|角色与前置|开关|当前视觉记录|完整业务|用户签收|
 |---|---|---|---|---|---|---|
-|P01|近邻帮<br>pages/index/index|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|首页已实际显示已登录/门牌及完整目录；QA06警告复测通过|核心/扩展业务仍待完整验收|待确认|
-|P02|选择门牌<br>pages/bind/bind|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|楼栋选择与手填实际界面已看，完整U1–U7待验|本人保存成功，强制刷新绑定保留；多地址/异常赠券待验|待确认|
-|P03|代取快递<br>pages/service/express|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|真实地址、无报价禁用及QA04无类型警告已看|D13云及页面报价、件数边界通过；北门/放门口/价格栏已看，下单待验|待确认|
-|P04|代扔垃圾<br>pages/service/trash|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|真实绑定后页面已加载；完整视觉待验|D13云及页面报价通过；完整交互/下单待验|待确认|
-|P05|周边代买<br>pages/service/buy|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|真实绑定后页面已加载；完整视觉待验|D13云及页面服务费/商品款分离、上下限拒绝通过；下单待验|待确认|
-|P06|帮把手<br>pages/service/help|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|实际30分钟/超时规则及39元价格已看；全视觉待验|D13云及页面报价、旧模式/时长拒绝通过；建单待验|待确认|
-|P07|我的订单<br>pages/orders/list|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|已有模拟器截图；用户验收待做|待完整业务验收|待确认|
-|P08|订单详情<br>pages/orders/detail|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P09|我的月卡<br>pages/membership/index|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|实际空计划/空卡页面已加载|商业月卡计划及购买成功待验|待确认|
-|P10|我的<br>pages/me/me|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|已有模拟器截图；用户验收待做|待完整业务验收|待确认|
-|P11|隐私政策<br>pages/legal/privacy|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|已有模拟器截图；用户验收待做|待完整业务验收|待确认|
-|P12|服务协议<br>pages/legal/terms|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|QA10上下屏、新计价文案及返回实际核对；当前尺寸无裁切，多尺寸/大字体待验|待完整业务验收|待确认|
-|P13|服务员申请<br>provider/apply/apply|申请页为住户；工作页需已审服务员|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P14|服务员工作台<br>provider/workbench/workbench|申请页为住户；工作页需已审服务员|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P15|任务大厅<br>provider/hall/hall|申请页为住户；工作页需已审服务员|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P16|任务详情<br>provider/task/task|申请页为住户；工作页需已审服务员|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P17|我的收入<br>provider/earnings/earnings|申请页为住户；工作页需已审服务员|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P18|管理看板<br>admin/dashboard/dashboard|管理员；物业按接口与小区限制|核心或按操作关联模块|顶部/底部已看；完整视觉待验|零数据/小区选择/非法日期及恢复通过；非零待验|待确认|
-|P19|订单管理<br>admin/orders/orders|管理员；物业按接口与小区限制|核心或按操作关联模块|实际空列表已看|待报价筛选成功；非空/分页/操作待验|待确认|
-|P20|订单处理<br>admin/order/order|管理员；物业按接口与小区限制|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P21|服务员审核<br>admin/providers/providers|管理员；物业按接口与小区限制|核心或按操作关联模块|实际空列表已看|只读筛选通过；实名审核成功链待验|待确认|
-|P22|小区配置<br>admin/community/community|管理员；物业按接口与小区限制|核心或按操作关联模块|楼栋维护实景已看，长表单完整视觉待验|真实楼栋和D13运营参数保存回读通过；其他配置待验；QA15/QA16已修复，19项本地回归通过；本地校验滚顶和真实只读刷新已看；真实保存后故障链路待验|待确认|
-|P23|海报码<br>admin/posters/posters|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P24|结算<br>admin/settlements/settlements|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P25|功能开关<br>admin/features/features|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P26|内容举报审核<br>admin/reports/reports|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P27|聊天记录审计<br>admin/chat/chat|管理员；物业按接口与小区限制|核心或按操作关联模块|待实景核查|待完整业务验收|待确认|
-|P28|优惠券模板管理<br>admin/coupons/coupons|管理员；物业按接口与小区限制|核心或按操作关联模块|中文表单顶部/底部及选项已看|本地保存映射通过；真实发券待验|待确认|
-|P29|公告与广告管理<br>admin/content/content|管理员；物业按接口与小区限制|核心或按操作关联模块|中文广告上下半屏、管理小区已看|公告广告独立读取/小区选择通过；真实发布记账待验|待确认|
-|P30|商家入驻审核<br>admin/merchants/merchants|管理员；物业按接口与小区限制|核心或按操作关联模块|状态筛选及空列表已看|已通过筛选成功；真实服务上架/审核待验|待确认|
-|P31|回收企业月度对账<br>admin/recycle/recycle|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P32|数据导出<br>admin/exports/exports|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P33|驿站账号审核<br>admin/stations/stations|管理员；物业按接口与小区限制|核心或按操作关联模块|已实际加载，完整视觉待验|只读/空数据路径通过，真实写入及非空业务待验|待确认|
-|P34|站内消息<br>chat/list/list|真实微信用户，业务页需对应绑定/参与关系|chat|待实景核查|待完整业务验收|待确认|
-|P35|聊天<br>chat/room/room|真实微信用户，业务页需对应绑定/参与关系|chat|待实景核查|待完整业务验收|待确认|
-|P36|优惠券中心<br>coupons/center/center|真实微信用户，业务页需对应绑定/参与关系|coupons|待实景核查|待完整业务验收|待确认|
-|P37|我的优惠券<br>coupons/mine/mine|真实微信用户，业务页需对应绑定/参与关系|coupons|待实景核查|待完整业务验收|待确认|
-|P38|需求广场<br>board/list/list|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|待实景核查|待完整业务验收|待确认|
-|P39|求助详情<br>board/detail/detail|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|待实景核查|待完整业务验收|待确认|
-|P40|发布需求<br>board/create/create|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|待实景核查|待完整业务验收|待确认|
-|P41|闲置交易<br>idle/list/list|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P42|闲置详情<br>idle/detail/detail|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P43|发布闲置<br>idle/create/create|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P44|我的闲置<br>idle/mine/mine|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P45|担保交易订单<br>idle/sales/sales|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P46|卖家交付<br>idle/sale/sale|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P47|卖家收入<br>idle/income/income|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|待实景核查|待完整业务验收|待确认|
-|P48|社区活动<br>events/list/list|真实微信用户，业务页需对应绑定/参与关系|events|待实景核查|待完整业务验收|待确认|
-|P49|活动详情<br>events/detail/detail|真实微信用户，业务页需对应绑定/参与关系|events|待实景核查|待完整业务验收|待确认|
-|P50|活动管理<br>events/manage/manage|管理员／物业／商家|events|上下屏及日期打开/取消/确认已核对；QA14空日期提交滚顶和隐藏重试通过；全U1–U7待验|缺开始/结束日期拦截已看；修复后其他边界及真实创建/发布/报名退款待验|待确认|
-|P51|上门喂宠<br>pet/order|真实微信用户，业务页需对应绑定/参与关系|pet|待实景核查|待完整业务验收|待确认|
-|P52|喂宠上门清单<br>pet/work|该订单已接单服务员|pet|待实景核查|待完整业务验收|待确认|
-|P53|喂宠服务记录<br>pet/reports|真实微信用户，业务页需对应绑定/参与关系|pet|待实景核查|待完整业务验收|待确认|
-|P54|商家入驻<br>merchant/apply/apply|申请页为住户；工作页需已审商家|merchants|待实景核查|待完整业务验收|待确认|
-|P55|商家工作台<br>merchant/workbench/workbench|申请页为住户；工作页需已审商家|merchants|待实景核查|待完整业务验收|待确认|
-|P56|服务管理<br>merchant/services/services|申请页为住户；工作页需已审商家|merchants|待实景核查|待完整业务验收|待确认|
-|P57|商家预约订单<br>merchant/orders/orders|申请页为住户；工作页需已审商家|merchants|待实景核查|待完整业务验收|待确认|
-|P58|社区商家<br>shops/list/list|真实微信用户，业务页需对应绑定/参与关系|merchants|待实景核查|待完整业务验收|待确认|
-|P59|商家详情<br>shops/detail/detail|真实微信用户，业务页需对应绑定/参与关系|merchants|待实景核查|待完整业务验收|待确认|
-|P60|提交预约<br>shops/booking/booking|真实微信用户，业务页需对应绑定/参与关系|merchants|待实景核查|待完整业务验收|待确认|
-|P61|申请驿站账号<br>station/apply/apply|住户申请／驿站／服务员，按页面核验|stationDelivery|待实景核查|待完整业务验收|待确认|
-|P62|驿站工作台<br>station/workbench/workbench|住户申请／驿站／服务员，按页面核验|stationDelivery|待实景核查|待完整业务验收|待确认|
-|P63|创建送上门批次<br>station/create/create|住户申请／驿站／服务员，按页面核验|stationDelivery|待实景核查|待完整业务验收|待确认|
-|P64|驿站配送任务<br>station/worker/worker|住户申请／驿站／服务员，按页面核验|stationDelivery|待实景核查|待完整业务验收|待确认|
-|P65|驿站批次<br>station/batch/batch|住户申请／驿站／服务员，按页面核验|stationDelivery|待实景核查|待完整业务验收|待确认|
-|P66|送餐上门<br>elder/meal|真实微信用户，业务页需对应绑定/参与关系|elder|待实景核查|待完整业务验收|待确认|
-|P67|陪诊预约<br>elder/escort|真实微信用户，业务页需对应绑定/参与关系|elder|待实景核查|待完整业务验收|待确认|
-|P68|预约上门回收<br>recycle/order/order|真实微信用户，业务页需对应绑定/参与关系|recycle / points|待实景核查|待完整业务验收|待确认|
-|P69|小区公告<br>notices/list/list|真实微信用户，业务页需对应绑定/参与关系|notices|待实景核查|待完整业务验收|待确认|
+|P01|近邻帮<br>pages/index/index|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|首页已登录、珺悦与4项核心/19项目录可见；未开通标记已核对|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P02|选择门牌<br>pages/bind/bind|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|既有真实手填保存、强刷持久化；QA18加载失败空态隔离回归通过|本人绑定保存及强制刷新持久化已有真实证据；多地址/赠券异常/弱网仍待验|待确认|
+|P03|代取快递<br>pages/service/express|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|既有D13真实报价/件数边界、QA07提示及价格栏核对|真实报价与所述拒绝边界已验证；创建、支付、履约、退款未全验|待确认|
+|P04|代扔垃圾<br>pages/service/trash|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|既有D13真实报价、QA07提示核对|真实报价与所述拒绝边界已验证；创建、支付、履约、退款未全验|待确认|
+|P05|周边代买<br>pages/service/buy|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|既有服务费/商品款分离、上下限拒绝及QA07提示核对|真实报价与所述拒绝边界已验证；创建、支付、履约、退款未全验|待确认|
+|P06|帮把手<br>pages/service/help|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|既有39元/30分钟报价与超时不扣费说明核对|真实报价与所述拒绝边界已验证；创建、支付、履约、退款未全验|待确认|
+|P07|我的订单<br>pages/orders/list|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|实点进行中/已完成/售后三标签，加载至空结果；标签文字居中|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P08|订单详情<br>pages/orders/detail|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P09|我的月卡<br>pages/membership/index|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|月卡读取完成，暂无已购卡；本小区无可选计划，未购卡|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P10|我的<br>pages/me/me|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|下半屏五工作台及资格说明可见；点击商家显示未开通说明，管理员入口已有证据|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P11|隐私政策<br>pages/legal/privacy|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|隐私政策上下屏可读，无观察到当前尺寸裁切|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P12|服务协议<br>pages/legal/terms|真实微信用户，业务页需对应绑定/参与关系|核心或按操作关联模块|QA10协议上下屏和返回，按次/按时及不自动扣费说明已核对|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P13|服务员申请<br>provider/apply/apply|申请页为住户；工作页需已审服务员|核心或按操作关联模块|经真实工作台进入申请页，上下屏字段已看，未上传/提交|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P14|服务员工作台<br>provider/workbench/workbench|申请页为住户；工作页需已审服务员|核心或按操作关联模块|读取成功的无服务员资料状态、申请入口点击通过；QA18失败隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P15|任务大厅<br>provider/hall/hall|申请页为住户；工作页需已审服务员|核心或按操作关联模块|本人无服务员角色，直达后回首页；成功工作台未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P16|任务详情<br>provider/task/task|申请页为住户；工作页需已审服务员|核心或按操作关联模块|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P17|我的收入<br>provider/earnings/earnings|申请页为住户；工作页需已审服务员|核心或按操作关联模块|本人无服务员角色，当前直达回首页；QA19收入失败/恢复仅隔离验证|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P18|管理看板<br>admin/dashboard/dashboard|管理员；物业按接口与小区限制|核心或按操作关联模块|既有D07管理看板、13导航及零统计已看；非零数据未验|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P19|订单管理<br>admin/orders/orders|管理员；物业按接口与小区限制|核心或按操作关联模块|管理订单真实空列表/全部筛选与导出入口已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P20|订单处理<br>admin/order/order|管理员；物业按接口与小区限制|核心或按操作关联模块|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P21|服务员审核<br>admin/providers/providers|管理员；物业按接口与小区限制|核心或按操作关联模块|待审核服务员空列表已看，未审核|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P22|小区配置<br>admin/community/community|管理员；物业按接口与小区限制|核心或按操作关联模块|QA15非法数字保留/滚顶、QA16只读回读与草稿保留实景；真实写后读故障未验|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P23|海报码<br>admin/posters/posters|管理员；物业按接口与小区限制|核心或按操作关联模块|示例小区/楼栋与二维码生成表单已看；未生成码|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P24|结算<br>admin/settlements/settlements|管理员；物业按接口与小区限制|核心或按操作关联模块|结算小区/人员/日期/预览生成导出表单已看；未执行结算|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P25|功能开关<br>admin/features/features|管理员；物业按接口与小区限制|核心或按操作关联模块|全局及珺悦定位开启、扩展关闭状态上下屏已读；未改开关|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P26|内容举报审核<br>admin/reports/reports|管理员；物业按接口与小区限制|核心或按操作关联模块|举报空列表及三类标签可见；QA18读取失败隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P27|聊天记录审计<br>admin/chat/chat|管理员；物业按接口与小区限制|核心或按操作关联模块|无案件参数错误/重试，未出现虚假审计成功；真实案件未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P28|优惠券模板管理<br>admin/coupons/coupons|管理员；物业按接口与小区限制|核心或按操作关联模块|优惠券表单上下屏中文标签/单位已看；未创建发券|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P29|公告与广告管理<br>admin/content/content|管理员；物业按接口与小区限制|核心或按操作关联模块|公告标题正文常驻字段与小区选择已看；广告此前上下屏已看，未发布|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P30|商家入驻审核<br>admin/merchants/merchants|管理员；物业按接口与小区限制|核心或按操作关联模块|待审核商家筛选与空列表已看；未审核|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P31|回收企业月度对账<br>admin/recycle/recycle|管理员；物业按接口与小区限制|核心或按操作关联模块|回收月结日期/小区/导出入口已看；未导出|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P32|数据导出<br>admin/exports/exports|管理员；物业按接口与小区限制|核心或按操作关联模块|管理导出读取完成后表单已看；未生成文件|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P33|驿站账号审核<br>admin/stations/stations|管理员；物业按接口与小区限制|核心或按操作关联模块|驿站审核读取成功无申请；QA18失败隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P34|站内消息<br>chat/list/list|真实微信用户，业务页需对应绑定/参与关系|chat|聊天列表功能关闭，仅错误重试，无虚假空结果|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P35|聊天<br>chat/room/room|真实微信用户，业务页需对应绑定/参与关系|chat|无会话提示，图片/发送禁用实景；QA20恢复与离页迟到响应隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P36|优惠券中心<br>coupons/center/center|真实微信用户，业务页需对应绑定/参与关系|coupons|优惠券中心功能关闭提示已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P37|我的优惠券<br>coupons/mine/mine|真实微信用户，业务页需对应绑定/参与关系|coupons|我的券功能关闭提示及领券中心入口已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P38|需求广场<br>board/list/list|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|需求列表功能关闭，三类标签居中已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P39|求助详情<br>board/detail/detail|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P40|发布需求<br>board/create/create|真实微信用户，业务页需对应绑定/参与关系|board / travelCarry|求助/悬赏/帮带三表单上下屏、常驻标签与卡片已看；初始化失败禁用上传/发布|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P41|闲置交易<br>idle/list/list|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|闲置列表功能关闭提示已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P42|闲置详情<br>idle/detail/detail|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P43|发布闲置<br>idle/create/create|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|闲置发布上下屏常驻字段、卡片、失败禁用上传/保存已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P44|我的闲置<br>idle/mine/mine|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|我的闲置关闭提示，历史卖家订单/收入入口可见|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P45|担保交易订单<br>idle/sales/sales|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|历史卖家订单查询成功为空，收入入口可见|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P46|卖家交付<br>idle/sale/sale|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P47|卖家收入<br>idle/income/income|真实微信用户，业务页需对应绑定/参与关系|idle / idleEscrow|QA19真实关闭错误仅重试，不显示默认零收入或结算操作|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P48|社区活动<br>events/list/list|真实微信用户，业务页需对应绑定/参与关系|events|活动列表功能关闭提示已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P49|活动详情<br>events/detail/detail|真实微信用户，业务页需对应绑定/参与关系|events|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P50|活动管理<br>events/manage/manage|管理员／物业／商家|events|活动表单上下屏/日期打开取消确认，缺开始日期提交滚顶且无列表重试已实测；未发布|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P51|上门喂宠<br>pet/order|真实微信用户，业务页需对应绑定/参与关系|pet|喂宠上下屏数量行、任务换行；QA24实际价格栏¥--、确认禁用及底部不遮挡已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P52|喂宠上门清单<br>pet/work|该订单已接单服务员|pet|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P53|喂宠服务记录<br>pet/reports|真实微信用户，业务页需对应绑定/参与关系|pet|QA25缺编号提示/按钮实景通过；按钮实际返回我的订单|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P54|商家入驻<br>merchant/apply/apply|申请页为住户；工作页需已审商家|merchants|商家申请上下屏，失败重试/上传与提交禁用已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P55|商家工作台<br>merchant/workbench/workbench|申请页为住户；工作页需已审商家|merchants|QA17读取失败仅显示错误重试，不显示未申请状态|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P56|服务管理<br>merchant/services/services|申请页为住户；工作页需已审商家|merchants|本人无商家资格，直达回首页；QA20读取门槛隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P57|商家预约订单<br>merchant/orders/orders|申请页为住户；工作页需已审商家|merchants|本人无商家资格，直达回首页；真实订单未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P58|社区商家<br>shops/list/list|真实微信用户，业务页需对应绑定/参与关系|merchants|商家列表关闭错误及资质提示已看|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P59|商家详情<br>shops/detail/detail|真实微信用户，业务页需对应绑定/参与关系|merchants|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P60|提交预约<br>shops/booking/booking|真实微信用户，业务页需对应绑定/参与关系|merchants|QA23真实绑定地址无undefined；QA25缺编号隐藏预约表单/提交，实际返回商家列表|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P61|申请驿站账号<br>station/apply/apply|住户申请／驿站／服务员，按页面核验|stationDelivery|QA18功能关闭错误，无假未申请/申请表|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P62|驿站工作台<br>station/workbench/workbench|住户申请／驿站／服务员，按页面核验|stationDelivery|本人无驿站资格，直达回首页；成功工作台未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P63|创建送上门批次<br>station/create/create|住户申请／驿站／服务员，按页面核验|stationDelivery|建批次常驻门牌标签及每行格式已看，空表单禁用；未建批次|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P64|驿站配送任务<br>station/worker/worker|住户申请／驿站／服务员，按页面核验|stationDelivery|本人无配送资格，直达回首页；成功工作台未测|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P65|驿站批次<br>station/batch/batch|住户申请／驿站／服务员，按页面核验|stationDelivery|QA25缺编号提示/按钮实景通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P66|送餐上门<br>elder/meal|真实微信用户，业务页需对应绑定/参与关系|elder|食堂未配置/功能关闭；QA24实际价格栏及禁用确认已核对|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P67|陪诊预约<br>elder/escort|真实微信用户，业务页需对应绑定/参与关系|elder|陪诊字段、报价¥--及功能关闭已看；下半屏完整交互待验|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P68|预约上门回收<br>recycle/order/order|真实微信用户，业务页需对应绑定/参与关系|recycle / points|回收类别纸类实际切换选中，关闭态提交禁用；未下单|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
+|P69|小区公告<br>notices/list/list|真实微信用户，业务页需对应绑定/参与关系|notices|公告读取成功空列表；QA18读取失败隔离通过|未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF|待确认|
 
 ### P01 近邻帮
 
@@ -681,3 +681,8 @@
 6. 定位全局开关和珺悦坐标已按此前授权配置；真机允许/拒绝、GPS远近、前台共享和停止、坐标索引一致性仍待完整实测。
 7. 69页全部U1–U7/F1–F6、320/375/390/430宽度、大字体、键盘、安全区、所有状态以及用户设计签收仍未完成；四核心页局部通过不能外推全页/全设备。
 8. 原40场景、15关闭回归、4真实支付场景不缩减，全部平台、配置、上线前剩余事项见[当前完整清单](../verification/2026-11-09-all-pages/README.md#当前仍未完成不遗漏原验收范围)。
+
+
+## QA17–QA25逐项状态（2026-11-09）
+
+69页均有单独状态记录；完整通过页数仍为0（以全部UI/功能标准和用户签收计）。[机器可读台账](../verification/2026-11-09-all-pages/page-status.json)为每页列出U1–U7、F1–F6，共897个判定项；“部分”不计作“通过”。当前主要390逻辑宽度，其他尺寸/键盘/大字体、真实非空数据和多角色链路仍待验。最新证据和剩余分组见[续验报告](../verification/2026-11-09-all-pages/README.md)。

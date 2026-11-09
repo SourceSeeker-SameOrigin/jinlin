@@ -1,10 +1,14 @@
 const api = require('../utils/api');
 const { uploadPhotos, uploadVideo } = require('../utils/media');
 Page({
-  data: { loading: true, error: '', orderId: '', visits: [], entryPassword: '' },
-  onLoad(options) { this.orderId = options.id; },
+  data: { missingRecord: false, loading: true, error: '', orderId: '', visits: [], entryPassword: '' },
+  onLoad(options = {}) {
+    this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
+  },
   onShow() { this.load(); },
   async load() {
+    if (!this.orderId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -14,6 +18,7 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   async reveal(event) {
+    if (!this.orderId) return;
     try {
       const result = await api.call('pet', 'revealEntry', { orderId: this.orderId, visitId: event.currentTarget.dataset.id });
       this.setData({ entryPassword: result.entry });
@@ -21,6 +26,7 @@ Page({
   },
   closeSecret() { this.setData({ entryPassword: '' }); },
   async done(event) {
+    if (!this.orderId) return;
     const visitId = event.currentTarget.dataset.id;
     try {
       const choice = await new Promise(resolve => wx.showActionSheet({ itemList: ['拍摄 2 张照片', '录制视频'], success: resolve, fail: () => resolve(null) }));
@@ -32,6 +38,7 @@ Page({
     } catch (error) { this.setData({ error: error.message || '提交服务结果失败' }); }
   },
   async missed(event) {
+    if (!this.orderId) return;
     const visitId = event.currentTarget.dataset.id;
     const answer = await new Promise(resolve => wx.showModal({ title: '标记本次未完成', content: '系统将按本次上门金额发起部分退款。确认记录吗？', success: resolve }));
     if (!answer.confirm) return;

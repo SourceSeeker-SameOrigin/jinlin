@@ -6,13 +6,17 @@ const subscriptions = require('../../utils/subscriptions');
 const statuses = { pending_quote: '待报价', pending_pay: '待支付', paid: '待接单', accepted: '已接单', in_service: '服务中', delivered: '待确认',
   completed: '已完成', disputed: '售后处理中', refunded: '已退款', cancelled: '已取消', closed: '已关闭' };
 Page({
-  data: { loading: true, error: '', order: null, busy: false, timeline: [], detailRows: [],
+  data: { missingRecord: false, loading: true, error: '', order: null, busy: false, timeline: [], detailRows: [],
     ratingScore: '5', ratingText: '', complaintIndex: 0, complaintText: '',
     complaintReasons: ['未上门', '物品损坏或丢失', '态度', '其他'] },
-  onLoad(options) { this.orderId = options.id; },
+  onLoad(options = {}) {
+    this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
+  },
   onShow() { this.load(); },
   onPullDownRefresh() { this.load().finally(() => wx.stopPullDownRefresh()); },
   async load() {
+    if (!this.orderId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -50,6 +54,7 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   async cancel() {
+    if (!this.orderId) return;
     if (this.data.busy) return;
     const content = this.data.order.status === 'pending_quote' ? '确认取消这条尚未报价的预约吗？' : '确认取消这笔订单吗？已支付且未接单的订单将全额退款。';
     const answer = await new Promise(resolve => wx.showModal({ title: '取消订单', content, success: resolve }));
@@ -60,6 +65,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async pay() {
+    if (!this.orderId) return;
     if (this.data.busy) return;
     this.setData({ busy: true });
     try { await pay(await api.call('order', 'retryPayment', { orderId: this.orderId })); await this.load(); }
@@ -71,6 +77,7 @@ Page({
     if (provider && provider.canCall) wx.makePhoneCall({ phoneNumber: provider.phone });
   },
   async subscribeVisitReport() {
+    if (!this.orderId) return;
     if (this.data.busy || !this.data.order || this.data.order.serviceCode !== 'visit' || this.data.order.visitReport ||
       this.data.order.visitReportNotifyAuthorized) return;
     this.setData({ busy: true });
@@ -89,6 +96,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async subscribeVacantReport() {
+    if (!this.orderId) return;
     if (this.data.busy || !this.data.order || this.data.order.serviceCode !== 'vacant' || this.data.order.visitReportNotifyAuthorized) return;
     this.setData({ busy: true, error: '' });
     try {
@@ -100,11 +108,13 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   previewVacant(event) {
+    if (!this.orderId) return;
     const urls = this.data.vacantPhotoGroups.flatMap(group => group.photos);
     const current = event.currentTarget.dataset.url;
     if (urls.includes(current)) require('../../utils/media-links').preview({ current, urls });
   },
   openChat() {
+    if (!this.orderId) return;
     if (this.data.order && this.data.order.canChat) wx.navigateTo({ url: '/chat/room/room?conversationId=' + encodeURIComponent(this.chatConversationId || '') +
       '&orderId=' + encodeURIComponent(this.orderId) });
   },
@@ -113,6 +123,7 @@ Page({
     if (['ratingScore', 'ratingText', 'complaintIndex', 'complaintText'].includes(field)) this.setData({ [field]: event.detail.value });
   },
   async serviceAction(event) {
+    if (!this.orderId) return;
     const action = event.currentTarget.dataset.action;
     if (this.data.busy || !['confirm', 'rate', 'complain'].includes(action)) return;
     if (action === 'confirm') {
@@ -128,6 +139,8 @@ Page({
     } catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
-  ,openPetReports() { wx.navigateTo({ url: '/pet/reports?id=' + encodeURIComponent(this.orderId) }); }
+  preview(event) {
+    if (!this.orderId) return; require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: this.data.order.photos }); }
+  ,openPetReports() {
+    if (!this.orderId) return; wx.navigateTo({ url: '/pet/reports?id=' + encodeURIComponent(this.orderId) }); }
 });

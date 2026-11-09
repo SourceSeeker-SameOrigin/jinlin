@@ -23,7 +23,7 @@
 <view class="label">统一社会信用代码（18位）</view>
 <input class="ui-input" placeholder="统一社会信用代码（18 位）" data-field="creditCode" value="{{creditCode}}" bindinput="input"/>
 </view>
-<button bindtap="upload">{{licenseFileId ? '已上传营业执照，点击重选' : '拍摄/上传营业执照'}}</button>
+<button bindtap="upload" disabled="{{!ready || loading || busy}}">{{licenseFileId ? '已上传营业执照，点击重选' : '拍摄/上传营业执照'}}</button>
 <view class="field">
 <view class="label">联系人</view>
 <input class="ui-input" placeholder="联系人" data-field="contactName" value="{{contactName}}" bindinput="input"/>
@@ -34,6 +34,6 @@
 </view>
 <view wx:if="{{existing}}" class="muted">当前状态：{{merchantStatusNames[existing.status] || '状态待确认'}} {{existing.reviewNote}}</view>
 </view>
-<view wx:if="{{error}}" class="error">{{error}}</view>
-<button type="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">提交审核</button>
+<view wx:if="{{error}}" class="error">{{error}}<button wx:if="{{loadError}}" bindtap="load" disabled="{{loading}}">重新加载</button></view>
+<button type="primary" loading="{{busy}}" disabled="{{!ready || loading || busy}}" bindtap="submit">提交审核</button>
 </view>

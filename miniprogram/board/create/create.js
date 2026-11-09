@@ -4,7 +4,7 @@ const { ymd, addDays } = require('../../utils/time');
 const { toFen } = require('../../utils/money');
 const { pay } = require('../../utils/payment');
 Page({
-  data: { loading: true, busy: false, error: '', type: 'ask', title: '', content: '', scope: 'community',
+  data: { ready: false, loadError: false, loading: true, busy: false, error: '', type: 'ask', title: '', content: '', scope: 'community',
     federationEnabled: false, scopeOptions: ['本小区', '联合社区'], directionOptions: ['求帮带', '我能帮带'],
     destinationTypes: ['境内', '境外'], direction: 'request', destination: '', destinationType: 'domestic',
     departDate: '', departTime: '09:00', returnDate: '', returnTime: '18:00', disclaimerAgreed: false, images: [],
@@ -16,6 +16,9 @@ Page({
       slotDate: type === 'task' ? ymd(addDays(new Date(), 1)) : today, today }); },
   onShow() { this.load(); },
   async load() {
+    if (this.loadInFlight) return;
+    this.loadInFlight = true;
+    this.setData({ loading: true, ready: false, loadError: false, error: '' });
     try {
       const user = await getApp().ensureSession();
       this.user = user;
@@ -24,9 +27,11 @@ Page({
       const slotOptions = (community.dutyWindows || []).map(window => ({ ...window, label: window.start + '—' + window.end }));
       if (this.data.type === 'task' && !slotOptions.length) throw new Error('小区尚未配置值班时段，暂不能发布悬赏');
       this.setData({ federationEnabled: this.data.type !== 'task' && community.enabledFeatures.federation,
-        slotOptions, slotLabel: slotOptions[0] ? slotOptions[0].label : '', slotIndex: 0, needEnterHome: false });
-    } catch (error) { this.setData({ error: error.message || '页面初始化失败' }); }
-    finally { this.setData({ loading: false }); }
+        slotOptions, slotLabel: slotOptions[this.data.slotIndex] ? slotOptions[this.data.slotIndex].label : '',
+        slotIndex: this.data.slotIndex });
+      this.setData({ ready: true });
+    } catch (error) { this.setData({ loadError: true, error: error.message || '页面初始化失败' }); }
+    finally { this.loadInFlight = false; this.setData({ loading: false }); }
   },
   field(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   choose(event) {
@@ -44,11 +49,12 @@ Page({
   toggleEnterHome(event) { this.setData({ needEnterHome: event.detail.value.includes('yes') }); },
   scope(event) { this.setData({ scope: Number(event.detail.value) === 1 ? 'federation' : 'community' }); },
   async photos() {
+    if (!this.data.ready || this.data.loading || this.data.busy) return;
     try { this.setData({ images: await uploadPhotos('board/' + this.user._id, 3) }); }
     catch (error) { this.setData({ error: error.message || '图片上传失败' }); }
   },
   async submit() {
-    if (this.data.busy) return;
+    if (!this.data.ready || this.data.loading || this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try {
       const data = { requestId: this.requestId,

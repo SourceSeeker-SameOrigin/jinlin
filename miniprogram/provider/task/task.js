@@ -6,15 +6,19 @@ const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilitie
   { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
   { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
-  data: { loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+  data: { missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
     weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
     vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
-  onLoad(options) { this.orderId = options.id; },
+  onLoad(options = {}) {
+    this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
+  },
   onShow() { this.visible = true; this.load(); },
   onHide() { this.visible = false; this.stopLocationTimer(); },
   onUnload() { this.visible = false; this.stopLocationTimer(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   async load() {
+    if (!this.orderId) return;
     this.setData({ loading: true, error: '' });
     this.stopLocationTimer();
     try {
@@ -32,6 +36,7 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   async uploadLocation() {
+    if (!this.orderId) return;
     const order = this.data.order;
     if (!order || !order.canShareLocation || !['accepted','in_service'].includes(order.status) || this.locationBusy) return;
     this.locationBusy = true;
@@ -56,6 +61,7 @@ Page({
   vacantNotes(event) { this.setData({ vacantNotes: event.detail.value }); },
   vacantAttention(event) { this.setData({ vacantAttention: event.detail.value }); },
   async vacantPhoto(event) {
+    if (!this.orderId) return;
     const key = event.currentTarget.dataset.key;
     try {
       const files = await uploadPhotos('vacant/' + this.orderId + '/' + key, 1);
@@ -63,6 +69,7 @@ Page({
     } catch (error) { this.setData({ error: error.message || '照片上传失败，请重试' }); }
   },
   async revealEntry() {
+    if (!this.orderId) return;
     if (this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try {
@@ -72,6 +79,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async submitVacantReport() {
+    if (!this.orderId) return;
     if (this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try {
@@ -83,6 +91,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async photo(event) {
+    if (!this.orderId) return;
     try {
       const receipt = event.currentTarget.dataset.type === 'receipt';
       const files = await uploadPhotos('orders/' + this.orderId, receipt ? 1 : 3);
@@ -90,6 +99,7 @@ Page({
     } catch (error) { this.setData({ error: error.message || '未完成拍照上传，请重试' }); }
   },
   async act(event) {
+    if (!this.orderId) return;
     const action = event.currentTarget.dataset.action;
     if (this.data.busy || !['start', 'release', 'deliver'].includes(action)) return;
     if (action === 'release') {
@@ -108,8 +118,11 @@ Page({
     } catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  callResident() { if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
+  callResident() {
+    if (!this.orderId) return; if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
     success: () => { if (this.data.order.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
-  openChat() { wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
-  ,openPetTasks() { wx.navigateTo({ url: '/pet/work?id=' + encodeURIComponent(this.orderId) }); }
+  openChat() {
+    if (!this.orderId) return; wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
+  ,openPetTasks() {
+    if (!this.orderId) return; wx.navigateTo({ url: '/pet/work?id=' + encodeURIComponent(this.orderId) }); }
 });

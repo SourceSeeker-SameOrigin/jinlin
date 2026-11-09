@@ -3,7 +3,7 @@
   <view class="bind-steps"><view class="step"><text class="step-number">1</text>选择门牌</view><view class="step-line"></view><view class="step"><text class="step-number secondary">2</text>填写电话</view></view>
   <view wx:if="{{loading}}" class="card muted">正在加载…</view>
   <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重新加载</button></view>
-  <view wx:if="{{!loading && !communities.length}}" class="card">暂时没有可服务的小区</view>
+  <view wx:if="{{!loading && !error && !communities.length}}" class="card">暂时没有可服务的小区</view>
   <view wx:if="{{locationHint}}" class="notice">{{locationHint}}</view>
   <block wx:if="{{communities.length}}">
     <view class="card address-form">

@@ -5,7 +5,7 @@ const vm = require('vm');
 const assert = require('assert');
 const root = process.cwd();
 const results = [];
-function runtime(call = async () => { throw Error('Unexpected API call'); }) {
+function runtime(call = async () => { throw Error('Unexpected API call'); }, overrides = {}) {
   const store = {}, navigation = [], requests = [], cache = new Map();
   const app = { globalData: { user: { _id: 'fixture', roles: ['resident'] }, community: null },
     ensureSession: async () => app.globalData.user };
@@ -22,7 +22,8 @@ function runtime(call = async () => { throw Error('Unexpected API call'); }) {
       if (target === path.join(root, 'miniprogram/utils/api.js')) return { call: async (...args) => {
         requests.push(args); return call(...args);
       } };
-      if (target === path.join(root, 'miniprogram/utils/payment.js')) return { pay: async () => { throw Error('No payment'); } };
+      if (target === path.join(root, 'miniprogram/utils/payment.js')) return overrides.payment || { pay: async () => { throw Error('No payment'); } };
+      if (target === path.join(root, 'miniprogram/utils/media.js') && overrides.media) return overrides.media;
       if (!id.startsWith('.')) throw Error('External dependencies forbidden');
       return load(path.resolve(path.dirname(file), id));
     };

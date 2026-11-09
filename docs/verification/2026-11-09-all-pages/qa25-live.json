@@ -1,0 +1,64 @@
+{
+  "scope": "微信开发工具真实页面，iPhone12/13 Pro 390逻辑宽度；没有真实业务写入",
+  "pages": [
+    {
+      "route": "admin/order/order",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "board/detail/detail",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "events/detail/detail",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "idle/detail/detail",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "idle/sale/sale",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "pages/orders/detail",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "pet/reports",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "pet/work",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "provider/task/task",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "shops/booking/booking",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "shops/detail/detail",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    },
+    {
+      "route": "station/batch/batch",
+      "missingIdUI": "已核对截图及AX，提示和导航按钮可见；业务内容隐藏"
+    }
+  ],
+  "clickedReturns": [
+    "商家预约→商家列表",
+    "喂宠报告→我的订单标签页",
+    "订单详情→我的订单标签页"
+  ],
+  "notVerified": [
+    "其余9页导航按钮未逐个确认实点（路径及类型静态验证通过）；后续控制台输入/点击间歇性未执行",
+    "有效编号对应的真实非空业务",
+    "多尺寸/真机"
+  ],
+  "debugger": "编译后0错误4警告；连续导航期间平台/热更新/worker等警告累积，未声称零告警"
+}

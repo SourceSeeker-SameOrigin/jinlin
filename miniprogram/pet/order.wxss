@@ -1,3 +1,7 @@
 .date-row { display: flex; justify-content: space-between; padding: 12rpx 0; }
 .ui-input { padding: 0 8rpx; background: #F5F6F0; }
-.count-input { display: inline-block; width: 120rpx; }
+.pet-count-row { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; min-height: 100rpx; }
+.pet-count-row .label { margin: 0; flex: 1; }
+.pet-count-row .count-input { width: 160rpx; flex: none; height: 88rpx; min-height: 88rpx; text-align: center; box-sizing: border-box; }
+.pet-tasks { display: flex; flex-wrap: wrap; gap: 12rpx 24rpx; }
+.pet-task { display: flex; align-items: center; gap: 8rpx; min-height: 88rpx; }

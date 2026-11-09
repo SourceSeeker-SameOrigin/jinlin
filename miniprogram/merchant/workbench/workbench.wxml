@@ -8,6 +8,7 @@
 </view>
 <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button>
 </view>
+<block wx:if="{{!loading && !error}}">
 <block wx:if="{{merchant}}">
 <view class="card">
 <view class="section-title">{{merchant.name}}</view>
@@ -19,7 +20,8 @@
 </view>
 </view>
 </block>
-<view wx:elif="{{!loading}}" class="card">尚未提交商家申请<button bindtap="apply">申请入驻</button>
+<view wx:else class="card">尚未提交商家申请<button bindtap="apply">申请入驻</button>
 </view>
+</block>
 <view wx:if="{{loading}}">正在加载…</view>
 </view>

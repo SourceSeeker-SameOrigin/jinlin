@@ -1,3 +1,5 @@
+<view wx:if="{{missingRecord}}" class="page"><view class="card"><view class="section-title">缺少活动编号</view><view class="muted">请从活动列表选择记录后重新进入。</view><navigator url="/events/list/list" open-type="redirect"><button class="ui-button">前往活动列表</button></navigator></view></view>
+<block wx:else>
 <view class="page">
 <view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button>
 </view>
@@ -26,3 +28,5 @@
 <view wx:if="{{loading}}" class="card">正在加载…</view>
 <button wx:if="{{item}}" class="ui-button" bindtap="reportContent">举报活动</button>
 </view>
+
+</block>
