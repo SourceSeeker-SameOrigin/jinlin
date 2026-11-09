@@ -28,7 +28,7 @@ function runtime(call = async () => { throw Error('Unexpected API call'); }) {
     };
     vm.runInNewContext('(function(require,module,exports){' + fs.readFileSync(file, 'utf8') + '\n})',
       { wx, getApp: () => app, Page: value => { definition = value; }, Date, Promise, console,
-        setTimeout: () => 1, clearTimeout() {} }, { filename: file })(requireLocal, module, module.exports);
+        setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {} }, { filename: file })(requireLocal, module, module.exports);
     const value = definition || module.exports; cache.set(file, value); return value;
   }
   function instance(definition) {
