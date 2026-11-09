@@ -1,0 +1,104 @@
+{
+  "date": "2026-11-09",
+  "decision": "D07 resumed, explicit target and record access/role append authorized by user",
+  "environment": "cloud1-d4gbpd8zx89564fb6",
+  "targetUserIdSuffix": "16249b8",
+  "identityVerification": {
+    "source": "current WeChat mini-program console userId matched CloudBase users document",
+    "openidSha256DerivedUserIdMatched": true,
+    "rawOpenidStoredInRepository": false
+  },
+  "before": {
+    "roles": [
+      "resident"
+    ],
+    "blocked": false,
+    "hasPhone": false,
+    "hasCommunity": false,
+    "hasBuilding": false,
+    "adminAlertRecipientCount": 0
+  },
+  "afterCloudReadback": {
+    "roles": [
+      "resident",
+      "admin"
+    ],
+    "blocked": false,
+    "openidUnchanged": true,
+    "adminAlertRecipientCount": 1,
+    "targetIncluded": true,
+    "existingRecipientsPreserved": true,
+    "duplicateRecipients": 0
+  },
+  "writes": [
+    "Append admin to existing target users.roles",
+    "Append same verified openid to config/global.adminOpenids"
+  ],
+  "excludedWrites": [
+    "Phone or address binding",
+    "Other users or roles",
+    "Feature flags",
+    "Payment mode or keys",
+    "Timer triggers",
+    "Production configuration"
+  ],
+  "runtimeSessionRefreshed": true,
+  "runtimeAdminAccessVerified": true,
+  "runtimeBlocker": null,
+  "D05": "paused",
+  "D06": "paused",
+  "note": "Cloud configuration and seven authenticated admin read actions verified. Full dashboard visual, management writes, other identities and notification delivery remain unverified.",
+  "runtimeRoles": [
+    "resident",
+    "admin"
+  ],
+  "runtimeReadChecks": [
+    {
+      "action": "managementConfig",
+      "ok": true,
+      "communityCount": 2
+    },
+    {
+      "action": "dashboard",
+      "ok": true,
+      "totalOrders": 0
+    },
+    {
+      "action": "getFeatures",
+      "ok": true
+    },
+    {
+      "action": "listOrders",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "action": "listProviders",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "action": "listSettlements",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "action": "notificationTemplates",
+      "ok": true
+    }
+  ],
+  "uiVerified": [
+    "My page shows 管理员后台 / 进入管理后台 after session refresh"
+  ],
+  "dashboardPageVerified": false,
+  "uiIssue": {
+    "firstNavigation": "navigateTo:fail timeout",
+    "recovery": "Recompiled project; console errors reset to 0; dashboard page success not yet observed",
+    "remaining": "User asked to click My > Administrator manually; automatic UI clicks unreliable"
+  },
+  "consoleAfterRecompile": {
+    "errors": 0,
+    "warnings": 4,
+    "allWarningsClassified": false
+  }
+}
