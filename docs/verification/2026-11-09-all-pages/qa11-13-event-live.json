@@ -40,6 +40,14 @@
     "description": "前轮只读QA_CHANNEL命令因焦点错误进入AGENTS.md未保存编辑缓冲，当前截图确认",
     "diskVerifiedUnchanged": true,
     "gitWorktreeClean": true,
-    "resolution": "已告知用户并请求仅恢复误插入位置；未确认缓冲已恢复；停止自动输入"
+    "resolution": "代理已通过编辑器查找替换恢复误插入命令及额外换行，截图见原目录行恢复；已打开与磁盘文件比较视图，但最终差异与未保存标记核验时连接报告Mac已锁定。磁盘再次确认与HEAD一致、Git工作区干净；不要求用户手工修复。",
+    "bufferFinalComparisonVerified": false
+  },
+  "connectionRecheck": {
+    "date": "2026-11-09",
+    "native": "工具明确返回Mac已锁定；应用列表为空",
+    "browser": "工具返回Local browser use is disabled in Work settings；浏览器列表为空",
+    "newLivePasses": 0,
+    "scope": "工具状态，不据此否定用户已执行解锁；未更改锁屏或浏览器设置"
   }
 }
