@@ -2,7 +2,7 @@
   "sourceCommit": "02a4470508d9384802c8b5d0261091a4e309a771",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "explicitly authorized in conversation; upload pending manual file selection because browser upload tool rejects workspace paths",
+  "status": "authorized; order deployed and 77/77 files verified; admin awaiting manual selection",
   "deployOrder": [
     "order",
     "admin"
@@ -193,5 +193,15 @@
     "jest": 605,
     "d13Regression": 6,
     "zipCrcAndSourceHashes": "passed"
+  },
+  "progress": {
+    "order": {
+      "status": "deployed and verified",
+      "matches": 77,
+      "sdkVersion": "4.0.2"
+    },
+    "admin": {
+      "status": "awaiting manual file selection; browser hash capture ready"
+    }
   }
 }
