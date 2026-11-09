@@ -202,7 +202,7 @@ module.exports = function serviceForm(serviceCode) {
           couponOptions: (result.couponOptions || []).map(item => ({ ...item, label: item.name + ' · 减 ¥' + yuan(item.discount) })),
           couponsEnabled: result.couponsEnabled === true, pointsEnabled: result.pointsEnabled === true,
           pointsBalance: result.pointsBalance || 0,
-          dutyHint: result.onDutyCount > 0 ? '' : slots.length ? '现在没有服务员值班，最早 ' + slots[0].label + ' 上门' : '暂时没有可预约时段',
+          dutyHint: result.onDutyCount > 0 ? '' : slots.length ? '当前暂无服务员值班，可选择服务时段预约，实际服务以接单确认为准' : '暂时没有可预约时段',
           quote: result.pricing, amount: result.pricing ? yuan(result.pricing.payAmount + result.pricing.goodsCap) : '--', quoteError: result.validationMessage || '' });
         if (this.pendingSlot) {
           const restoredIndex = slots.findIndex(item => JSON.stringify(item.value) === JSON.stringify(this.pendingSlot));
