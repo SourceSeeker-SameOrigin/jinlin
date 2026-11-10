@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const listAll = require('../../utils/list-all');
 const CONTENT_PREPARATION = '公众平台添加与发布内容相匹配的类目；配置内容安全消息推送到 mediaCallback；指定专人每天处理举报。图片须在审核回调通过后展示。';
 const RECYCLE_PREPARATION = '与已备案的正规回收企业签约并作为商家入驻；逐小区配置分类积分单价、企业收购价、品类对应企业及服务员报酬；积分向下取整，企业金额四舍五入到分；缺项时不得开放。';
 const INFO = {
@@ -20,32 +21,34 @@ const INFO = {
 };
 const LABELS = { board:'需求广场',idle:'闲置交易',idleEscrow:'闲置担保',events:'社区活动',chat:'站内聊天',location:'地图定位',coupons:'优惠券',points:'环保积分',autoPayout:'自动打款',elder:'助老服务',pet:'上门喂宠',stationDelivery:'驿站送上门',recycle:'回收上门',merchants:'商家预约',vacantHome:'空置房巡检',travelCarry:'出行帮带',federation:'联合社区',ads:'广告位',notices:'物业公告' };
 Page({
-  data: { loading: true, saving: false, error: '', items: [], communities: [], communityIndex: 0, scope: 'community' },
+  data: { loading: true, ready: false, saving: false, error: '', items: [], communities: [], communityIndex: 0, scope: 'community' },
   onLoad() { this.load(); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, ready: false, error: '' });
     try {
       const user = await getApp().ensureSession();
       if (!user.roles.includes('admin')) throw new Error('只有运营管理员可配置扩展功能');
-      const result = await api.call('catalog', 'listCommunities', {}, { loading: false, silent: true });
-      this.setData({ communities: result.list, communityIndex: Math.max(0, result.list.findIndex(item => item._id === user.communityId)) });
+      const communities = await listAll('catalog', 'listCommunities');
+      this.setData({ communities, communityIndex: Math.max(0, communities.findIndex(item => item._id === user.communityId)) });
       await this.refresh();
     } catch (error) { this.setData({ error: error.message || '加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
   async refresh() {
+    this.setData({ ready: false });
     const community = this.data.communities[this.data.communityIndex];
     const result = await api.call('admin', 'getFeatures', { communityId: community && community._id }, { loading: false, silent: true });
-    this.setData({ communityId: result.communityId, global: result.global,
+    this.setData({ ready: true, communityId: result.communityId, global: result.global,
       items: Object.keys(LABELS).map(key => ({ key, label: LABELS[key], info: INFO[key], global: result.global[key] === true,
         community: Object.prototype.hasOwnProperty.call(result.community, key) ? result.community[key] === true : null,
         enabled: this.data.scope === 'global' ? result.global[key] === true :
           Object.prototype.hasOwnProperty.call(result.community, key) ? result.community[key] === true : result.global[key] === true })) });
     this.communityFeatures = result.community;
   },
-  choose(event) { this.setData({ communityIndex: Number(event.detail.value) }); this.refresh().catch(error => this.setData({ error: error.message })); },
-  scope(event) { this.setData({ scope: event.currentTarget.dataset.scope }); this.refresh().catch(error => this.setData({ error: error.message })); },
+  choose(event) { if (!this.data.ready || this.data.saving) return; this.setData({ communityIndex: Number(event.detail.value) }); this.refresh().catch(error => this.setData({ error: error.message })); },
+  scope(event) { if (!this.data.ready || this.data.saving) return; this.setData({ scope: event.currentTarget.dataset.scope }); this.refresh().catch(error => this.setData({ error: error.message })); },
   async toggle(event) {
+    if (!this.data.ready || this.data.saving) return;
     const key = event.currentTarget.dataset.key;
     const community = this.data.communities[this.data.communityIndex];
     const enabled = event.detail.value === true;

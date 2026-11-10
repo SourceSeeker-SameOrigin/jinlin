@@ -1,6 +1,6 @@
 const { requireLedgerFeatures } = require('./orderFeatures');
 const { requireRole, requireCommunityAccess } = require('./auth');
-const { ensure, text } = require('./validate');
+const { ensure, text, integer } = require('./validate');
 const { period, rowsForPayee, total, csv, settlementId, validatePayee, validateSettlementNote } = require('./settlementData');
 const { atomic, read, insert } = require('./transaction');
 const { isEnabled } = require('./features');
@@ -145,10 +145,11 @@ function adminSettlementActions(cloud, server) {
     const filter = {};
     if (user.roles.includes('property')) { filter.communityId = user.communityId; filter.payee = 'property'; }
     else if (event.communityId) filter.communityId = event.communityId;
-    const rows = await server.all('settlements', filter);
-    return { list: rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, 100).map(({ _id, payee, providerId, merchantId, sellerOpenid,
+    const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
+    const result = await db.collection('settlements').where(filter).orderBy('createdAt', 'desc').skip(offset).limit(20).get();
+    return { list: result.data.map(({ _id, payee, providerId, merchantId, sellerOpenid,
       communityId, period: range, total: amount, status, paidAt, note }) => ({ _id, payee, providerId, merchantId, communityId,
-      sellerOpenid, period: range, total: amount, status, paidAt, note })) };
+      sellerOpenid, period: range, total: amount, status, paidAt, note })), hasMore: result.data.length === 20 };
   }
   return { settlementPreview, settlementCreate, settlementMarkPaid, exportCsv, listSettlements };
 }

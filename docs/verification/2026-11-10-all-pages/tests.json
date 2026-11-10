@@ -1,0 +1,25 @@
+{
+  "jest": {
+    "suites": 53,
+    "tests": 624,
+    "passed": true
+  },
+  "qa32": 19,
+  "qa33": 24,
+  "qa34Frontend": 9,
+  "qa34Shared": 10,
+  "lifecycle": {
+    "pages": 69,
+    "scenarios": 207,
+    "scope": "isolated API failures only"
+  },
+  "componentRegistration": {
+    "templates": 77,
+    "problems": []
+  },
+  "styles": {
+    "pages": 69,
+    "issues": []
+  },
+  "limits": "No full visual or live business acceptance. admin deployment pending."
+}

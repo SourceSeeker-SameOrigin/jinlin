@@ -379,6 +379,7 @@
       "route": "admin/posters/posters",
       "filesComplete": true,
       "handlers": [
+        "retry",
         "changeCommunity",
         "generate",
         "providerChange",
@@ -399,7 +400,8 @@
         "input",
         "preview",
         "create",
-        "markPaid"
+        "markPaid",
+        "loadMoreHistory"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -510,6 +512,7 @@
       "route": "admin/recycle/recycle",
       "filesComplete": true,
       "handlers": [
+        "load",
         "select",
         "input"
       ],

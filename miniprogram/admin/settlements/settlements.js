@@ -1,15 +1,22 @@
 const api = require('../../utils/api');
+const listAll = require('../../utils/list-all');
 const { yuan } = require('../../utils/money');
 function merchantName(merchants, id) { const item = (merchants || []).find(merchant => merchant._id === id); return item ? item.name : ''; }
 Page({
-  data: { loading: true, authorized: false, isAdmin: false, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
-    payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [] },
+  data: { loading: true, ready: false, authorized: false, isAdmin: false, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
+    payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [],
+    historyLoading: false, historyError: '', historyHasMore: false, historyOffset: 0 },
+  onUnload() { this._closed = true; this._historyVersion = (this._historyVersion || 0) + 1; },
   onLoad() {
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today }); this.load();
   },
   async load() {
-    this.setData({ loading: true, error: '', authorized: false, isAdmin: false, preview: [], settlements: [] });
+    if (this._loading || this._closed) return;
+    this._loading = true;
+    this._historyVersion = (this._historyVersion || 0) + 1;
+    this.setData({ loading: true, ready: false, error: '', authorized: false, isAdmin: false, preview: [], settlements: [],
+      historyLoading: false, historyError: '', historyHasMore: false, historyOffset: 0 });
     try {
       const user = await getApp().ensureSession();
       const isAdmin = user.roles.includes('admin');
@@ -21,24 +28,53 @@ Page({
           api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true }),
           api.call('admin', 'listSettlements', {}, { loading: false, silent: true })
         ]);
-        this.setData({ communities: [community], communityIndex: 0, payeeIndex: 1, providers: [], merchants: [],
+        if (this._closed) return;
+        this.setData({ ready: true, communities: [community], communityIndex: 0, payeeIndex: 1, providers: [], merchants: [],
+          historyHasMore: settlements.hasMore === true, historyOffset: settlements.list.length,
           settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total) })) });
         return;
       }
       const [communities, providers, settlements, merchants] = await Promise.all([
-        api.call('catalog', 'listCommunities', {}, { loading: false, silent: true }),
-        api.call('admin', 'listProviders', { status: 'approved' }, { loading: false, silent: true }),
-        api.call('admin', 'listSettlements', {}, { loading: false, silent: true }), api.call('merchant', 'adminList', { status: 'approved' }, { loading: false, silent: true })
+        listAll('catalog', 'listCommunities'),
+        listAll('admin', 'listProviders', { status: 'approved' }),
+        api.call('admin', 'listSettlements', {}, { loading: false, silent: true }), listAll('merchant', 'adminList', { status: 'approved' })
       ]);
-      this.setData({ communities: communities.list, providers: providers.list,
-        merchants: merchants.list, settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(merchants.list, item.merchantId) })) });
-    } catch (error) { this.setData({ error: error.message || '加载失败' }); }
-    finally { this.setData({ loading: false }); }
+      if (this._closed) return;
+      this.setData({ ready: true, communities, providers,
+        historyHasMore: settlements.hasMore === true, historyOffset: settlements.list.length,
+        merchants, settlements: settlements.list.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(merchants, item.merchantId) })) });
+    } catch (error) { if (!this._closed) this.setData({ error: error.message || '加载失败' }); }
+    finally { this._loading = false; if (!this._closed) this.setData({ loading: false }); }
+  },
+  async loadMoreHistory() {
+    if (this._closed || !this.data.ready || this.data.loading || this.data.historyLoading || this.data.busy || !this.data.historyHasMore) return;
+    const version = this._historyVersion;
+    const offset = this.data.historyOffset;
+    this.setData({ historyLoading: true, historyError: '' });
+    try {
+      const result = await api.call('admin', 'listSettlements', { offset }, { loading: false, silent: true });
+      if (this._closed || version !== this._historyVersion) return;
+      if (!Array.isArray(result.list) || (result.hasMore && !result.list.length)) throw new Error('结算记录分页异常，请重试');
+      const seen = new Set(this.data.settlements.map(item => item._id));
+      const additions = [];
+      for (const item of result.list) {
+        if (!item || !item._id) throw new Error('结算记录编号缺失，请重试');
+        if (seen.has(item._id)) continue;
+        seen.add(item._id);
+        additions.push({ ...item, totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) });
+      }
+      this.setData({ settlements: this.data.settlements.concat(additions), historyOffset: offset + result.list.length,
+        historyHasMore: result.hasMore === true });
+    } catch (error) {
+      if (!this._closed && version === this._historyVersion) this.setData({ historyError: error.message || '结算记录加载失败，请重试' });
+    } finally {
+      if (!this._closed && version === this._historyVersion) this.setData({ historyLoading: false });
+    }
   },
   input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
-  select(event) { this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
+  select(event) { if (this.data.ready && !this.data.busy) this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
   request() {
-    if (!this.data.authorized) throw new Error('请先加载结算权限');
+    if (!this.data.authorized || !this.data.ready) throw new Error('请先完整加载结算选项与权限');
     const payee = !this.data.isAdmin ? 'property' : ['provider', 'property', 'merchant', 'seller'][this.data.payeeIndex];
     const community = this.data.communities[this.data.communityIndex];
     const provider = this.data.providers[this.data.providerIndex]; const merchant = this.data.merchants[this.data.merchantIndex];
@@ -47,6 +83,7 @@ Page({
       from: this.data.from, to: this.data.to };
   },
   async preview() {
+    if (!this.data.ready || this.data.busy) return;
     try {
       this.setData({ busy: true, error: '' });
       const result = await api.call('admin', 'settlementPreview', this.request());
@@ -55,7 +92,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async create() {
-    if (this.data.busy || !this.data.isAdmin) return;
+    if (this.data.busy || !this.data.ready || !this.data.isAdmin) return;
     try {
       this.setData({ busy: true, error: '' });
       const result = await api.call('admin', 'settlementCreate', this.request());
@@ -65,14 +102,14 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async markPaid(event) {
-    if (!this.data.isAdmin || this.data.busy) return;
+    if (!this.data.isAdmin || !this.data.ready || this.data.busy) return;
     try {
       await api.call('admin', 'settlementMarkPaid', { settlementId: event.currentTarget.dataset.id });
       await this.load();
     } catch (error) { this.setData({ error: error.message }); }
   },
   async exportCsv() {
-    if (!this.data.isAdmin) return;
+    if (!this.data.isAdmin || !this.data.ready || this.data.busy) return;
     try {
       const result = await api.call('admin', 'exportCsv', this.request());
       const filePath = await new Promise((resolve, reject) => wx.downloadFile({ url: result.tempFileURL,

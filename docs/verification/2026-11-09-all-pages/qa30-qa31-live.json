@@ -19,7 +19,7 @@
       }
     ],
     "phone": "用户反馈：iPhone 16 Pro Max首次扫码显示缺少订单编号，点击前往服务员工作台显示未提交服务员申请；退出后再次扫码仍正常显示缺少订单编号，未反馈空白。",
-    "localMode": "QA30-喂宠缺编号对照（project.private.config.json，未入Git；诊断结束后恢复普通编译）",
+    "localMode": "2026-11-10本轮已通过界面恢复普通编译；专用诊断配置仅本地保留，未入Git",
     "businessCodeChanged": false,
     "phoneChecks": {
       "source": "用户对话反馈，2026-11-10；非代理直接观察手机",
