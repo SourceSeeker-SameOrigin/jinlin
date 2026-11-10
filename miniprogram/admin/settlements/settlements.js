@@ -2,6 +2,10 @@ const api = require('../../utils/api');
 const listAll = require('../../utils/list-all');
 const { yuan } = require('../../utils/money');
 function merchantName(merchants, id) { const item = (merchants || []).find(merchant => merchant._id === id); return item ? item.name : ''; }
+function previewKey(row) {
+  const recipient = row.payee === 'provider' ? row.providerId : row.payee === 'merchant' ? row.merchantId : row.payee === 'seller' ? row.sellerOpenid : row.communityId;
+  return JSON.stringify([row.payee, row.communityId, recipient]);
+}
 Page({
   data: { loading: true, ready: false, authorized: false, isAdmin: false, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
     payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], previewRange: null, settlements: [],
@@ -105,7 +109,7 @@ Page({
       const previewRange = { from: request.from, to: request.to, communityName: this.data.communities[this.data.communityIndex].name };
       const result = await api.call('admin', 'settlementPreview', request);
       if (this._closed || version !== this._previewVersion) return;
-      this.setData({ previewRange, preview: result.rows.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) })) });
+      this.setData({ previewRange, preview: result.rows.map(item => ({ ...item, previewKey: previewKey(item), totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) })) });
     } catch (error) { if (!this._closed && version === this._previewVersion) this.setData({ error: error.message || '预览失败' }); }
     finally { if (!this._closed) this.setData({ busy: false }); }
   },
