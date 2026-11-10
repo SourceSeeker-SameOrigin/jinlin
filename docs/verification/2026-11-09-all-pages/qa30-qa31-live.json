@@ -18,9 +18,17 @@
         "result": "2026-11-10 10:07模拟器显示缺少订单编号、说明及返回按钮；截图核对，无业务操作"
       }
     ],
-    "phone": "已生成并展示二维码、交付三步核对；等待用户手机实际结果",
+    "phone": "用户反馈：首次扫码显示缺少订单编号，左上角为房子图标；点击前往服务员工作台后显示你还没有提交服务员申请及申请成为服务员按钮。重复扫码与手机型号待反馈。",
     "localMode": "QA30-喂宠缺编号对照（project.private.config.json，未入Git；诊断结束后恢复普通编译）",
-    "businessCodeChanged": false
+    "businessCodeChanged": false,
+    "phoneChecks": {
+      "source": "用户对话反馈，2026-11-10；非代理直接观察手机",
+      "initialMissingId": "通过",
+      "workbenchUnapplied": "通过",
+      "repeatScanBlank": "待反馈",
+      "deviceModel": "待提供",
+      "topNavigation": "用户看到房子图标、无返回箭头；直接启动页面未有上一页，页面内工作台入口已实点成功"
+    }
   },
   "qa31": {
     "decision": "用户A：采用28字文案",
@@ -108,7 +116,7 @@
     }
   },
   "boundaries": [
-    "不是QA30根因解决或真机通过",
+    "真机首次提示与返回未申请状态已有用户反馈；不是QA30根因解决、重复扫码或完整喂宠业务通过",
     "预览不等于正式上传发布或云函数更新",
     "D05/D06暂停；timer不运行、不改角色/绑定/业务开关；不合并main"
   ],

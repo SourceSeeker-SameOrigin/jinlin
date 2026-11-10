@@ -1409,14 +1409,14 @@
     "route": "pet/work",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回provider/workbench/workbench：重新从首页进入后提示正常，返回显示尚未提交服务员申请；此前偶发空白，QA30待真机对照",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回provider/workbench/workbench：重新从首页进入后提示正常，返回显示尚未提交服务员申请；此前偶发空白，QA30待真机对照；用户真机反馈首次扫码显示缺编号、点击进入服务员未申请页面",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复",
-      "QA30：导航后曾偶发空白，冷启动缺编号页正常；真机对照待反馈，未改喂宠逻辑"
+      "QA30：导航后曾偶发空白，冷启动缺编号页正常；真机首次提示与返回通过，重复扫码/机型待反馈，未改喂宠逻辑"
     ],
     "userAcceptance": "待用户签收",
-    "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收；QA30偶发空白对照复现与根因确认",
+    "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收；QA30偶发空白对照复现与根因确认；真机重复扫码和机型待反馈",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
