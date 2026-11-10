@@ -3,34 +3,43 @@ const TYPES = { post:'帖子', comment:'评论', idle:'闲置', event:'活动', 
 Page({
   data: { loading: false, busy: false, error: '', rows: [], hasMore: true, status: 'pending' },
   onShow() { this.load(true); },
+  onUnload() { this._closed = true; this.sequence = (this.sequence || 0) + 1; },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
+  retry() { return this.load(this._failedReset !== false); },
   async load(reset = false) {
-    this.setData({ loading: true, error: '' });
+    if (this._closed || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
+    const sequence = this.sequence = (this.sequence || 0) + 1;
+    const offset = reset ? 0 : this.data.rows.length;
+    this._failedReset = reset;
+    this.setData({ loading: true, error: '', ...(reset ? { rows: [], hasMore: true } : {}) });
     try {
-      const result = await api.call('content', 'listReports', { status: this.data.status, offset: reset ? 0 : this.data.rows.length }, { loading: false, silent: true });
+      const result = await api.call('content', 'listReports', { status: this.data.status, offset }, { loading: false, silent: true });
+      if (this._closed || sequence !== this.sequence) return;
       const rows = result.list.map(item => ({ ...item, typeLabel: TYPES[item.targetType] || item.targetType }));
       this.setData({ rows: reset ? rows : [...this.data.rows, ...rows], hasMore: result.hasMore });
-    } catch (error) { this.setData({ error: error.message || '举报列表加载失败' }); }
-    finally { this.setData({ loading: false }); }
+    } catch (error) { if (!this._closed && sequence === this.sequence) this.setData({ error: error.message || '举报列表加载失败' }); }
+    finally { if (!this._closed && sequence === this.sequence) this.setData({ loading: false }); }
   },
-  chooseStatus(event) { this.setData({ status: event.currentTarget.dataset.status }); this.load(true); },
+  chooseStatus(event) { if (this._closed || this.data.busy) return; this.setData({ status: event.currentTarget.dataset.status }); this.load(true); },
   openChat(event) {
+    if (this._closed || this.data.loading || this.data.busy) return;
     const row = this.data.rows[event.currentTarget.dataset.index];
+    if (!row) return;
     wx.navigateTo({ url: '/admin/chat/chat?caseType=report&reportId=' + encodeURIComponent(row._id) });
   },
   async resolve(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];
     const status = event.currentTarget.dataset.status;
-    if (this.data.busy) return;
+    if (this._closed || this.data.busy || this.data.loading || !row) return;
     this.setData({ busy: true, error: '' });
     try { await api.call('content', 'resolveReport', { reportId: row._id, status }); await this.load(true); }
-    catch (error) { this.setData({ error: error.message || '提交审核结果失败' }); }
-    finally { this.setData({ busy: false }); }
+    catch (error) { if (!this._closed) this.setData({ error: error.message || '提交审核结果失败' }); }
+    finally { if (!this._closed) this.setData({ busy: false }); }
   },
   async moderate(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];
     const kind = event.currentTarget.dataset.kind;
-    if (this.data.busy) return;
+    if (this._closed || this.data.busy || this.data.loading || !row) return;
     this.setData({ busy: true, error: '' });
     try {
       if (kind === 'hide' || kind === 'show') await api.call('content', 'moderateContent', {
@@ -39,7 +48,7 @@ Page({
         operation: kind === 'mute' ? 'mute' : 'block', hours: 24 });
       else throw new Error('无法定位内容发布者账号');
       await this.load(true);
-    } catch (error) { this.setData({ error: error.message || '内容管理操作失败' }); }
-    finally { this.setData({ busy: false }); }
+    } catch (error) { if (!this._closed) this.setData({ error: error.message || '内容管理操作失败' }); }
+    finally { if (!this._closed) this.setData({ busy: false }); }
   }
 });

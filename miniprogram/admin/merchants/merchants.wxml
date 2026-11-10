@@ -9,7 +9,7 @@
 <picker range="{{statusLabels}}" value="{{statusIndex}}" bindchange="filter" disabled="{{busy}}">
 <view class="card">商家状态：{{statusLabels[statusIndex]}}</view>
 </picker>
-<view wx:if="{{error}}" class="error">{{error}}<button bindtap="load">重试</button>
+<view wx:if="{{error}}" class="error">{{error}}<button bindtap="retry" disabled="{{loading || busy}}">重试</button>
 </view>
 <view wx:for="{{list}}" wx:key="_id" class="card" data-id="{{item._id}}" bindtap="inspect">
 <view class="section-title">{{item.name}} · {{item.categoryName}} · {{statusNames[item.status] || '状态待确认'}}</view>
@@ -20,15 +20,20 @@
 </view>
 <view wx:if="{{loading}}">正在加载…</view>
 <view wx:elif="{{!list.length && !error}}" class="card">暂无符合条件的商家</view>
+<button wx:if="{{hasMore && !error}}" bindtap="loadMore" disabled="{{loading || busy}}">加载更多商家</button>
 <view wx:if="{{selected}}" class="card">
 <view class="section-title">服务审核：{{selected.name}}</view>
+<view wx:if="{{servicesError}}" class="error">{{servicesError}}<button bindtap="retryServices" disabled="{{servicesLoading || busy}}">重试读取服务</button></view>
+<view wx:if="{{servicesLoading}}">正在加载服务…</view>
+<view wx:elif="{{!servicesError && !services.length}}">暂无服务</view>
 <view wx:for="{{services}}" wx:key="_id" class="service">
 <view>{{item.title}} · <text wx:if="{{item.priceType === 'fixed'}}">固定价：¥{{item.priceText}} / {{item.unit || '次'}}</text>
 <text wx:else>预约后报价</text> · {{item.status === 'on' ? '已上架' : (item.status === 'off' ? '已下架' : '状态待确认')}}</view>
-<button wx:if="{{selected.status === 'approved' && item.status === 'off'}}" size="mini" data-id="{{item._id}}" data-status="on" bindtap="serviceStatus">上架</button>
-<button wx:elif="{{selected.status === 'approved'}}" size="mini" data-id="{{item._id}}" data-status="off" bindtap="serviceStatus">下架</button>
+<button wx:if="{{selected.status === 'approved' && item.status === 'off'}}" size="mini" data-id="{{item._id}}" data-status="on" bindtap="serviceStatus" disabled="{{busy || loading || servicesLoading}}">上架</button>
+<button wx:elif="{{selected.status === 'approved'}}" size="mini" data-id="{{item._id}}" data-status="off" bindtap="serviceStatus" disabled="{{busy || loading || servicesLoading}}">下架</button>
 </view>
-<button wx:if="{{selected.status === 'pending'}}" type="primary" data-approved="true" bindtap="review" disabled="{{busy}}">通过入驻</button>
-<button wx:if="{{selected.status === 'pending'}}" data-approved="false" bindtap="review" disabled="{{busy}}">拒绝申请</button>
+<button wx:if="{{servicesHasMore && !servicesError}}" bindtap="loadMoreServices" disabled="{{servicesLoading || busy}}">加载更多服务</button>
+<button wx:if="{{selected.status === 'pending'}}" type="primary" data-approved="true" bindtap="review" disabled="{{busy || loading || servicesLoading}}">通过入驻</button>
+<button wx:if="{{selected.status === 'pending'}}" data-approved="false" bindtap="review" disabled="{{busy || loading || servicesLoading}}">拒绝申请</button>
 </view>
 </view>

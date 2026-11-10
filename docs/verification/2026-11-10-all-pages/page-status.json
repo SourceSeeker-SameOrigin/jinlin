@@ -498,12 +498,14 @@
     "title": "订单管理",
     "route": "admin/orders/orders",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）；QA40读取乱序/失败/离页专项回归通过",
     "liveUIThisRun": "管理订单真实空列表/全部筛选与导出入口已看",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [],
+    "newFindings": [
+      "QA40：新筛选失败仍留旧列表、离页迟到更新，本地复现，已批准A并修复，本地回归通过；真实非空状态待验"
+    ],
     "userAcceptance": "待用户签收",
-    "remaining": "非空筛选/分页、订单处理往返和导出；未完成的多尺寸/大字体/键盘及用户视觉签收另列",
+    "remaining": "非空筛选/分页、订单处理往返和导出；未完成的多尺寸/大字体/键盘及用户视觉签收另列；QA40：新筛选失败仍留旧列表、离页迟到更新，本地复现，本地修复已通过，真实回归待验",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
@@ -554,12 +556,14 @@
     "title": "服务员审核",
     "route": "admin/providers/providers",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）；QA40读取乱序/失败/离页专项回归通过",
     "liveUIThisRun": "待审核服务员空列表已看，未审核",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [],
+    "newFindings": [
+      "QA40：新筛选失败仍留旧列表、离页迟到更新，本地复现，已批准A并修复，本地回归通过；真实非空状态待验"
+    ],
     "userAcceptance": "待用户签收",
-    "remaining": "真实申请审核、退回、敏感图片处理；未完成的多尺寸/大字体/键盘及用户视觉签收另列",
+    "remaining": "真实申请审核、退回、敏感图片处理；未完成的多尺寸/大字体/键盘及用户视觉签收另列；QA40：新筛选失败仍留旧列表、离页迟到更新，本地复现，本地修复已通过，真实回归待验",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
@@ -702,12 +706,14 @@
     "title": "内容举报审核",
     "route": "admin/reports/reports",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）；QA40读取乱序/失败/离页专项回归通过",
     "liveUIThisRun": "举报空列表及三类标签可见；QA18读取失败隔离通过",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [],
+    "newFindings": [
+      "QA40：旧筛选响应覆盖新结果、离页迟到更新，本地复现，已批准A并修复，本地回归通过；真实非空状态待验"
+    ],
     "userAcceptance": "待用户签收",
-    "remaining": "真实举报、下架/驳回与关联业务；未完成的多尺寸/大字体/键盘及用户视觉签收另列",
+    "remaining": "真实举报、下架/驳回与关联业务；未完成的多尺寸/大字体/键盘及用户视觉签收另列；QA40：旧筛选响应覆盖新结果、离页迟到更新，本地复现，本地修复已通过，真实回归待验",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
@@ -814,14 +820,15 @@
     "title": "商家入驻审核",
     "route": "admin/merchants/merchants",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）；QA40读取乱序/失败/离页专项回归通过",
     "liveUIThisRun": "待审核商家筛选与空列表已看；未审核",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
-      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验"
+      "QA11 中文/标签/金额展示，已批准并完成本地修复，实景待验",
+      "QA40离页保护、QA41商家20条/服务100条无完整分页，本地复现，已批准A并修复，本地回归通过；真实非空状态待验"
     ],
     "userAcceptance": "待用户签收",
-    "remaining": "真实商家资料、审核与通过商家服务管理；未完成的多尺寸/大字体/键盘及用户视觉签收另列",
+    "remaining": "真实商家资料、审核与通过商家服务管理；未完成的多尺寸/大字体/键盘及用户视觉签收另列；QA40离页保护、QA41商家20条/服务100条无完整分页，本地复现，本地修复已通过，真实回归待验；QA41 merchant新包尚未部署，云端分页待验",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
@@ -873,21 +880,22 @@
     "route": "admin/exports/exports",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "2026-11-11两段用户真机录屏：四类导出切换、日期、返回再进入已见；物业/卖家及养老CSV查看器打开并见表头，非空数据和文件内容未验。QA38/39按A修复，9组新回归、15组关联回归、624单测及77WXML/78WXSS编译通过；新版实景待验。",
+    "liveUIThisRun": "第三段205.63秒新版真机录屏：分组卡片/常驻标签/箭头可见，缺服务员提示无重新加载，切换物业/导出类型清旧错误，四类型切换及CSV查看器返回恢复已见；录屏尺寸无明显裁切。QA42空选择器已批准并完成本地整改，新版真机待验。",
     "successFlowThisRun": "真机录像显示部分CSV生成/打开及返回、四类切换和功能关闭拒绝；原文件内容、非空业务及完整闭环未验。",
     "newFindings": [
       "QA36已批准A并修复：读取成功才可导出，失败保留草稿、重试只读、离页不更新或打开迟到文件；14项隔离回归通过。真实文件与新页面实景待验。",
       "QA38旧校验错误与加载重试混淆：已批准A并修复，本地回归通过；新版实景待验",
-      "QA39导出表单卡片/标签/箭头/间距：已批准A并整改，官方编译通过；新版视觉待验"
+      "QA39导出表单卡片/标签/箭头/间距：已批准A并整改，官方编译通过；新版视觉待验",
+      "QA42空选择器已修复，本地通过，真机待验"
     ],
     "userAcceptance": "待用户签收",
-    "remaining": "QA38/39新版真机视觉及交互；四类非空CSV字段/金额/脱敏、回收与驿站启用后成功导出、下载失败/离页真实恢复；多尺寸、大字体、键盘与用户签收",
+    "remaining": "QA42空选择器新版真机待验；四类非空CSV字段/金额/脱敏、回收与驿站启用后成功导出、读取/下载失败及离页真实恢复；多尺寸、大字体、键盘与用户最终签收",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
       "U3": "部分核对，未完整通过；见liveUIThisRun",
       "U4": "手机录屏当前尺寸已核对；视频编码尺寸不作为CSS宽度，QA39新版、多尺寸、大字体与键盘待验",
-      "U5": "旧版加载、校验错误、关闭拒绝及返回有录像；QA38新版错误恢复隔离通过，真实弱网待验",
+      "U5": "新版录屏确认缺对象校验、功能未开放错误、切换清错；真实读取/下载失败未验",
       "U6": "部分核对，未完整通过；见liveUIThisRun",
       "U7": "部分核对，未完整通过；见liveUIThisRun",
       "F1": "真机录像显示部分CSV生成/打开及返回、四类切换和功能关闭拒绝；原文件内容、非空业务及完整闭环未验。",
@@ -903,12 +911,14 @@
     "title": "驿站账号审核",
     "route": "admin/stations/stations",
     "staticReferences": "通过（静态检查范围）",
-    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
+    "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）；QA40读取乱序/失败/离页专项回归通过",
     "liveUIThisRun": "驿站审核读取成功无申请；QA18失败隔离通过",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
-    "newFindings": [],
+    "newFindings": [
+      "QA40：旧分页混入重载结果、离页迟到更新，本地复现，已批准A并修复，本地回归通过；真实非空状态待验"
+    ],
     "userAcceptance": "待用户签收",
-    "remaining": "真实驿站申请、审核与角色授予；未完成的多尺寸/大字体/键盘及用户视觉签收另列",
+    "remaining": "真实驿站申请、审核与角色授予；未完成的多尺寸/大字体/键盘及用户视觉签收另列；QA40：旧分页混入重载结果、离页迟到更新，本地复现，本地修复已通过，真实回归待验",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",

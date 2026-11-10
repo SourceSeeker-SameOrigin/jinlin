@@ -70,6 +70,7 @@ Page({
   select(event) {
     if (this._closed || !this.data.ready || this.data.loading || this.data.busy) return;
     const field = event.currentTarget.dataset.field;
+    if ((field === 'providerIndex' && !this.data.providers.length) || (field === 'merchantIndex' && !this.data.merchants.length)) return;
     const changed = this.changeCondition(field, ['from', 'to'].includes(field) ? event.detail.value : Number(event.detail.value));
     if (changed && field === 'communityIndex') return this.loadCommunity();
   },

@@ -96,7 +96,7 @@ async function test(name, fn) {
     const s = fs.readFileSync('miniprogram/admin/exports/exports.wxml', 'utf8');
     assert(/button wx:if="\{\{errorKind === 'load'\}\}"[^>]*bindtap="load">重新加载/.test(s));
     assert.equal((s.match(/<picker /g) || []).length, 8);
-    assert.equal((s.match(/<picker disabled="\{\{busy\}\}"/g) || []).length, 8);
+    assert.equal((s.match(/<picker disabled="\{\{busy[^"]*\}\}"/g) || []).length, 8);
     assert.equal((s.match(/class="export-arrow"/g) || []).length, 8);
     for (const label of ['导出类型','小区','收款对象','服务员','商家','驿站','开始日期','结束日期','卖家编号（OpenID，选填）']) assert(s.includes('<view class="label">' + label + '</view>'));
     assert(s.includes('wx:if="{{ready && !loading}}"'));

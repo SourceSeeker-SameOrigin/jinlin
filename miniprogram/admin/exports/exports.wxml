@@ -26,11 +26,11 @@
       </view>
       <view wx:if="{{typeIndex === 0 && payeeIndex === 0}}" class="field">
         <view class="label">服务员</view>
-        <picker disabled="{{busy}}" range="{{providers}}" range-key="realName" value="{{providerIndex}}" data-field="providerIndex" bindchange="select"><view class="picker export-picker"><text class="export-value">{{providers[providerIndex].realName || '选择服务员'}}</text><text class="export-arrow">›</text></view></picker>
+        <picker disabled="{{busy || !providers.length}}" range="{{providers}}" range-key="realName" value="{{providerIndex}}" data-field="providerIndex" bindchange="select"><view class="picker export-picker"><text class="export-value">{{providers.length ? (providers[providerIndex].realName || '选择服务员') : '暂无已审核服务员'}}</text><text class="export-arrow">›</text></view></picker>
       </view>
       <view wx:if="{{typeIndex === 0 && payeeIndex === 2}}" class="field">
         <view class="label">商家</view>
-        <picker disabled="{{busy}}" range="{{merchants}}" range-key="name" value="{{merchantIndex}}" data-field="merchantIndex" bindchange="select"><view class="picker export-picker"><text class="export-value">{{merchants[merchantIndex].name || '选择商家'}}</text><text class="export-arrow">›</text></view></picker>
+        <picker disabled="{{busy || !merchants.length}}" range="{{merchants}}" range-key="name" value="{{merchantIndex}}" data-field="merchantIndex" bindchange="select"><view class="picker export-picker"><text class="export-value">{{merchants.length ? (merchants[merchantIndex].name || '选择商家') : '暂无已审核商家'}}</text><text class="export-arrow">›</text></view></picker>
       </view>
       <view wx:if="{{typeIndex === 0 && payeeIndex === 3}}" class="field">
         <view class="label">卖家编号（OpenID，选填）</view>

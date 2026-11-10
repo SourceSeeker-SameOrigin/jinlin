@@ -311,8 +311,10 @@ async function setServiceStatus(event, { user }) {
 async function adminServices(event, { user }) {
   requireRole(user, ['admin']);
   text(event.merchantId, '商家');
-  const rows = await db.collection('merchantServices').where({ merchantId: event.merchantId }).orderBy('createdAt', 'desc').limit(100).get();
-  return { list: rows.data.map(visibleService) };
+  const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
+  const rows = await db.collection('merchantServices').where({ merchantId: event.merchantId })
+    .orderBy('createdAt', 'desc').skip(offset).limit(20).get();
+  return { list: rows.data.map(visibleService), hasMore: rows.data.length === 20 };
 }
 
 exports.main = server.entry({ apply, myApplication, listForCommunity, servicesForMerchant, adminList, review,
