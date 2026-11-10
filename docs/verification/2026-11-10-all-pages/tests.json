@@ -21,5 +21,5 @@
     "pages": 69,
     "issues": []
   },
-  "limits": "No full visual or live business acceptance. admin deployment pending."
+  "limits": "No full visual or live business acceptance. admin deployed and 76/76 source files verified; live empty pagination and invalid offset verified; nonempty pagination pending."
 }
