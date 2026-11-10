@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-10",
+  "scope": "QA30模拟器对照和QA31官方预览；未执行真实业务写入",
+  "qa30": {
+    "decision": "用户A：先真机与模拟器对照，再决定代码修改",
+    "rootCause": "未知",
+    "observations": [
+      {
+        "entry": "provider/task缺编号返回工作台后redirectTo pet/work",
+        "result": "曾出现喂宠标题下空白；视觉页面pet/work、逻辑当前页provider/workbench/workbench不一致"
+      },
+      {
+        "entry": "切回首页再navigateTo pet/work",
+        "result": "缺少订单编号提示恢复，实际返回工作台显示未提交服务员申请"
+      },
+      {
+        "entry": "专用编译模式直接启动pet/work，query为空",
+        "result": "2026-11-10 10:07模拟器显示缺少订单编号、说明及返回按钮；截图核对，无业务操作"
+      }
+    ],
+    "phone": "已生成并展示二维码、交付三步核对；等待用户手机实际结果",
+    "localMode": "QA30-喂宠缺编号对照（project.private.config.json，未入Git；诊断结束后恢复普通编译）",
+    "businessCodeChanged": false
+  },
+  "qa31": {
+    "decision": "用户A：采用28字文案",
+    "beforeLength": 43,
+    "platformError": "80058 scope.userLocation exceeds 30",
+    "after": "用于附近小区排序、小区位置设置及服务中向订单住户共享位置",
+    "afterLength": 28,
+    "preview": {
+      "result": "官方CLI输出preview成功，二维码图片已生成并查看",
+      "time": "2026-11-10 10:12 Asia/Shanghai",
+      "size": {
+        "total": 1051549,
+        "packages": [
+          {
+            "name": "TOTAL",
+            "size": 1051549
+          },
+          {
+            "name": "main",
+            "size": 681861
+          },
+          {
+            "name": "/admin/",
+            "size": 148136
+          },
+          {
+            "name": "/board/",
+            "size": 24773
+          },
+          {
+            "name": "/chat/",
+            "size": 11868
+          },
+          {
+            "name": "/coupons/",
+            "size": 6365
+          },
+          {
+            "name": "/elder/",
+            "size": 5980
+          },
+          {
+            "name": "/events/",
+            "size": 23695
+          },
+          {
+            "name": "/idle/",
+            "size": 36232
+          },
+          {
+            "name": "/merchant/",
+            "size": 19457
+          },
+          {
+            "name": "/notices/",
+            "size": 2399
+          },
+          {
+            "name": "/pet/",
+            "size": 12525
+          },
+          {
+            "name": "/provider/",
+            "size": 39824
+          },
+          {
+            "name": "/recycle/",
+            "size": 5873
+          },
+          {
+            "name": "/shops/",
+            "size": 11505
+          },
+          {
+            "name": "/station/",
+            "size": 21056
+          }
+        ]
+      }
+    },
+    "tests": {
+      "suites": 52,
+      "passed": 614,
+      "failed": 0
+    }
+  },
+  "boundaries": [
+    "不是QA30根因解决或真机通过",
+    "预览不等于正式上传发布或云函数更新",
+    "D05/D06暂停；timer不运行、不改角色/绑定/业务开关；不合并main"
+  ],
+  "toolIssue": "修复后CLI预览成功；10:08旧UI错误弹窗仍留在原窗口，关闭时点击返回noWindowsAvailable。旧弹窗不是10:12新预览结果。"
+}

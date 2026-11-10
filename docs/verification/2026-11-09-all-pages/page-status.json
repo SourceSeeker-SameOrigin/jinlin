@@ -414,7 +414,7 @@
     "route": "provider/task/task",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回provider/workbench/workbench：显示尚未提交服务员申请；不是已审服务员工作成功",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
@@ -1048,7 +1048,7 @@
     "route": "board/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回board/list/list：需求广场暂未开放",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
@@ -1133,7 +1133,7 @@
     "route": "idle/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回idle/list/list：闲置交易暂未开放",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
@@ -1243,7 +1243,7 @@
     "route": "idle/sale/sale",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回idle/sales/sales：暂无担保交易订单，卖家收入与结算入口可见",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
@@ -1326,7 +1326,7 @@
     "route": "events/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示实景；真实跨区ID直达回首页，非正常详情页通过",
+    "liveUIThisRun": "QA25缺编号提示实景；真实跨区ID直达回首页，非正常详情页通过；2026-11-10实点返回events/list/list：该功能暂未开放",
     "successFlowThisRun": "跨区detail服务端E_FORBIDDEN、signup拒绝；真实同区详情和报名成功仍待身份",
     "newFindings": [],
     "userAcceptance": "待用户签收",
@@ -1409,13 +1409,14 @@
     "route": "pet/work",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回provider/workbench/workbench：重新从首页进入后提示正常，返回显示尚未提交服务员申请；此前偶发空白，QA30待真机对照",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
-      "QA25已批准并修复"
+      "QA25已批准并修复",
+      "QA30：导航后曾偶发空白，冷启动缺编号页正常；真机对照待反馈，未改喂宠逻辑"
     ],
     "userAcceptance": "待用户签收",
-    "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收",
+    "remaining": "正常非空业务及所有交互状态；320/375/430宽度、大字体/键盘、真机；用户视觉签收；QA30偶发空白对照复现与根因确认",
     "criteria": {
       "U1": "部分核对，未完整通过；见liveUIThisRun",
       "U2": "部分核对，未完整通过；见liveUIThisRun",
@@ -1608,7 +1609,7 @@
     "route": "shops/detail/detail",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回shops/list/list：该功能暂未开放",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
@@ -1774,7 +1775,7 @@
     "route": "station/batch/batch",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "QA25缺编号提示/按钮实景通过",
+    "liveUIThisRun": "QA25缺编号提示/按钮实景通过；2026-11-10实点返回station/worker/worker → pages/index/index：当前resident/admin账号无配送权限，providerHall实测E_FORBIDDEN并回首页；不是配送成功流程",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA25已批准并修复"
