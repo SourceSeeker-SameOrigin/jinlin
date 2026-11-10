@@ -21,7 +21,7 @@
     "pages": 69,
     "issues": []
   },
-  "limits": "No full visual or live business acceptance. admin deployed and 76/76 source files verified; live empty pagination and invalid offset verified; nonempty pagination pending. QA36/QA37 local regressions and official WXML compilation pass; live export/nonempty preview pending Mac unlock and valid samples.",
+  "limits": "No full visual or live business acceptance. admin deployed and 76/76 source files verified; live empty pagination and invalid offset verified; nonempty pagination pending. QA36/QA37 local regressions and official WXML compilation pass; live export/nonempty preview pending stable UI connection, phone feedback and valid samples.",
   "qa35Frontend": 9,
   "qa36Frontend": 14,
   "qa37Frontend": 1
