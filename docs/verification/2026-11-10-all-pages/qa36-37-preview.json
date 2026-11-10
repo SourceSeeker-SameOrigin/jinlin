@@ -73,6 +73,6 @@
       }
     ]
   },
-  "livePhoneResult": "pending user feedback; not accepted",
-  "scope": "No release, CSV generation, settlement, payment, roles, binding, feature flags or cloud function update"
+  "livePhoneResult": "Received two user videos on 2026-11-11; see qa38-39-video.json. Partial visual/navigation/file-opening evidence, QA38/39 fixes approved; not complete acceptance.",
+  "scope": "Original agent preview upload only, no release/CSV/settlement/payment or cloud update by agent. Later user recordings independently show manual CSV generation; no permission inferred for further agent exports."
 }
