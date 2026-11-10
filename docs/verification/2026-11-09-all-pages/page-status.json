@@ -5,7 +5,7 @@
     "route": "pages/index/index",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "首页已登录、珺悦与4项核心/19项目录可见；未开通标记已核对；11月10日320宽上半屏布局已看，目录下半屏尚未补测",
+    "liveUIThisRun": "首页已登录、珺悦与4项核心/19项目录可见；11月10日320宽上下屏已核对，目录底部、热线按钮及底部标签无观察到遮挡；未拨打热线",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [],
     "userAcceptance": "待用户签收",
@@ -167,7 +167,7 @@
     "route": "pages/orders/list",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "实点进行中/已完成/售后三标签，加载至空结果；标签文字居中",
+    "liveUIThisRun": "实点进行中/已完成/售后三标签，加载至空结果；11月10日320宽复验已完成/售后切换及空结果，标签文字上下居中",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [],
     "userAcceptance": "待用户签收",
@@ -250,7 +250,7 @@
     "route": "pages/me/me",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "下半屏五工作台及资格说明可见；点击商家显示未开通说明，管理员入口已有证据",
+    "liveUIThisRun": "五个工作台及资格说明可见；11月10日320宽下半屏五入口、协议入口和底部标签已实际显示，管理员卡片进入看板；其他角色成功业务未验",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [],
     "userAcceptance": "待用户签收",
@@ -470,7 +470,7 @@
     "route": "admin/dashboard/dashboard",
     "staticReferences": "通过（静态检查范围）",
     "isolatedLifecycle": "3组均无未捕获异常（非成功业务验收）",
-    "liveUIThisRun": "既有D07管理看板、13导航及零统计已看；非零数据未验",
+    "liveUIThisRun": "既有D07管理看板、13导航及零统计已看；11月10日320宽上半屏管理导航已显示，非零统计未验",
     "successFlowThisRun": "未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF",
     "newFindings": [
       "QA33已批准并修复：5页选择器完整分页与加载门槛，24项隔离回归通过；真实大量数据及新版本完整交互未验。"
@@ -646,7 +646,8 @@
     "successFlowThisRun": "真实admin分页空列表与非法偏移拒绝通过；非空历史、物业边界、结算业务闭环未验",
     "newFindings": [
       "QA33已批准并修复：5页选择器完整分页与加载门槛，24项隔离回归通过；真实大量数据及新版本完整交互未验。",
-      "QA34已批准并修复：历史20条分页与加载更多、失败保留；10项共享及9项前端隔离测试通过。admin新包02e7d65已授权部署、76/76源码一致；真实空分页/负偏移拒绝通过，非空分页仍待验。"
+      "QA34已批准并修复：历史20条分页与加载更多、失败保留；10项共享及9项前端隔离测试通过。admin新包02e7d65已授权部署、76/76源码一致；真实空分页/负偏移拒绝通过，非空分页仍待验。",
+      "QA35按用户选择A修复：条件变化清空预览、请求范围快照及迟到响应保护；9项隔离回归通过；仅前端，无新增云包，真实非空预览切换仍待验。"
     ],
     "userAcceptance": "待用户签收",
     "remaining": "真实非空历史分页/失败恢复及物业身份；合法收款对象、非零账目、生成/确认及导出；适用多尺寸及用户签收仍未完成。",

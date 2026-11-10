@@ -4,9 +4,9 @@ const { yuan } = require('../../utils/money');
 function merchantName(merchants, id) { const item = (merchants || []).find(merchant => merchant._id === id); return item ? item.name : ''; }
 Page({
   data: { loading: true, ready: false, authorized: false, isAdmin: false, busy: false, error: '', communities: [], communityIndex: 0, providers: [], providerIndex: 0, merchants: [], merchantIndex: 0, sellerOpenid: '',
-    payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], settlements: [],
+    payees: ['服务员', '物业', '商家', '个人卖家'], payeeIndex: 0, from: '', to: '', preview: [], previewRange: null, settlements: [],
     historyLoading: false, historyError: '', historyHasMore: false, historyOffset: 0 },
-  onUnload() { this._closed = true; this._historyVersion = (this._historyVersion || 0) + 1; },
+  onUnload() { this._closed = true; this._historyVersion = (this._historyVersion || 0) + 1; this._previewVersion = (this._previewVersion || 0) + 1; },
   onLoad() {
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today }); this.load();
@@ -15,7 +15,8 @@ Page({
     if (this._loading || this._closed) return;
     this._loading = true;
     this._historyVersion = (this._historyVersion || 0) + 1;
-    this.setData({ loading: true, ready: false, error: '', authorized: false, isAdmin: false, preview: [], settlements: [],
+    this._previewVersion = (this._previewVersion || 0) + 1;
+    this.setData({ loading: true, ready: false, error: '', authorized: false, isAdmin: false, preview: [], previewRange: null, settlements: [],
       historyLoading: false, historyError: '', historyHasMore: false, historyOffset: 0 });
     try {
       const user = await getApp().ensureSession();
@@ -71,8 +72,21 @@ Page({
       if (!this._closed && version === this._historyVersion) this.setData({ historyLoading: false });
     }
   },
-  input(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
-  select(event) { if (this.data.ready && !this.data.busy) this.setData({ [event.currentTarget.dataset.field]: Number(event.detail.value) }); },
+  changePreviewField(field, value) {
+    if (this._closed || !this.data.ready || this.data[field] === value) return;
+    this._previewVersion = (this._previewVersion || 0) + 1;
+    this.setData({ [field]: value, preview: [], previewRange: null });
+  },
+  input(event) {
+    const field = event.currentTarget.dataset.field;
+    if (['from', 'to', 'sellerOpenid'].includes(field)) this.changePreviewField(field, event.detail.value);
+  },
+  select(event) {
+    const field = event.currentTarget.dataset.field;
+    if (!this.data.busy && ['communityIndex', 'payeeIndex', 'providerIndex', 'merchantIndex'].includes(field)) {
+      this.changePreviewField(field, Number(event.detail.value));
+    }
+  },
   request() {
     if (!this.data.authorized || !this.data.ready) throw new Error('请先完整加载结算选项与权限');
     const payee = !this.data.isAdmin ? 'property' : ['provider', 'property', 'merchant', 'seller'][this.data.payeeIndex];
@@ -83,13 +97,17 @@ Page({
       from: this.data.from, to: this.data.to };
   },
   async preview() {
-    if (!this.data.ready || this.data.busy) return;
+    if (this._closed || !this.data.ready || this.data.busy) return;
+    const version = this._previewVersion = (this._previewVersion || 0) + 1;
     try {
-      this.setData({ busy: true, error: '' });
-      const result = await api.call('admin', 'settlementPreview', this.request());
-      this.setData({ preview: result.rows.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) })) });
-    } catch (error) { this.setData({ error: error.message || '预览失败' }); }
-    finally { this.setData({ busy: false }); }
+      this.setData({ busy: true, error: '', preview: [], previewRange: null });
+      const request = this.request();
+      const previewRange = { from: request.from, to: request.to, communityName: this.data.communities[this.data.communityIndex].name };
+      const result = await api.call('admin', 'settlementPreview', request);
+      if (this._closed || version !== this._previewVersion) return;
+      this.setData({ previewRange, preview: result.rows.map(item => ({ ...item, totalText: yuan(item.total), merchantName: merchantName(this.data.merchants, item.merchantId) })) });
+    } catch (error) { if (!this._closed && version === this._previewVersion) this.setData({ error: error.message || '预览失败' }); }
+    finally { if (!this._closed) this.setData({ busy: false }); }
   },
   async create() {
     if (this.data.busy || !this.data.ready || !this.data.isAdmin) return;
