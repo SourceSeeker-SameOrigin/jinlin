@@ -2,7 +2,7 @@
   "sourceCommit": "05bda9609d3e897cabb73f14e96f442823d723a1",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "prepared; upload authorization pending",
+  "status": "user authorized 12 packages on 2026-11-12; deployment pending",
   "purpose": "QA50 notify accepted after successful accept/assignment; remove premature resident notices on payment",
   "operation": "Update existing functions and cloud install dependencies; preserve existing environment variables; do not enable/run timer or apply triggers/HTTP",
   "totalBytes": 1516522,

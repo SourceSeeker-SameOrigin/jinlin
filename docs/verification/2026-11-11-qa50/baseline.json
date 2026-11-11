@@ -1,13 +1,13 @@
 {
   "mode": "baseline a485e0c",
   "scope": "offline actual entry integration; synthetic records only; no cloud or real notifications",
-  "passed": 9,
-  "total": 14,
+  "passed": 10,
+  "total": 16,
   "cases": [
     {
       "name": "payment success: paid status without premature resident messages",
       "passed": false,
-      "error": "Expected values to be strictly equal:\n\n2 !== 0\n"
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    {\n      phrase: '待接单',\n      status: 'paid',\n      templateId: 'new-task'\n    },\n+   {\n+     phrase: '已接单',\n+     status: 'paid',\n+     templateId: 'accepted'\n+   },\n+   {\n+     phrase: '待确认',\n+     status: 'paid',\n+     templateId: 'delivered'\n+   }\n  ]\n"
     },
     {
       "name": "duplicate payment does not notify or increment statistics",
@@ -15,6 +15,15 @@
     },
     {
       "name": "payment transaction conflict sends nothing",
+      "passed": true
+    },
+    {
+      "name": "new-task delivery failure does not undo payment",
+      "passed": false,
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    'new-task',\n+   'accepted',\n+   'delivered'\n  ]\n"
+    },
+    {
+      "name": "payment without templates sends no messages",
       "passed": true
     },
     {

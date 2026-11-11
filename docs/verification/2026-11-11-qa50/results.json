@@ -1,8 +1,8 @@
 {
   "mode": "working tree",
   "scope": "offline actual entry integration; synthetic records only; no cloud or real notifications",
-  "passed": 14,
-  "total": 14,
+  "passed": 16,
+  "total": 16,
   "cases": [
     {
       "name": "payment success: paid status without premature resident messages",
@@ -14,6 +14,14 @@
     },
     {
       "name": "payment transaction conflict sends nothing",
+      "passed": true
+    },
+    {
+      "name": "new-task delivery failure does not undo payment",
+      "passed": true
+    },
+    {
+      "name": "payment without templates sends no messages",
       "passed": true
     },
     {

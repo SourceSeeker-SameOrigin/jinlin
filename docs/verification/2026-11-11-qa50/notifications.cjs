@@ -11,7 +11,7 @@ function harness({ status='paid', sendFails=false, conflict=false, noTemplates=f
   users:[{_id:'test-user',openid:'resident-test',firstPaidAt:new Date(),paidOrderCount:3}],
   providers:[{_id:'test-provider',openid:'provider-test',status:'approved',level:2,onDuty:true,
     communityId:'test-community',insuranceUntil:new Date('2099-01-01')} ]};
-  const command={nin:value=>({op:'nin',value}),push:value=>({op:'push',value})};
+  const command={nin:value=>({op:'nin',value}),push:value=>({op:'push',value}),gte:value=>({op:'gte',value}),gt:value=>({op:'gt',value}),inc:value=>({op:'inc',value})};
   const matches=(r,f)=>Object.entries(f).every(([k,v])=>v?.op==='nin'?!(r[k]||[]).some(x=>v.value.includes(x)):r[k]===v);
   function apply(row,patch){for(const [k,v] of Object.entries(patch))row[k]=v?.op==='push'?[...(row[k]||[]),...v.value]:clone(v);}
   const db={command, async runTransaction(work){if(conflict)throw Object.assign(Error('conflict'),{code:'DATABASE_TRANSACTION_CONFLICT'});const saved=clone(data);try{return await work(db);}catch(e){for(const k of Object.keys(data))delete data[k];Object.assign(data,saved);throw e;}},collection(name){return {
@@ -19,7 +19,7 @@ function harness({ status='paid', sendFails=false, conflict=false, noTemplates=f
     where(filter){return {async update({data:patch}){const rows=conflict?[]:(data[name]||[]).filter(r=>matches(r,filter));rows.forEach(r=>apply(r,patch));return {stats:{updated:rows.length}};}};}
   };}};
   const config={templateIds:noTemplates?{}:{newTask:'new-task',accepted:'accepted',delivered:'delivered'}};
-  const server={db,command,async config(){return config;},async get(table,id){return clone((data[table]||[]).find(r=>r._id===id)||null);},async one(table,filter){return clone((data[table]||[]).find(r=>matches(r,filter))||null);},async all(){return [];},async feature(){throw Object.assign(Error('off'),{code:'E_FEATURE_OFF'});},entry(actions){return actions;}};
+  const server={db,command,async config(){return config;},async get(table,id){return clone((data[table]||[]).find(r=>r._id===id)||null);},async one(table,filter){return clone((data[table]||[]).find(r=>matches(r,filter))||null);},async all(table){return clone(data[table]||[]);},async feature(){throw Object.assign(Error('off'),{code:'E_FEATURE_OFF'});},entry(actions){return actions;}};
   const cloud={init(){},openapi:{subscribeMessage:{async send(message){messages.push({templateId:message.templateId,status:data.orders[0].status,phrase:message.data.phrase3?.value});if(sendFails)throw Error('synthetic send failure');return {errCode:0};}}}};
   const cache=new Map();
   function load(file){file=path.resolve(root,file).replace(/\/[^/]+\/lib\/shared\//,'/_shared/');if(!path.extname(file))file+='.js';if(cache.has(file))return cache.get(file).exports;
@@ -34,9 +34,11 @@ const cases=[];
 async function check(name,fn){try{await fn();cases.push({name,passed:true});}catch(e){cases.push({name,passed:false,error:e.message});}}
 (async()=>{
  const payment={mode:'mock',amount:500,transactionId:'test-transaction'};
- await check('payment success: paid status without premature resident messages',async()=>{const h=harness({status:'pending_pay'});await h.pay().onPaid(h.data.orders[0],payment);assert.equal(h.data.orders[0].status,'paid');assert.equal(h.messages.length,0);});
+ await check('payment success: paid status without premature resident messages',async()=>{const h=harness({status:'pending_pay'});await h.pay().onPaid(h.data.orders[0],payment);assert.equal(h.data.orders[0].status,'paid');assert.deepEqual(h.messages,[{templateId:'new-task',status:'paid',phrase:'待接单'}]);});
  await check('duplicate payment does not notify or increment statistics',async()=>{const h=harness({status:'pending_pay'});const p=h.pay();await p.onPaid(h.data.orders[0],payment);h.messages.length=0;const count=h.data.users[0].paidOrderCount;await p.onPaid(h.data.orders[0],payment);assert.equal(h.messages.length,0);assert.equal(h.data.users[0].paidOrderCount,count);});
  await check('payment transaction conflict sends nothing',async()=>{const h=harness({status:'pending_pay',conflict:true});await assert.rejects(()=>h.pay().onPaid(h.data.orders[0],payment),e=>e.code==='E_CONFLICT');assert.equal(h.messages.length,0);assert.equal(h.data.orders[0].status,'pending_pay');});
+ await check('new-task delivery failure does not undo payment',async()=>{const h=harness({status:'pending_pay',sendFails:true});await h.pay().onPaid(h.data.orders[0],payment);assert.equal(h.data.orders[0].status,'paid');assert.deepEqual(h.messages.map(x=>x.templateId),['new-task']);});
+ await check('payment without templates sends no messages',async()=>{const h=harness({status:'pending_pay',noTemplates:true});await h.pay().onPaid(h.data.orders[0],payment);assert.equal(h.data.orders[0].status,'paid');assert.equal(h.messages.length,0);});
  for(const type of ['provider','admin']) {
    const run=h=>type==='provider'?h.provider().accept({orderId:'test-order'},{openid:'provider-test'}):h.admin().assign({orderId:'test-order',providerId:'test-provider'},{openid:'admin-test',user:{roles:['admin']}});
    await check(type+' success notifies accepted only after persistence',async()=>{const h=harness();await run(h);assert.deepEqual(h.messages,[{templateId:'accepted',status:'accepted',phrase:'已接单'}]);});

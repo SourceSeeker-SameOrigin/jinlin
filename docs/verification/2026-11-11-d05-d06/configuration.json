@@ -72,7 +72,7 @@
     "method": "Official CloudBase document UI, read only"
   },
   "secretKey": {
-    "status": "partially configured",
+    "status": "four functions saved and format verified; business verification pending",
     "functions": {
       "order": {
         "saved": true,
@@ -90,12 +90,21 @@
         "mockRetained": true
       },
       "vacant": {
-        "status": "pending user entry"
+        "saved": true,
+        "formatValid": true,
+        "mockNotRequired": true
       }
     },
     "crossFunctionConsistency": "not verified",
-    "businessVerification": "not performed"
+    "businessVerification": "not performed",
+    "verifiedAt": "2026-11-12"
   },
   "timerExecution": "not authorized or performed",
-  "businessRecordsCreated": 0
+  "businessRecordsCreated": 0,
+  "localCrypto": {
+    "passed": 8,
+    "total": 8,
+    "evidence": "crypto-check.json",
+    "scope": "synthetic data only; no configured cloud keys used"
+  }
 }

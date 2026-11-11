@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-12",
+  "environment": "cloud1-d4gbpd8zx89564fb6",
+  "authorizedManifest": "deployment-manifest.json",
+  "order": {
+    "selectedFileVerified": true,
+    "bytes": 126284,
+    "sha256": "53c8bebc7ae49472ebc9e84ca4a6e003db63c1801341bc99b285e942974dd9e0",
+    "operation": "old console Save and install dependencies",
+    "result": "UI rejected dependency installation: root package.json absent; local ZIP root package.json confirmed present",
+    "status": "not verified deployed; investigating",
+    "oldPageRetained": true,
+    "newConsoleRead": "two automatic approval timeouts; no state returned",
+    "oldPageRefresh": "automatic review rejected to avoid losing selected ZIP state; page retained",
+    "next": "pending user decision: inspect new official console, retry same package once only if not updated"
+  },
+  "remainingFunctions": "not attempted",
+  "timerExecuted": false
+}
