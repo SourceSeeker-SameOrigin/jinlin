@@ -8,13 +8,14 @@
 
 |需要了解什么|入口|
 |---|---|
+|交付日期、工时与剩余工作|[交付排期：目标11月14日20:00](docs/DELIVERY_PLAN.md)，当前条件验收版；D05/D06继续暂缓|
 |完整产品介绍|[可编辑 PPTX](docs/product/jinlin-product-introduction.pptx) · [PDF预览](docs/product/jinlin-product-introduction.pdf)|
 |每个云函数做什么、在哪里调用|[21函数及69页调用索引](docs/product/CLOUD_FUNCTIONS.md)|
 |每个页面的UI、操作和前置条件|[69页完整验收册](docs/product/PAGE_ACCEPTANCE.md)|
 |跨角色业务验收|[测试交接](docs/TEST_HANDOFF.md) · [T00–T33状态](docs/ACCEPTANCE.md)|
 |需求与设计依据|[SPEC](docs/SPEC.md) · [SPEC_EXT](docs/SPEC_EXT.md) · [批准设计稿](docs/design/approved-ui.png) · [设计规范](docs/design/DESIGN.md)|
 |配置和待决事项|[人工配置](docs/MANUAL_SETUP.md) · [5W2H决策台账](docs/INTEGRATION_DECISIONS.md)|
-|本轮证据|[当前整改与部署状态](docs/verification/2026-11-09-remediation/README.md) · [原始全范围核查](docs/audit/2026-11-09/README.md)|
+|本轮证据|[11月11日最新69页续验](docs/verification/2026-11-11-ui-audit/README.md) · [此前整改与部署状态](docs/verification/2026-11-09-remediation/README.md) · [原始全范围核查](docs/audit/2026-11-09/README.md)|
 
 ## 所有功能从哪里进入
 
