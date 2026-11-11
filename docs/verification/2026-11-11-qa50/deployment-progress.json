@@ -8,12 +8,57 @@
     "sha256": "53c8bebc7ae49472ebc9e84ca4a6e003db63c1801341bc99b285e942974dd9e0",
     "operation": "old console Save and install dependencies",
     "result": "UI rejected dependency installation: root package.json absent; local ZIP root package.json confirmed present",
-    "status": "not verified deployed; investigating",
+    "status": "new console deployed; 76/76 source hashes matched; wx-server-sdk 4.0.2 present",
     "oldPageRetained": true,
     "newConsoleRead": "two automatic approval timeouts; no state returned",
     "oldPageRefresh": "automatic review rejected to avoid losing selected ZIP state; page retained",
-    "next": "pending user decision: inspect new official console, retry same package once only if not updated"
+    "next": "continue provider",
+    "cloudReadback": {
+      "matched": 72,
+      "total": 76,
+      "differences": [
+        "lib/shared/adminOrders.js",
+        "lib/shared/adminSettlements.js",
+        "lib/shared/eventCancellation.js",
+        "lib/shared/payFlow.js"
+      ],
+      "packageAndDependenciesPresent": true
+    },
+    "newConsoleRetryAuthorized": true,
+    "newConsoleUploadDialogReady": true,
+    "browserHashCheck": "selected order.zip size and SHA-256 matched",
+    "cloudReadbackAfter": {
+      "matched": 76,
+      "total": 76,
+      "differences": [],
+      "sdkVersion": "4.0.2"
+    },
+    "environmentAfter": {
+      "names": [
+        "ALLOW_MOCK_PAY",
+        "SECRET_KEY"
+      ],
+      "masked": true,
+      "valuesRevealed": false,
+      "reason": "kept masked after automatic review rejected revealing secret"
+    }
   },
-  "remainingFunctions": "not attempted",
-  "timerExecuted": false
+  "remainingFunctions": [
+    "provider",
+    "membership",
+    "admin",
+    "board",
+    "event",
+    "idle",
+    "merchant",
+    "pet",
+    "timer",
+    "payCallback",
+    "refundCallback"
+  ],
+  "timerExecuted": false,
+  "additionalReadback": "provider/membership/admin batch did not execute: automatic approval timeout",
+  "completed": [
+    "order"
+  ]
 }
