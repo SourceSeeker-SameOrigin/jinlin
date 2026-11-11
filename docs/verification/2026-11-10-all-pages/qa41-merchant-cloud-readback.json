@@ -9,6 +9,6 @@
   "mismatch": [],
   "sdkVersion": "4.0.2",
   "downloadMethod": "official WeChat CLI functions download; file-like .zip suffix required; result extracted directory",
-  "runtimeVerification": "pending real WeChat context",
+  "runtimeVerification": "4 readonly real-session cloud checks passed; empty pagination and negative offset rejection only; qa41-live-pagination.json",
   "configurationChanges": false
 }

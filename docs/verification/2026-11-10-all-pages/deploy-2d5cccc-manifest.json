@@ -2,7 +2,7 @@
   "sourceCommit": "2d5ccccc1ecb354f1abfb9bc536ccddb9932fc14",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "deployed; official CLI readback 76/76 source hashes matched; live pagination pending",
+  "status": "deployed; 76/76 source hashes matched; real-session empty pagination and invalid offset verified",
   "purpose": "QA41 merchant admin service pagination; QA40 and QA42 frontend only",
   "operation": "Update existing merchant ordinary function and cloud install dependencies; code only",
   "totalBytes": 128298,
@@ -108,7 +108,7 @@
     "wxml": 77,
     "wxss": 78,
     "zipCrcAndSourceHashes": "passed",
-    "livePagination": "pending"
+    "livePagination": "4 readonly checks passed; nonempty pagination pending"
   },
   "authorization": {
     "date": "2026-11-11",

@@ -27,7 +27,7 @@
     "uploaded": false,
     "deployed": false
   },
-  "next": "Await readonly calls from real mini-program context; CUA coordinate input returned noWindowsAvailable and AX input did not visibly enter Console; user requested to execute readonly probe",
+  "next": "Nonempty pagination and real UI acceptance pending; user no longer needs to execute Console probe",
   "paused": [
     "D05",
     "D06"
@@ -43,5 +43,10 @@
     "sourceReadbackMatched": 76,
     "sdkVersion": "4.0.2",
     "evidence": "qa41-merchant-cloud-readback.json"
+  },
+  "liveVerification": {
+    "executedBy": "agent through native Console",
+    "passed": 4,
+    "evidence": "qa41-live-pagination.json"
   }
 }
