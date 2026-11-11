@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-11",
+  "environment": "development",
+  "authorization": "User approved D05 D06 recommended plan",
+  "functions": [
+    {
+      "function": "pet",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "order",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "provider",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "membership",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "admin",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "board",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "event",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "idle",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "merchant",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    },
+    {
+      "function": "timer",
+      "before": "empty",
+      "after": "ALLOW_MOCK_PAY=true",
+      "verified": true
+    }
+  ],
+  "payModeRecheck": {
+    "collection": "config",
+    "document": "global",
+    "value": "mock",
+    "verified": true,
+    "method": "Official CloudBase document UI, read only"
+  },
+  "secretKey": {
+    "status": "partially configured",
+    "functions": {
+      "order": {
+        "saved": true,
+        "formatValid": true,
+        "mockRetained": true
+      },
+      "pet": {
+        "saved": true,
+        "formatValid": true,
+        "mockRetained": true
+      },
+      "membership": {
+        "saved": true,
+        "formatValid": true,
+        "mockRetained": true
+      },
+      "vacant": {
+        "status": "pending user entry"
+      }
+    },
+    "crossFunctionConsistency": "not verified",
+    "businessVerification": "not performed"
+  },
+  "timerExecution": "not authorized or performed",
+  "businessRecordsCreated": 0
+}

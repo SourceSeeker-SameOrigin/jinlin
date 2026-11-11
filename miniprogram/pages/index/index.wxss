@@ -4,3 +4,5 @@
 .location-action .chevron{margin-left:0}
 
 .catalog-status{font-size:32rpx;color:#687466;line-height:1.5}.catalog-item{min-height:188rpx}
+
+.service-cell{display:flex;min-width:0;align-self:stretch}

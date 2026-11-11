@@ -137,6 +137,8 @@ async function accept(event, { openid }) {
   const result = await conditionalTransition(server, order, 'accepted', openid,
     { providerId: provider._id, providerOpenid: openid, acceptedAt: now },
     { releasedProviderIds: command.nin([provider._id]) }, '手慢了，单已被接走');
+  await notify.resident('accepted', { ...order, status: 'accepted', providerId: provider._id,
+    providerOpenid: openid, acceptedAt: now });
   try {
     await server.feature('chat', order.communityId);
     await ensureOrderConversation(server, { ...order, status: 'accepted', providerOpenid: openid });

@@ -58,10 +58,6 @@ function createPayFlow(cloud, server) {
       return { ...result, status: 'cancelled' };
     }
     if (changed && result.kind === 'service') await notify.newTask(result);
-    if (changed && result.kind === 'service') {
-      await notify.resident('accepted', result);
-      await notify.resident('delivered', result);
-    }
     return result;
   }
 
