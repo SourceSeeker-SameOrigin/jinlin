@@ -44,7 +44,6 @@
     }
   },
   "remainingFunctions": [
-    "provider",
     "membership",
     "admin",
     "board",
@@ -59,6 +58,18 @@
   "timerExecuted": false,
   "additionalReadback": "provider/membership/admin batch did not execute: automatic approval timeout",
   "completed": [
-    "order"
-  ]
+    "order",
+    "provider"
+  ],
+  "provider": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "environmentNamesRetained": [
+      "ALLOW_MOCK_PAY"
+    ],
+    "valuesNotRevealed": true
+  }
 }
