@@ -22,7 +22,7 @@ textarea { min-height:196rpx; }
 input { height:92rpx; padding-top:0; padding-bottom:0; line-height:normal; }
 .picker { display:flex; align-items:center; word-break:break-word; }
 .links { display:flex; flex-wrap:wrap; gap:24rpx; margin:24rpx 0; color:#1F7A5C; }
-.links navigator { min-height:72rpx; display:flex; align-items:center; }
+.links navigator { min-height:88rpx; display:flex; align-items:center; }
 .error { padding:24rpx; margin:20rpx 0; color:#9C3E2F; background:#FFF0E9; border:1rpx solid #F2D8CA; border-radius:18rpx; overflow-wrap:break-word; }
 .error button { margin-top:20rpx; }
 .notice,.restored { padding:24rpx; margin:20rpx 0; border-radius:18rpx; color:#705223; background:#FFF3DA; font-size:32rpx; }

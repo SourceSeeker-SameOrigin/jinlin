@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const validRange = require('../../utils/date-range');
 const TYPES = [{ key: 'settlement', name: '人工结算账目' }, { key: 'subsidy', name: '政府养老补贴业务明细' },
   { key: 'recycle', name: '回收企业月度对账' }, { key: 'station', name: '驿站月度对账' }];
 const PAYEES = ['服务员', '物业', '商家', '个人卖家'];
@@ -10,6 +11,14 @@ Page({
     const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
     this.setData({ from: today.slice(0, 8) + '01', to: today,
       typeIndex: Math.max(0, TYPES.findIndex(item => item.key === options.type)) });
+    if (options.type === 'recycle' && ['communityId', 'from', 'to'].some(key => options[key] !== undefined)) {
+      if (typeof options.communityId !== 'string' || !options.communityId.trim() || !validRange(options.from, options.to)) {
+        this._entryError = '回收对账入口条件无效，请返回重新选择小区和日期';
+      } else {
+        this._entryCommunity = options.communityId;
+        this.setData({ from: options.from, to: options.to });
+      }
+    }
   },
   onShow() { this.load(); },
   onUnload() { this._closed = true; this._communityVersion = (this._communityVersion || 0) + 1; },
@@ -25,13 +34,17 @@ Page({
   },
   async load() {
     if (this._closed || this._loading || this.data.busy || this.data.communityLoading) return;
+    if (this._entryError) {
+      this.setData({ loading: false, ready: false, error: this._entryError, errorKind: 'validation' });
+      return;
+    }
     this._loading = true;
     this.setData({ loading: true, ready: false, error: '', errorKind: '' });
     try {
       const user = await getApp().ensureSession();
       if (this._closed) return;
       if (!user.roles.includes('admin')) throw new Error('只有运营管理员可以使用数据导出');
-      const selectedCommunity = this.data.communities[this.data.communityIndex]?._id || user.communityId;
+      const selectedCommunity = this._entryCommunity || this.data.communities[this.data.communityIndex]?._id || user.communityId;
       const selectedProvider = this.data.providers[this.data.providerIndex]?._id;
       const selectedMerchant = this.data.merchants[this.data.merchantIndex]?._id;
       const [communities, providers, merchants] = await Promise.all([
@@ -40,11 +53,15 @@ Page({
         this.loadAll('merchant', 'adminList', { status: 'approved' })
       ]);
       if (this._closed) return;
+      if (this._entryCommunity && !communities.some(item => item._id === this._entryCommunity)) {
+        throw new Error('入口小区不在当前可选范围，请返回重新选择');
+      }
       this.setData({ communities, providers, merchants,
         communityIndex: Math.max(0, communities.findIndex(item => item._id === selectedCommunity)),
         providerIndex: Math.max(0, providers.findIndex(item => item._id === selectedProvider)),
         merchantIndex: Math.max(0, merchants.findIndex(item => item._id === selectedMerchant)) });
       await this.loadCommunity();
+      if (this.data.ready) this._entryCommunity = null;
     } catch (error) { if (!this._closed) this.setData({ error: error.message || '数据导出页面加载失败', errorKind: 'load' }); }
     finally { this._loading = false; if (!this._closed) this.setData({ loading: false }); }
   },
