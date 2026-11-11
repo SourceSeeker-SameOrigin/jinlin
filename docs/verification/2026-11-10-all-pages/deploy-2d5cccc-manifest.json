@@ -2,7 +2,7 @@
   "sourceCommit": "2d5ccccc1ecb354f1abfb9bc536ccddb9932fc14",
   "environmentId": "cloud1-d4gbpd8zx89564fb6",
   "destination": "Tencent Cloud official CloudBase",
-  "status": "pending explicit upload authorization",
+  "status": "deployed; official CLI readback 76/76 source hashes matched; live pagination pending",
   "purpose": "QA41 merchant admin service pagination; QA40 and QA42 frontend only",
   "operation": "Update existing merchant ordinary function and cloud install dependencies; code only",
   "totalBytes": 128298,
@@ -109,5 +109,19 @@
     "wxss": 78,
     "zipCrcAndSourceHashes": "passed",
     "livePagination": "pending"
+  },
+  "authorization": {
+    "date": "2026-11-11",
+    "decision": "User approved exact merchant package deployment and cloud dependency installation",
+    "packageBytes": 128298,
+    "sourceCommit": "2d5ccccc1ecb354f1abfb9bc536ccddb9932fc14"
+  },
+  "deployment": {
+    "date": "2026-11-11",
+    "browserSelectedBytes": 128298,
+    "browserSelectedSha256": "19075dc0b69432147a79d4bc60761c5db259886cf7234ebc606f168d71cd8202",
+    "sourceFilesMatched": 76,
+    "sdkVersion": "4.0.2",
+    "evidence": "qa41-merchant-cloud-readback.json"
   }
 }
