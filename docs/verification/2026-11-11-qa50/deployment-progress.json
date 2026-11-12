@@ -44,7 +44,6 @@
     }
   },
   "remainingFunctions": [
-    "merchant",
     "pet",
     "timer",
     "payCallback",
@@ -59,7 +58,8 @@
     "admin",
     "board",
     "event",
-    "idle"
+    "idle",
+    "merchant"
   ],
   "provider": {
     "status": "deployed and readback verified",
@@ -84,7 +84,7 @@
     ],
     "valuesNotRevealed": true
   },
-  "next": "merchant: awaiting file selection",
+  "next": "pet: awaiting file selection",
   "admin": {
     "status": "deployed and readback verified",
     "packageHashMatched": true,
@@ -119,6 +119,17 @@
     "valuesNotRevealed": true
   },
   "idle": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "environmentNamesRetained": [
+      "ALLOW_MOCK_PAY"
+    ],
+    "valuesNotRevealed": true
+  },
+  "merchant": {
     "status": "deployed and readback verified",
     "packageHashMatched": true,
     "matchedFiles": 76,
