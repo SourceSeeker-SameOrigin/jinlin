@@ -18,8 +18,12 @@ Page({
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
       const details = Object.entries(order.detail || {}).map(([key, value]) => ({ key,
         label: ({ stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数', sorted: '已分类', shop: '店名', items: '代买清单', goodsCap: '商品预付（分）', category: '类别', desc: '描述', blocks: '时长块数', billingMode: '计价方式', includedMinutes: '包含时长（分钟）', overtimePolicy: '超时规则' })[key] || key,
-        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : ({per_visit:'按次计价',per15min:'每15分钟计价',new_order:'不自动扣费，另行确认新订单'})[value] || String(value) }));
+        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : ({per_visit:'按次计价',per15min:'每15分钟计价',new_order:'不自动扣费，另行确认新订单',door:'放门口',hand:'当面交'})[value] || String(value) }));
+      // The detail API exposes status history, not the private payment record or payment mode.
+      // A paid history entry confirms a payment transition, never a real cash charge.
+      const paymentRecorded = (order.timeline || []).some(item => item.status === 'paid');
       this.setData({ order, readOnly, details, slotText: slotText(order.slot), amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
+        paymentRecordText: paymentRecorded ? '已记录支付成功（不代表真实扣款）' : '未见支付成功记录',
         canCancel: ['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status) &&
           (order.kind !== 'membership_purchase' || order.status === 'pending_pay'),
         refunds: order.refunds.map(item => ({ ...item, amountText: yuan(item.amount), statusText: { failed: '失败', processing: '处理中', success: '成功' }[item.status], time: display(item.at) })) });
