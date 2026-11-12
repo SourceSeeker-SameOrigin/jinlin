@@ -1,0 +1,35 @@
+{
+  "scope": "Simulator runtime only; actual recovery button and visual acceptance NOT completed",
+  "width": 320,
+  "afterProjectReopen": {
+    "route": "recycle/order/order",
+    "loading": false,
+    "error": "",
+    "newMethod": true,
+    "ownerMatches": true
+  },
+  "controlledFailure": {
+    "navigationError": "预约已创建，暂未打开详情，请点击下方按钮重试。不会重复预约。",
+    "navigating": false,
+    "persistentReceiptExists": false
+  },
+  "fixture": "In-memory receipt referencing the previously authorized closed trash order; not a new recycle booking; original redirectTo restored immediately",
+  "laterReentry": {
+    "blankObserved": true,
+    "warning": "Page \"recycle/order/order\" has not been registered yet.",
+    "dataKeys": [
+      "__webviewId__"
+    ],
+    "recoveryMethod": "undefined"
+  },
+  "remaining": [
+    "recovery card visual",
+    "actual button",
+    "matching detail loaded",
+    "back behavior",
+    "true restart receipt",
+    "other widths and phone"
+  ],
+  "newCloudOrders": 0,
+  "decision": "QA54 temporary hot reload off comparison requested; pending"
+}
