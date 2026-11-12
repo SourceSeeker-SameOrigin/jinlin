@@ -24,16 +24,35 @@
       "navigationApiRestored": true
     },
     "visual": "Recovery card, explanation, failure message and existing-order button visible without overlap at 390; purchase form hidden",
-    "actualButtonClick": "Entered pages/orders/detail; observed 正在加载订单… only"
+    "actualButtonClick": "Actual recovery button opened the original closed test order; loaded identity matched and status closed.",
+    "detailReadback": {
+      "route": "pages/orders/detail",
+      "orderMatches": true,
+      "status": "closed",
+      "loading": false,
+      "error": "",
+      "receiptAbsent": true
+    },
+    "actualBackButton": true,
+    "returnReadback": {
+      "route": "pages/membership/index",
+      "ready": true,
+      "loading": false,
+      "error": "",
+      "busy": false,
+      "createdOrderId": "",
+      "receipt": false,
+      "navigating": false,
+      "plans": 0,
+      "cards": 0
+    },
+    "returnVisual": "Normal no-plan/no-card empty states visible; recovery card absent."
   },
   "pending": [
-    "Loaded detail identity and final state",
-    "Matching local receipt cleared",
-    "Back to monthly page and normal reload",
     "True app restart and real-device recovery",
     "320/375/430 recovery UI and full approved-design acceptance",
     "Actual monthly creation/activation/task generation"
   ],
-  "blocker": "After button navigation tool explicitly reported Mac locked; user asked to unlock",
-  "cleanup": "Navigation success callback should clear matching receipt; not yet read back, do not claim cleanup confirmed"
+  "blocker": "Prior lock interruption resolved for the 390-width recovery/navigation/return sample. Remaining cases are not verified by this sample.",
+  "cleanup": "Confirmed receiptAbsent=true after navigation; page receipt=false after back. Navigation API was restored immediately after local fault injection."
 }

@@ -31,5 +31,5 @@
   "isolatedLifecycleScenarios": 207,
   "componentProblems": [],
   "styleRuleProblems": [],
-  "liveUI": "Partial live 390-width evidence recorded in qa52-live-ui.json; detail completion, receipt cleanup and return pending after Mac locked."
+  "liveUI": "390-width injected-receipt recovery, controlled failure display, actual button navigation, loaded closed-order identity, receipt cleanup and actual back/reload verified; see qa52-live-ui.json. Not real monthly purchase or true app restart."
 }
