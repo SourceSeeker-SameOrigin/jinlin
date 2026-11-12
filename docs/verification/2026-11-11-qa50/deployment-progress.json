@@ -44,7 +44,6 @@
     }
   },
   "remainingFunctions": [
-    "timer",
     "payCallback",
     "refundCallback"
   ],
@@ -59,7 +58,8 @@
     "event",
     "idle",
     "merchant",
-    "pet"
+    "pet",
+    "timer"
   ],
   "provider": {
     "status": "deployed and readback verified",
@@ -84,7 +84,7 @@
     ],
     "valuesNotRevealed": true
   },
-  "next": "timer: awaiting file selection; code update only, no invocation or trigger changes",
+  "next": "payCallback: awaiting file selection",
   "admin": {
     "status": "deployed and readback verified",
     "packageHashMatched": true,
@@ -151,5 +151,18 @@
       "SECRET_KEY"
     ],
     "valuesNotRevealed": true
+  },
+  "timer": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "environmentNamesRetained": [
+      "ALLOW_MOCK_PAY"
+    ],
+    "valuesNotRevealed": true,
+    "functionInvoked": false,
+    "triggersModified": false
   }
 }
