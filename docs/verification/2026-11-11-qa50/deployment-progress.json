@@ -43,9 +43,7 @@
       "reason": "kept masked after automatic review rejected revealing secret"
     }
   },
-  "remainingFunctions": [
-    "refundCallback"
-  ],
+  "remainingFunctions": [],
   "timerExecuted": false,
   "additionalReadback": "provider/membership/admin batch did not execute: automatic approval timeout",
   "completed": [
@@ -59,7 +57,8 @@
     "merchant",
     "pet",
     "timer",
-    "payCallback"
+    "payCallback",
+    "refundCallback"
   ],
   "provider": {
     "status": "deployed and readback verified",
@@ -84,7 +83,7 @@
     ],
     "valuesNotRevealed": true
   },
-  "next": "refundCallback: awaiting file selection",
+  "next": "runtime integration: read-only checks authorized; mock business records require concrete scope confirmation",
   "admin": {
     "status": "deployed and readback verified",
     "packageHashMatched": true,
@@ -173,5 +172,22 @@
     "sdkVersion": "4.0.2",
     "configurationModified": false,
     "callbackInvoked": false
+  },
+  "refundCallback": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "configurationModified": false,
+    "callbackInvoked": false
+  },
+  "batchSummary": {
+    "functions": 12,
+    "matchedSourceFiles": 912,
+    "totalSourceFiles": 912,
+    "allSdkVersions": "4.0.2",
+    "sourceCommit": "05bda9609d3e897cabb73f14e96f442823d723a1",
+    "businessFlowAcceptance": false
   }
 }
