@@ -47,7 +47,7 @@ function setup(route, response) {
   const cases = [
     ['pages/bind/bind', '暂时没有可服务的小区', { communities: [] }],
     ['provider/workbench/workbench', ' message="你还没有提交服务员申请"', { provider: null, tasks: [] }],
-    ['admin/reports/reports', '暂无举报', { rows: [] }],
+    ['admin/reports/reports', '暂无符合当前筛选的举报', { rows: [] }],
     ['admin/stations/stations', '暂无待审核申请', { rows: [] }],
     ['notices/list/list', '暂无公告', { list: [] }]
   ];

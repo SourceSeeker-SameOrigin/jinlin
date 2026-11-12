@@ -65,8 +65,8 @@ const clone = value => JSON.parse(JSON.stringify(value));
     assert(xml('merchant/services/services').includes('¥{{item.priceText}} /'));
   });
   await test('QA11 管理员服务查看转元且不扩大审核条件', async () => {
-    const r = runtime(async () => ({ list: [{ _id: 's', price: 999, status: 'off' }] }));
-    const p = r.instance(file('admin/merchants/merchants.js')); p.setData({ list: [{ _id: 'm', status: 'approved' }] });
+    const r = runtime(async (_, action) => ({ list: action === 'adminList' ? [{ _id: 'm', status: 'approved' }] : [{ _id: 's', price: 999, status: 'off' }], hasMore: false }));
+    const p = r.instance(file('admin/merchants/merchants.js')); await p.load();
     await p.inspect({ currentTarget: { dataset: { id: 'm' } } });
     assert.equal(p.data.services[0].priceText, '9.99'); assert.equal(p.data.services[0].price, 999);
     assert(xml('admin/merchants/merchants').includes("selected.status === 'pending'"));

@@ -960,6 +960,7 @@
       "handlers": [
         "address",
         "input",
+        "load",
         "submit"
       ],
       "missingHandlers": [],
@@ -3479,6 +3480,10 @@
         {
           "name": "merchant",
           "action": "myApplication"
+        },
+        {
+          "name": "merchant",
+          "action": "myApplication"
         }
       ],
       "errors": {
@@ -3495,6 +3500,10 @@
         {
           "name": "merchant",
           "action": "myApplication"
+        },
+        {
+          "name": "merchant",
+          "action": "myApplication"
         }
       ],
       "errors": {
@@ -3508,6 +3517,10 @@
       "route": "merchant/apply/apply",
       "scenario": "unbound_network_failure",
       "calls": [
+        {
+          "name": "merchant",
+          "action": "myApplication"
+        },
         {
           "name": "merchant",
           "action": "myApplication"

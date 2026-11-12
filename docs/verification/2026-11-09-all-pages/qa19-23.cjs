@@ -51,7 +51,7 @@ function page(route,handler,options={}){
   p.onLoad({id:'fixture-item'});await p.load();p.data.title='新标题';fail=true;await p.load();fail=false;await p.load();assert.equal(p.data.title,'新标题');
  });
  await test('QA20商家手填电话在重试后保留',async()=>{
-  const {p}=page('merchant/apply/apply',async()=>({merchant:null}));p.input({currentTarget:{dataset:{field:'phone'}},detail:{value:'synthetic-phone'}});await p.load();assert.equal(p.data.phone,'synthetic-phone');
+  const {p}=page('merchant/apply/apply',async()=>({merchant:null}));await p.load();p.input({currentTarget:{dataset:{field:'phone'}},detail:{value:'synthetic-phone'}});await p.load();assert.equal(p.data.phone,'synthetic-phone');
  });
  await test('QA20聊天无会话/首次拉取失败均不能发消息或上传',async()=>{
   let upload=0;const {p,r}=page('chat/room/room',async()=>{throw Error('合成拉取失败');},{media:{uploadPhotos:async()=>{upload++;return ['synthetic-file'];}}});p.onLoad({});p.data.content='保留消息';await p.start();await p.send();await p.image();await p.sendMessage({type:'text',content:'x'});assert.equal(r.requests.length,0);assert.equal(upload,0);
