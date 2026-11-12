@@ -1,5 +1,5 @@
 {
-  "scope": "Simulator runtime only; actual recovery button and visual acceptance NOT completed",
+  "scope": "320-width controlled local recovery sample completed under approved QA54 temporary hot reload off comparison; not a real recycle booking",
   "width": 320,
   "afterProjectReopen": {
     "route": "recycle/order/order",
@@ -23,13 +23,20 @@
     "recoveryMethod": "undefined"
   },
   "remaining": [
-    "recovery card visual",
-    "actual button",
-    "matching detail loaded",
-    "back behavior",
-    "true restart receipt",
-    "other widths and phone"
+    "true app restart receipt",
+    "other widths and phone",
+    "real recycle booking and fulfillment"
   ],
   "newCloudOrders": 0,
-  "decision": "QA54 temporary hot reload off comparison requested; pending"
+  "decision": "QA54 A approved, comparison and original setting restoration completed",
+  "latestEvidence": "qa54-hot-reload.json",
+  "later320Result": {
+    "cardObserved": true,
+    "actualButtonOpenedExistingOrder": true,
+    "loadedOrderMatches": true,
+    "status": "closed",
+    "receiptCleared": true,
+    "actualBackHome": true,
+    "freshReentryNormal": true
+  }
 }
