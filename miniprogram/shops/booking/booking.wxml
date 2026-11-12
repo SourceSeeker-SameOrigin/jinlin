@@ -1,5 +1,16 @@
-<view wx:if="{{missingRecord}}" class="page"><view class="card"><view class="section-title">缺少服务编号</view><view class="muted">请从商家列表选择记录后重新进入。</view><navigator url="/shops/list/list" open-type="redirect"><button class="ui-button">前往商家列表</button></navigator></view></view>
-<block wx:else>
-<view class="page"><view class="page-masthead"><image class="masthead-icon" src="/assets/icons/shop.png"/><view class="masthead-copy"><view class="page-title">提交预约</view><view class="masthead-subtitle">发现身边的生活服务</view></view></view><view class="card">请简要说明需求，商家会根据预约内容提供服务或报价。</view><picker wx:if="{{addresses.length}}" range="{{addresses}}" range-key="label" value="{{addressIndex}}" bindchange="address"><view class="card">上门地址：{{addresses[addressIndex].label}}</view></picker><view wx:else class="card">使用当前绑定门牌地址</view><view class="card field"><view class="label">服务需求（最多500字）</view><textarea class="ui-textarea" maxlength="500" placeholder="服务需求（最多 500 字）" value="{{requirement}}" bindinput="input"/></view><view wx:if="{{error}}" class="error">{{error}}</view><button type="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="submit">提交预约</button></view>
-
-</block>
+<view wx:if="{{missingRecord}}" class="page">
+  <view class="card"><view class="section-title">缺少服务编号</view><view class="muted">请从商家列表选择记录后重新进入。</view><navigator url="/shops/list/list" open-type="redirect"><button class="ui-button">前往商家列表</button></navigator></view>
+</view>
+<view wx:else class="page">
+  <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/shop.png"/><view class="masthead-copy"><view class="page-title">提交预约</view><view class="masthead-subtitle">发现身边的生活服务</view></view></view>
+  <view wx:if="{{loading}}" class="card muted">正在加载预约地址…</view>
+  <block wx:if="{{ready && !loading}}">
+    <view class="card">请简要说明需求，商家会根据预约内容提供服务或报价。</view>
+    <picker wx:if="{{addresses.length}}" disabled="{{busy}}" range="{{addresses}}" range-key="label" value="{{addressIndex}}" bindchange="address"><view class="card">上门地址：{{addresses[addressIndex].label}}</view></picker>
+    <view wx:else class="card">使用当前绑定门牌地址</view>
+    <view class="card field"><view class="label">服务需求（最多500字）</view><textarea class="ui-textarea" disabled="{{busy}}" maxlength="500" placeholder="服务需求（最多 500 字）" value="{{requirement}}" bindinput="input"/></view>
+  </block>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <button wx:if="{{loadError}}" class="ui-button" disabled="{{loading || busy}}" bindtap="load">重新加载</button>
+  <button wx:if="{{ready && !loading}}" type="primary" loading="{{busy}}" disabled="{{busy || loading || !ready}}" bindtap="submit">提交预约</button>
+</view>
