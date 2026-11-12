@@ -1,0 +1,40 @@
+{
+  "scope": "QA54 approved temporary hot-reload comparison; no business code or cloud writes",
+  "width": 320,
+  "initialSetting": true,
+  "temporarySetting": false,
+  "ordinaryCompile": "completed; startup log no hot reload enabled message",
+  "firstEntry": {
+    "route": "recycle/order/order",
+    "loading": false,
+    "error": "",
+    "method": "function",
+    "ownerMatches": true,
+    "formScreenshotObserved": true
+  },
+  "actualBack": {
+    "observedRoutes": [
+      "pages/index/index"
+    ]
+  },
+  "reentry": {
+    "route": "recycle/order/order",
+    "loading": false,
+    "error": "",
+    "method": "function"
+  },
+  "recoveryProbe": "Tool reported Mac locked before output; command execution and potential local receipt creation UNKNOWN; readback and cleanup required",
+  "restoration": {
+    "fileValue": true,
+    "exactOriginalBytes": true,
+    "runtimeReadback": "pending unlock"
+  },
+  "limitations": [
+    "Root cause not established",
+    "Recovery card screenshot, actual button and loaded detail not verified",
+    "Potential minimal test receipt must be checked after unlock",
+    "Other widths and phone remain pending"
+  ],
+  "newCloudOrders": 0,
+  "realPayments": 0
+}
