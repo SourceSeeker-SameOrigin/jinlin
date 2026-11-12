@@ -67,9 +67,10 @@
       "AX Console click did not establish focus",
       "coordinate click returned noWindowsAvailable",
       "targeted Console setValue did not show inserted command",
-      "Raise and CUA rebind did not restore page navigation"
+      "Raise and CUA rebind did not restore page navigation",
+      "After user manually focused Console, channel probe paste was not visible; Return was not pressed"
     ],
     "lockedReported": false,
-    "requestedAssistance": "single manual focus of Console prompt, no command execution requested"
+    "requestedAssistance": "Official phone preview: inspect trash page quote only; do not submit yet"
   }
 }
