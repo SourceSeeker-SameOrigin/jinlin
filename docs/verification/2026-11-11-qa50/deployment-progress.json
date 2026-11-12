@@ -44,7 +44,6 @@
     }
   },
   "remainingFunctions": [
-    "payCallback",
     "refundCallback"
   ],
   "timerExecuted": false,
@@ -59,7 +58,8 @@
     "idle",
     "merchant",
     "pet",
-    "timer"
+    "timer",
+    "payCallback"
   ],
   "provider": {
     "status": "deployed and readback verified",
@@ -84,7 +84,7 @@
     ],
     "valuesNotRevealed": true
   },
-  "next": "payCallback: awaiting file selection",
+  "next": "refundCallback: awaiting file selection",
   "admin": {
     "status": "deployed and readback verified",
     "packageHashMatched": true,
@@ -164,5 +164,14 @@
     "valuesNotRevealed": true,
     "functionInvoked": false,
     "triggersModified": false
+  },
+  "payCallback": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "configurationModified": false,
+    "callbackInvoked": false
   }
 }
