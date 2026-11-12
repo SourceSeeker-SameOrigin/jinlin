@@ -72,9 +72,33 @@
       }
     },
     "430": {
-      "deviceSelected": "iPhone 14 Pro Max (430 x 932)",
-      "passed": false,
-      "reason": "Mac locked after device selection; route switch/result and screenshot not verified"
+      "widthRead": 430,
+      "sourceCommit": "419f0d0",
+      "observed": [
+        "ongoing empty screenshot",
+        "actual done filter click",
+        "two terminal cards and both detail links screenshot without overlap",
+        "actual closed detail open and return",
+        "actual aftersale filter: empty screenshot, prior cards cleared"
+      ],
+      "tabs": {
+        "top": 118,
+        "height": 50,
+        "width": 127.328125,
+        "count": 3
+      },
+      "returnState": {
+        "group": "done",
+        "count": 2,
+        "loading": false,
+        "error": "",
+        "hidden": false
+      },
+      "notVerified": [
+        "real nonzero unread",
+        "real multi-page list",
+        "large-font and full states"
+      ]
     }
   },
   "admin": {
@@ -96,7 +120,57 @@
   },
   "qa58": {
     "before": "390 screenshot: closed unpaid order incorrectly labelled paid 1.00, placement door",
-    "after": "13 isolated actual-page tests pass; updated UI not yet verified because Mac locked"
+    "after": {
+      "sourceCommit": "419f0d0",
+      "width": 430,
+      "unpaid": {
+        "observed": [
+          "actual closed card open",
+          "订单金额 ¥1.00",
+          "支付记录：未见支付成功记录",
+          "交付方式：放门口",
+          "screenshot no overlap",
+          "actual refresh clicked",
+          "actual back to list"
+        ],
+        "status": "closed"
+      },
+      "refunded": {
+        "observed": [
+          "actual cancelled card open",
+          "long payment explanation wraps within card",
+          "refund card separate",
+          "actual refresh and readback",
+          "actual back to list loading"
+        ],
+        "state": {
+          "status": "cancelled",
+          "amount": "1.00",
+          "paymentRecord": "已记录支付成功（不代表真实扣款）",
+          "refunds": [
+            {
+              "amount": "1.00",
+              "status": "成功"
+            }
+          ],
+          "loading": false,
+          "error": ""
+        }
+      },
+      "notVerified": [
+        "other widths for new QA58 text",
+        "real payment mode or cash charge",
+        "processing/failed refund real data",
+        "all admin actions"
+      ],
+      "adminReturn": {
+        "route": "admin/orders/orders",
+        "count": 2,
+        "statusIndex": 0,
+        "loading": false,
+        "error": ""
+      }
+    }
   },
   "limitations": [
     "synthetic stale-response tests do not prove real multi-account concurrency",
@@ -104,5 +178,18 @@
     "no large-font or real device acceptance in this run",
     "69 pages not fully accepted",
     "device switches restart simulator; no cross-restart continuity claim"
-  ]
+  ],
+  "followup": "2026-11-12 23:47 Asia/Shanghai; actual UI after user unlock, no new business writes",
+  "console": {
+    "errors": 0,
+    "warnings": 12,
+    "observedWarningKinds": [
+      "getSystemInfo platform notice",
+      "gray base library 3.18.0",
+      "SharedArrayBuffer deprecation",
+      "reportRealtimeAction fail not support"
+    ],
+    "note": "not zero warnings; did not change base library or tool settings",
+    "warningsAtFinalScreenshot": 14
+  }
 }
