@@ -31,5 +31,5 @@
   "isolatedLifecycleScenarios": 207,
   "componentProblems": [],
   "styleRuleProblems": [],
-  "liveUI": "Pending: AX readable, actual click returned noWindowsAvailable; no monthly recovery UI pass claimed."
+  "liveUI": "Partial live 390-width evidence recorded in qa52-live-ui.json; detail completion, receipt cleanup and return pending after Mac locked."
 }

@@ -1,0 +1,39 @@
+{
+  "sourceCommit": "f9e19d4",
+  "date": "2026-11-12",
+  "device": "WeChat DevTools iPhone 12/13 (Pro), 390 CSS px, 75% display",
+  "scope": "Local injected minimal receipt referencing existing authorized closed trash order; no new monthly order, payment or backend mutation",
+  "observed": {
+    "initial": {
+      "route": "pages/membership/index",
+      "recoveryMethod": "function",
+      "ready": true,
+      "loading": false,
+      "receipt": false,
+      "userMatched": true
+    },
+    "freshPageReceiptRestore": {
+      "receipt": true,
+      "created": true,
+      "ready": false,
+      "loading": false
+    },
+    "controlledFailure": {
+      "message": "月卡订单已创建，暂未打开详情，请点击下方按钮重试。不会重复购买。",
+      "navigating": false,
+      "navigationApiRestored": true
+    },
+    "visual": "Recovery card, explanation, failure message and existing-order button visible without overlap at 390; purchase form hidden",
+    "actualButtonClick": "Entered pages/orders/detail; observed 正在加载订单… only"
+  },
+  "pending": [
+    "Loaded detail identity and final state",
+    "Matching local receipt cleared",
+    "Back to monthly page and normal reload",
+    "True app restart and real-device recovery",
+    "320/375/430 recovery UI and full approved-design acceptance",
+    "Actual monthly creation/activation/task generation"
+  ],
+  "blocker": "After button navigation tool explicitly reported Mac locked; user asked to unlock",
+  "cleanup": "Navigation success callback should clear matching receipt; not yet read back, do not claim cleanup confirmed"
+}
