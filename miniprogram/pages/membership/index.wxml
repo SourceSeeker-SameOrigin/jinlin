@@ -6,15 +6,21 @@
 <view class="masthead-subtitle">选择适合自己的服务月卡</view>
 </view>
 </view>
+<view wx:if="{{createdOrderId}}" class="card">
+<view class="section-title">月卡订单已创建</view>
+<view class="muted">请前往已有订单查看状态或继续支付，无需重复购买。</view>
+<view wx:if="{{navigationError}}" class="error">{{navigationError}}</view>
+<button class="ui-button" bindtap="openCreatedOrder" loading="{{navigating}}" disabled="{{busy || navigating}}">前往已有订单</button>
+</view>
 <empty-state wx:if="{{loading}}" message="正在加载月卡…"/>
 <empty-state wx:if="{{!loading && error}}" message="{{error}}" retry bind:retry="load"/>
-<view wx:if="{{addresses.length > 1}}" class="card">
+<view wx:if="{{addresses.length > 1 && !createdOrderId}}" class="card">
 <view class="section-title">服务地址</view>
 <picker disabled="{{busy}}" range="{{addresses}}" range-key="pickerLabel" value="{{addressIndex}}" bindchange="addressChange">
 <view class="picker">{{addressText}} · 切换地址</view>
 </picker>
 </view>
-<block wx:if="{{ready && !loading}}">
+<block wx:if="{{ready && !loading && !createdOrderId}}">
 <view class="section-title">选择月卡</view>
 <empty-state wx:if="{{!plans.length}}" message="当前地址暂无可购买月卡"/>
 <view class="card" wx:for="{{plans}}" wx:key="code">

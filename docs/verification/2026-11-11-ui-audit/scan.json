@@ -159,6 +159,7 @@
       "route": "pages/membership/index",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "slot",

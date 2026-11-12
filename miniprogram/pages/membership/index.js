@@ -4,18 +4,31 @@ const { display } = require('../../utils/time');
 const { pay } = require('../../utils/payment');
 Page({
   data: { loading: true, ready: false, busy: false, error: '', plans: [], cards: [], addresses: [], addressIndex: 0,
+    createdOrderId: '', navigating: false, navigationError: '',
     slots: ['早班', '中班', '晚班'], slotIndex: 2, entryOptions: ['密码入户', '交接钥匙', '物业钥匙柜'], entry: 'password', entryPassword: '' },
-  onShow() { this.load(); },
+  onShow() { this.hidden = false; this.setData({ busy: !!this.purchasePending }); this.load(); },
+  onHide() { this.hidden = true; this.sequence = (this.sequence || 0) + 1; },
   onUnload() { this.closed = true; this.sequence = (this.sequence || 0) + 1; },
   async load() {
-    if (this.closed) return;
+    if (this.closed || this.hidden) return;
     const sequence = this.sequence = (this.sequence || 0) + 1;
-    const current = () => !this.closed && sequence === this.sequence;
+    const current = () => !this.closed && !this.hidden && sequence === this.sequence;
     const selectedId = this.data.addresses[this.data.addressIndex]?.id;
     this.setData({ loading: true, ready: false, error: '', plans: [], cards: [] });
     try {
       const user = await getApp().ensureSession();
       if (!current()) return;
+      this.userId = user._id;
+      this.receiptKey = 'membershipOrderReceipt:' + user._id;
+      if (this.receipt && this.receipt.userId !== user._id) this.receipt = null;
+      if (!this.receipt) {
+        try {
+          const saved = wx.getStorageSync(this.receiptKey);
+          if (saved && saved.userId === user._id && typeof saved.orderId === 'string' && saved.orderId) this.receipt = saved;
+        } catch (_) { /* Local storage failure must not discard an in-memory receipt. */ }
+      }
+      this.setData({ createdOrderId: this.receipt ? this.receipt.orderId : '', navigating: false, navigationError: '' });
+      if (this.receipt) return;
       if (!user.buildingId && !(user.addresses && user.addresses.length)) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
       const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
         buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room, isDefault: true }];
@@ -36,13 +49,13 @@ Page({
     return [address.buildingName, address.unit, address.room].filter(Boolean).join(' ');
   },
   async addressChange(event) {
-    if (this.closed || this.data.busy) return;
+    if (this.closed || this.hidden || this.data.busy || this.receipt) return;
     const addressIndex = Number(event.detail.value);
     const address = this.data.addresses[addressIndex];
     if (!address) return;
     if (addressIndex === this.data.addressIndex && this.data.ready && !this.data.loading) return;
     const sequence = this.sequence = (this.sequence || 0) + 1;
-    const current = () => !this.closed && sequence === this.sequence;
+    const current = () => !this.closed && !this.hidden && sequence === this.sequence;
     this.request = null;
     this.setData({ addressIndex, addressText: this.addressLabel(address), loading: true, ready: false, plans: [], error: '' });
     try {
@@ -59,13 +72,38 @@ Page({
   slot(event) { this.setData({ slotIndex: Number(event.detail.value) }); },
   entry(event) { this.setData({ entry: ['password', 'key_handover', 'property_keybox'][Number(event.detail.value)], entryPassword: '' }); },
   entryPassword(event) { this.setData({ entryPassword: event.detail.value }); },
+  openCreatedOrder() {
+    const receipt = this.receipt;
+    if (!receipt || receipt.userId !== this.userId || this.closed || this.hidden || this.data.navigating) return;
+    const key = 'membershipOrderReceipt:' + receipt.userId;
+    this.setData({ navigating: true, navigationError: '' });
+    const fail = () => {
+      if (!this.closed && !this.hidden) this.setData({ navigating: false,
+        navigationError: '月卡订单已创建，暂未打开详情，请点击下方按钮重试。不会重复购买。' });
+    };
+    try {
+      wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(receipt.orderId), fail,
+        success: () => {
+          try {
+            const saved = wx.getStorageSync(key);
+            if (saved && saved.userId === receipt.userId && saved.orderId === receipt.orderId) wx.removeStorageSync(key);
+          } catch (_) { /* A retained receipt can safely reopen the same order. */ }
+          if (this.receipt === receipt) this.receipt = null;
+        } });
+    } catch (_) { fail(); }
+  },
   async buy(event) {
-    if (this.closed || this.data.busy || this.data.loading || !this.data.ready) return;
+    if (this.closed || this.hidden || this.data.busy) return;
+    if (this.receipt) { this.openCreatedOrder(); return; }
+    if (this.data.loading || !this.data.ready) return;
     const planCode = event.currentTarget.dataset.code;
     if (!this.data.plans.some(plan => plan.code === planCode)) return;
     const slot = planCode === 'vacant_monthly' ? null : ['morning', 'afternoon', 'evening'][this.data.slotIndex];
     const address = this.data.addresses[this.data.addressIndex];
     const addressId = address && address.id || undefined;
+    const userId = this.userId;
+    const receiptKey = this.receiptKey;
+    this.purchasePending = true;
     this.setData({ busy: true, error: '' });
     try {
       const fields = { planCode, slot, addressId, entry: this.data.entry, entryPassword: this.data.entryPassword };
@@ -74,13 +112,18 @@ Page({
       const requestBody = { planCode, slot, addressId, requestId: this.request.requestId };
       if (planCode === 'vacant_monthly') Object.assign(requestBody, { entry: this.data.entry, entryPassword: this.data.entryPassword });
       const created = await api.call('membership', 'buy', requestBody);
-      if (this.closed) return;
+      if (!created || typeof created.orderId !== 'string' || !created.orderId) throw Error('未取得订单编号，请重试');
+      const receipt = { userId, orderId: created.orderId };
+      if (this.userId === userId) this.receipt = receipt;
       this.request = null;
-      try { await pay(created); } catch (error) { wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }
-      await this.load();
-      if (!this.closed) wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(created.orderId) });
-    } catch (error) { if (!this.closed) this.setData({ error: error.message }); }
-    finally { if (!this.closed) this.setData({ busy: false }); }
+      try { wx.setStorageSync(receiptKey, receipt); } catch (_) { /* Keep the in-memory lock even when storage fails. */ }
+      if (this.closed || this.hidden || this.userId !== userId) return;
+      this.setData({ createdOrderId: receipt.orderId, entryPassword: '', navigationError: '' });
+      try { await pay(created); }
+      catch (error) { if (!this.closed && !this.hidden) wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }
+      this.openCreatedOrder();
+    } catch (error) { if (!this.closed && !this.hidden) this.setData({ error: error.message }); }
+    finally { this.purchasePending = false; if (!this.closed && !this.hidden) this.setData({ busy: false }); }
   },
   async skip(event) {
     if (this.closed || this.data.busy || this.data.loading || !this.data.ready) return;
