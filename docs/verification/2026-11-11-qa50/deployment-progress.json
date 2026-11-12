@@ -44,7 +44,6 @@
     }
   },
   "remainingFunctions": [
-    "membership",
     "admin",
     "board",
     "event",
@@ -59,7 +58,8 @@
   "additionalReadback": "provider/membership/admin batch did not execute: automatic approval timeout",
   "completed": [
     "order",
-    "provider"
+    "provider",
+    "membership"
   ],
   "provider": {
     "status": "deployed and readback verified",
@@ -71,5 +71,18 @@
       "ALLOW_MOCK_PAY"
     ],
     "valuesNotRevealed": true
-  }
+  },
+  "membership": {
+    "status": "deployed and readback verified",
+    "packageHashMatched": true,
+    "matchedFiles": 76,
+    "totalFiles": 76,
+    "sdkVersion": "4.0.2",
+    "environmentNamesRetained": [
+      "ALLOW_MOCK_PAY",
+      "SECRET_KEY"
+    ],
+    "valuesNotRevealed": true
+  },
+  "next": "admin: awaiting selected package verification"
 }
