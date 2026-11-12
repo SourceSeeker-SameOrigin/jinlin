@@ -33,5 +33,8 @@
     "Simulator screenshot and accessibility tree occasionally lag device-model changes; width labels above only reflect observations where screen/device evidence matched.",
     "QA49 visual click test remains outstanding.",
     "430 actual screenshot observed after navigation refreshed the earlier stale image. Console AX click did not focus and coordinate click returned noWindowsAvailable; no console command pasted."
-  ]
+  ],
+  "historicalSnapshot": true,
+  "latestEvidence": "../2026-11-12-mock-orders/widths.json",
+  "latestStatus": "All four widths now have equal-row rectangle measurements; old pending entries below describe the earlier snapshot only."
 }

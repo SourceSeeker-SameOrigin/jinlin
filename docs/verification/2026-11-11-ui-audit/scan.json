@@ -45,6 +45,7 @@
       "route": "pages/service/express",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -64,6 +65,7 @@
       "route": "pages/service/trash",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -83,6 +85,7 @@
       "route": "pages/service/buy",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -102,6 +105,7 @@
       "route": "pages/service/help",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -820,6 +824,7 @@
       "route": "pet/order",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "removePetDate",
@@ -1030,6 +1035,7 @@
       "route": "elder/meal",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "change",
@@ -1045,6 +1051,7 @@
       "route": "elder/escort",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "change",

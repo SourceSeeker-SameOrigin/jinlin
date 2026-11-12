@@ -19,6 +19,7 @@ function draftForm(serviceCode, form) {
 module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
+      createdOrderId: '', navigating: false, navigationError: '',
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
       pointsToUse: 0, visitsPerDayOptions: [1,2], entryMethods: ['门锁密码','当面交钥匙','物业钥匙盒'],
@@ -57,6 +58,7 @@ module.exports = function serviceForm(serviceCode) {
           this.setData({ 'form.date': date, escortDateStart: this.dateOffset(0), escortDateEnd: this.dateOffset(30) });
         }
         this.restoreDraft(user);
+        if (this.createdOrderId) return;
         if (this.idlePrefill) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
@@ -70,7 +72,13 @@ module.exports = function serviceForm(serviceCode) {
       finally { if (sequence === this.loadSequence && !this.hidden && !this.unloaded) this.setData({ loading: false }); }
     },
     restoreDraft(user) {
+      if (this.createdOrderId) { this.setData({ createdOrderId: this.createdOrderId, navigating: false }); return; }
       const draft = wx.getStorageSync(this.draftKey);
+      if (draft && draft.userId === user._id && typeof draft.createdOrderId === 'string' && draft.createdOrderId) {
+        this.createdOrderId = draft.createdOrderId;
+        this.setData({ createdOrderId: draft.createdOrderId });
+        return;
+      }
       if (!draft || draft.userId !== user._id || draft.communityId !== user.communityId || Date.now() - draft.savedAt > 86400000) {
         if (draft) wx.removeStorageSync(this.draftKey);
         this.request = null;
@@ -88,6 +96,10 @@ module.exports = function serviceForm(serviceCode) {
     saveDraft() {
       const user = getApp().globalData.user;
       if (!this.draftKey || !user || !user._id) return;
+      if (this.createdOrderId) {
+        wx.setStorageSync(this.draftKey, { userId: user._id, createdOrderId: this.createdOrderId });
+        return;
+      }
       const slot = this.data.slots[this.data.slotIndex] && this.data.slots[this.data.slotIndex].value;
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: user.communityId, savedAt: Date.now(),
         form: draftForm(serviceCode, this.data.form), slot, request: serviceCode === 'pet' ? null : this.request });
@@ -214,8 +226,28 @@ module.exports = function serviceForm(serviceCode) {
       } finally { if (sequence === this.quoteSequence && !this.unloaded) this.setData({ quoteLoading: false }); }
     },
     retryQuote() { return this.data.community ? this.refreshQuote() : this.addressChange({ detail: { value: this.data.addressIndex } }); },
+    openCreatedOrder() {
+      if (!this.createdOrderId || this.data.navigating || this.hidden || this.unloaded) return;
+      this.setData({ navigating: true, navigationError: '' });
+      const failed = () => {
+        if (!this.hidden && !this.unloaded) this.setData({ navigating: false,
+          navigationError: '订单已创建，暂未打开详情，请点击下方按钮重试。不会重复下单。' });
+      };
+      try {
+        wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(this.createdOrderId),
+          success: () => {
+            // A newer page may already own this draft key. Only clear our own receipt.
+            try {
+              const saved = this.draftKey && wx.getStorageSync(this.draftKey);
+              if (saved && saved.createdOrderId === this.createdOrderId) wx.removeStorageSync(this.draftKey);
+            } catch (_) { /* Keep the receipt for recovery if local storage is unavailable. */ }
+          }, fail: failed });
+      } catch (_) { failed(); }
+    },
     async submit() {
-      if (this.data.saving || !this.data.quote || this.data.quoteLoading) return;
+      if (this.data.saving || this.hidden || this.unloaded) return;
+      if (this.createdOrderId) { this.openCreatedOrder(); return; }
+      if (!this.data.quote || this.data.quoteLoading) return;
       this.setData({ saving: true, error: '' });
       try {
         const params = this.params();
@@ -224,12 +256,17 @@ module.exports = function serviceForm(serviceCode) {
           signature, id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
         this.saveDraft();
         const created = await api.call('order', 'create', { ...params, requestId: this.request.id });
+        if (!created || typeof created.orderId !== 'string' || !created.orderId) throw Error('未取得订单编号，请重试');
+        this.createdOrderId = created.orderId;
         this.request = null;
-        if (this.draftKey) wx.removeStorageSync(this.draftKey);
+        // Once confirmed, persist only the receipt, never the form or entry password.
+        try { this.saveDraft(); } catch (_) { /* The in-memory receipt still prevents another create. */ }
+        if (this.unloaded || this.hidden) return;
+        this.setData({ createdOrderId: created.orderId, navigationError: '' });
         try { await pay(created); }
-        catch (error) { wx.showToast({ title: error.message || '支付未完成，可到订单详情继续支付', icon: 'none' }); }
-        wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(created.orderId) });
-      } catch (error) { this.setData({ error: error.message || '下单失败，请重试' }); }
+        catch (error) { if (!this.unloaded && !this.hidden) wx.showToast({ title: error.message || '支付未完成，可到订单详情继续支付', icon: 'none' }); }
+        this.openCreatedOrder();
+      } catch (error) { if (!this.unloaded && !this.hidden) this.setData({ error: error.message || '下单失败，请重试' }); }
       finally { if (!this.unloaded) this.setData({ saving: false }); }
     }
   };
