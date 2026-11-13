@@ -35,7 +35,7 @@ Page({
     let reason = '';
     if (item.status !== 'published') reason = '活动当前不可报名';
     else if (!beforeDeadline || start <= now) reason = '活动报名已截止';
-    else if (item.remaining <= 0 && !status) reason = '活动名额已满';
+    else if (item.remaining <= 0 && item.canSignup) reason = '活动名额已满';
     if (!beforeDeadline && (status === 'signed' || status === 'pending_pay')) reason = '报名已截止，无法取消报名';
     const actions = { canJoin, canPay, canCancel, reason };
     const next = Math.min(...[deadline, start].filter(at => at > now));
