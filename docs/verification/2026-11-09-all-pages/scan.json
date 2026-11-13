@@ -448,7 +448,8 @@
       "filesComplete": true,
       "handlers": [
         "load",
-        "preview"
+        "preview",
+        "loadMore"
       ],
       "missingHandlers": [],
       "missingRoutes": [],

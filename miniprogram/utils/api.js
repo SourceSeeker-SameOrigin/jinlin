@@ -21,7 +21,7 @@ async function call(name, action, data = {}, options = {}) {
   } catch (error) {
     const active = typeof options.isActive !== 'function' || options.isActive();
     if (active && !options.silent) wx.showToast({ title: error.message || '网络连接失败，请重试', icon: 'none' });
-    if (active && error.code === 'E_FORBIDDEN') wx.switchTab({ url: '/pages/index/index' });
+    if (active && options.redirectOnForbidden !== false && error.code === 'E_FORBIDDEN') wx.switchTab({ url: '/pages/index/index' });
     throw error;
   } finally {
     if (loading && --pending === 0) wx.hideLoading();
