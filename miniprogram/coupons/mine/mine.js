@@ -7,7 +7,7 @@ const { discountText } = require('../presentation');
 const STATUS = { unused: '未使用', locked: '已锁定', used: '已使用', expired: '已过期' };
 Page({
   ...lifecycle,
-  data: { loading: false, error: '', list: [], retrying: false, retryError: '', retryMessage: '', canRetry: false },
+  data: { loading: true, error: '', list: [], retrying: false, retryError: '', retryMessage: '', canRetry: false },
   load() {
     return readList(this, { canRetry: false, retrying: false }, '优惠券加载失败', async (_, options) => {
       const { list } = await api.call('coupon', 'mine', {}, options);

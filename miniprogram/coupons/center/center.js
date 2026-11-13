@@ -5,7 +5,7 @@ const { discountText } = require('../presentation');
 
 Page({
   ...lifecycle,
-  data: { loading: false, busy: false, error: '', list: [] },
+  data: { loading: true, busy: false, error: '', list: [] },
   load() {
     return readList(this, { busy: false }, '优惠券加载失败', async (_, options) => {
       const { list } = await api.call('coupon', 'center', {}, options);
