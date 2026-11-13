@@ -8,6 +8,10 @@
   </view>
   <view class="coupon-loading" wx:if="{{loading}}">正在加载…</view>
   <block wx:else>
+    <view wx:for="{{pending}}" wx:key="id" class="card">
+      <view class="section-title">{{item.name}} · 领取结果待确认</view>
+      <button class="ui-button" data-id="{{item.templateId}}" bindtap="claim" disabled="{{busy}}">重试上次领取</button>
+    </view>
     <view wx:if="{{error}}" class="error">{{error}}
       <button class="ui-button" bindtap="load">重试</button>
     </view>

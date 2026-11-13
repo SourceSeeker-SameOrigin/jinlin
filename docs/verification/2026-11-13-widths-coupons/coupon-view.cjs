@@ -35,3 +35,17 @@ for (const page of pages) {
   }
   console.log(page, cases.length + '/' + cases.length);
 }
+
+const recovery = context.$gwx(pages[0]);
+for (const error of ['', '网络中断']) {
+  const node = recovery({loading:false, busy:false, error, list:[],
+    pending:[{id:'req-local',templateId:'ct-local',name:'最后一张样券'}]});
+  function button(value) {
+    if (typeof value === 'string') return null;
+    if (value.tag === 'wx-button' && visibleText(value).includes('重试上次领取')) return value;
+    return (value.children || []).map(button).find(Boolean);
+  }
+  assert.ok(button(node));
+  assert.ok(visibleText(node).includes('最后一张样券'));
+}
+console.log('center: 2/2 pending claim recovery with no remaining inventory');

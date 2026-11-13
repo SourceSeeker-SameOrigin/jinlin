@@ -589,8 +589,8 @@
       "route": "coupons/center/center",
       "filesComplete": true,
       "handlers": [
-        "load",
-        "claim"
+        "claim",
+        "load"
       ],
       "missingHandlers": [],
       "missingRoutes": [],

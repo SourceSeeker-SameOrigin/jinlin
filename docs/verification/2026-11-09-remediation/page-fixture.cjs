@@ -9,7 +9,7 @@ function runtime(call = async () => { throw Error('Unexpected API call'); }, ove
   const store = {}, navigation = [], requests = [], cache = new Map();
   const app = { globalData: { user: { _id: 'fixture', roles: ['resident'] }, community: null },
     ensureSession: async () => app.globalData.user };
-  const wx = { getStorageSync: key => store[key], removeStorageSync: key => delete store[key],
+  const wx = { getStorageSync: key => store[key], setStorageSync: (key, value) => { store[key] = value; }, removeStorageSync: key => delete store[key],
     navigateTo: o => navigation.push(['navigateTo', o.url]),
     redirectTo: o => navigation.push(['redirectTo', o.url]),
     switchTab: o => navigation.push(['switchTab', o.url]), showToast() {} };

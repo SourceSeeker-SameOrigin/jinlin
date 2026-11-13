@@ -8,8 +8,8 @@ function communityMatches(template, communityId) {
   return template.communityIds === 'all' || template.communityIds.includes(communityId);
 }
 
-async function issueOne(server, { openid, templateId, mode, communityId, deterministic = false }) {
-  const suffix = deterministic ? mode : crypto.randomBytes(16).toString('hex');
+async function issueOne(server, { openid, templateId, mode, communityId, deterministic = false, claimRequestId }) {
+  const suffix = claimRequestId ? 'claim_' + claimRequestId : deterministic ? mode : crypto.randomBytes(16).toString('hex');
   const id = couponId(openid, templateId, suffix);
   const actor = await server.one('users', { openid });
   ensure(actor, '用户不存在');

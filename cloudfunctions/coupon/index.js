@@ -23,7 +23,11 @@ async function center(event, { user }) {
 async function claim(event, { user, openid }) {
   await server.featureEntry('coupons', user);
   text(event.templateId, '优惠券模板');
-  return issueOne(server, { openid, templateId: event.templateId, mode: 'claim', communityId: user.communityId });
+  if (event.requestId !== undefined) {
+    ensure(typeof event.requestId === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(event.requestId), '领取编号不正确');
+  }
+  return issueOne(server, { openid, templateId: event.templateId, mode: 'claim',
+    communityId: user.communityId, claimRequestId: event.requestId });
 }
 
 async function mine(event, { user, openid }) {
