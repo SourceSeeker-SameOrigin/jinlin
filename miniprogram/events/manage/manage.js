@@ -15,11 +15,21 @@ Page({
     startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
     types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
     sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false,
+    rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0,
     communities: [], communityIndex: 0, communityId: '', ready: false },
-  onShow() { this.load(); },
+  onShow() { this.inactive = false; return this.load(); },
+  onHide() { this.inactive = true; this.invalidateReads(); },
+  onUnload() { this.inactive = true; this.invalidateReads(); },
+  invalidateReads() {
+    this.loadSequence = (this.loadSequence || 0) + 1;
+    this.rosterSequence = (this.rosterSequence || 0) + 1;
+  },
   async load() {
-    const sequence = this.loadSequence = (this.loadSequence || 0) + 1;
-    this.setData({ loading: true, ready: false, error: '', errorFromForm: false, list: [], attendees: [], scanCode: '' });
+    if (this.inactive) return;
+    this.invalidateReads();
+    const sequence = this.loadSequence;
+    this.setData({ loading: true, ready: false, error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
+      rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0 });
     try {
       const user = await getApp().ensureSession();
       const isAdmin = user.roles.includes('admin');
@@ -119,9 +129,38 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async showSignups(event) {
+    if (this.inactive || !this.data.ready || this.data.loading) return;
+    const id = event.currentTarget.dataset.id;
+    const activity = this.data.list.find(row => row._id === id && row.status === 'published');
+    if (!activity || (id === this.data.rosterId && this.data.rosterLoading)) return;
+    this.rosterSequence = (this.rosterSequence || 0) + 1;
+    this.setData({ rosterId: id, rosterTitle: activity.title, attendees: [], rosterOffset: 0,
+      rosterMore: false, rosterLoading: false, rosterError: '' });
+    return this.readRosterPage();
+  },
+  loadMoreSignups() {
+    if (this.data.rosterMore) return this.readRosterPage();
+  },
+  retrySignups() {
+    if (this.data.rosterError) return this.readRosterPage();
+  },
+  async readRosterPage() {
+    const { rosterId, rosterOffset, rosterLoading, ready } = this.data;
+    if (this.inactive || !ready || !rosterId || rosterLoading) return;
+    const sequence = this.rosterSequence;
+    this.setData({ rosterLoading: true, rosterError: '' });
     try {
-      const result = await api.call('event', 'listSignups', { eventId: event.currentTarget.dataset.id }, { loading: false, silent: true });
-      this.setData({ attendees: result.list || [] });
-    } catch (error) { this.setData({ error: error.message || '报名名单加载失败', errorFromForm: false }); }
+      const result = await api.call('event', 'listSignups', { eventId: rosterId, offset: rosterOffset }, { loading: false, silent: true });
+      if (sequence !== this.rosterSequence) return;
+      const rows = result.list;
+      const seen = new Set(this.data.attendees.map(row => row.signupId));
+      const additions = rows.filter(row => !seen.has(row.signupId) && seen.add(row.signupId));
+      this.setData({ attendees: this.data.attendees.concat(additions), rosterOffset: rosterOffset + rows.length,
+        rosterMore: rows.length > 0 && result.hasMore === true });
+    } catch (error) {
+      if (sequence === this.rosterSequence) this.setData({ rosterError: error.message || '报名名单加载失败' });
+    } finally {
+      if (sequence === this.rosterSequence) this.setData({ rosterLoading: false });
+    }
   }
 });

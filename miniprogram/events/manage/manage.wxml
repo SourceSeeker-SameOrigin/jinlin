@@ -91,5 +91,15 @@
 <button wx:if="{{item.cancelRefund.status === 'attention' && item.cancelRefund.failedCount > 0}}" data-id="{{item._id}}" bindtap="retryCancellation">重试失败退款</button>
 </view>
 <view wx:if="{{loading}}" class="card">正在加载…</view>
-<view class="card" wx:for="{{attendees}}" wx:key="signupId">{{signupStatusNames[item.status] || '状态待确认'}} · {{item.checkinCode}}</view>
+<view class="card" wx:if="{{rosterId}}">
+<view class="section-title">{{rosterTitle}} · 报名名单</view>
+<view wx:for="{{attendees}}" wx:key="signupId">{{signupStatusNames[item.status] || '状态待确认'}} · {{item.checkinCode}}</view>
+<view wx:if="{{rosterLoading}}" class="muted">正在加载报名名单…</view>
+<block wx:elif="{{rosterError}}">
+<view class="error">{{rosterError}}</view>
+<button class="ui-button" bindtap="retrySignups">重试本页名单</button>
+</block>
+<button wx:elif="{{rosterMore}}" class="ui-button" bindtap="loadMoreSignups">加载更多报名</button>
+<view wx:elif="{{!attendees.length}}" class="muted">暂无报名记录</view>
+</view>
 </view>
