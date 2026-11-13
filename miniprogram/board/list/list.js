@@ -2,37 +2,48 @@ const ads = require('../../utils/ads');
 const api = require('../../utils/api');
 const { display } = require('../../utils/time');
 const { yuan } = require('../../utils/money');
+const { lifecycle, readList } = require('../../utils/visible-list');
+
 Page({
+  ...lifecycle,
   data: { ads: [], adError: '', loading: false, error: '', needsBinding: true, posts: [], type: 'ask', scope: 'community', federationEnabled: false,
     types: [{ code: 'task', label: '悬赏' }, { code: 'ask', label: '求助' }, { code: 'carry', label: '出行帮带' }] },
   onLoad(options = {}) { if (options.type === 'carry') this.setData({ type: 'carry' }); },
   retryAds() { return ads.load(this, 'board_top', this.adCommunityId); },
   recordAd(event) { ads.record(this,event.currentTarget.dataset.id,'ad_view'); },
   openAd(event) { ads.open(this,event); },
-  onShow() { return this.load(true); },
-  onHide() { ads.clear(this); },
-  async load(reset = false) {
-    if(reset)ads.clear(this);
-    this.setData({ loading: true, error: '', ...(reset ? { posts: [] } : {}) });
-    try {
-      const user = await getApp().ensureSession();
-      const needsBinding = !user.communityId || !user.buildingId;
-      this.setData({ needsBinding });
-      if (needsBinding) {
+  load(reset = true) {
+    const append = reset === false;
+    const { type, scope, posts } = this.data;
+    if (!append) ads.clear(this);
+    return readList(this, append ? {} : { posts: [], hasMore: false, federationEnabled: false }, '需求列表加载失败', async (user, options) => {
+      const { communityId, buildingId } = user;
+      if (!communityId || !buildingId) {
         ads.clear(this);
-        this.setData({ posts: [], hasMore: false, federationEnabled: false, scope: 'community' });
-        return;
+        return { needsBinding: true, posts: [], hasMore: false, federationEnabled: false, scope: 'community' };
       }
-      const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
-      const federationEnabled = community.enabledFeatures.federation;
+      this.setData({ needsBinding: false });
+      if (append && communityId !== this.listCommunityId) {
+        this.setData({ posts: [], hasMore: false, federationEnabled: false });
+        ads.clear(this);
+      }
+      const community = await api.call('catalog', 'getCommunity', { communityId }, options);
+      if (!options.isActive()) return;
       if (!community.enabledFeatures.board) throw new Error('需求广场暂未开放');
-      if (reset) await ads.load(this, 'board_top', user.communityId);
-      const result = await api.call('board', 'list', { type: this.data.type, scope: this.data.scope,
-        offset: reset ? 0 : this.data.posts.length }, { loading: false, silent: true });
-      this.setData({ federationEnabled, posts: reset ? result.list.map(this.formatPost) :
-        [...this.data.posts, ...result.list.map(this.formatPost)], hasMore: result.hasMore });
-    } catch (error) { this.setData({ error: error.message || '需求列表加载失败' }); }
-    finally { this.setData({ loading: false }); }
+      const federationEnabled = !!community.enabledFeatures.federation;
+      const selectedScope = federationEnabled && type !== 'task' ? scope : 'community';
+      const sameList = append && this.listCommunityId === communityId && scope === selectedScope;
+      if (!sameList) {
+        this.setData({ posts: [], hasMore: false, scope: selectedScope });
+        await ads.load(this, 'board_top', communityId, options.isActive);
+        if (!options.isActive()) return;
+      }
+      const previous = sameList ? posts : [];
+      const result = await api.call('board', 'list', { type, scope: selectedScope, offset: previous.length }, options);
+      if (!options.isActive()) return;
+      this.listCommunityId = communityId;
+      return { federationEnabled, posts: previous.concat(result.list.map(this.formatPost)), hasMore: result.hasMore };
+    });
   },
   formatPost(post) { return { ...post, timeText: display(post.createdAt), typeText: post.type === 'task' ? '悬赏' : post.type === 'carry' ? '出行帮带' : '求助',
     rewardText: post.reward ? yuan(post.reward) : '', slotText: post.slot ? post.slot.date + ' ' + post.slot.start + '—' + post.slot.end : '' }; },
@@ -42,5 +53,5 @@ Page({
   bindAddress() { wx.navigateTo({ url: '/pages/bind/bind' }); },
   create() { if (this.data.needsBinding) return this.bindAddress(); wx.navigateTo({ url: '/board/create/create?type=' + this.data.type }); },
   open(event) { wx.navigateTo({ url: '/board/detail/detail?id=' + encodeURIComponent(event.currentTarget.dataset.id) }); },
-  more() { if (this.data.hasMore && !this.data.loading) this.load(); }
+  more() { if (this.data.hasMore && !this.data.loading) return this.load(false); }
 });
