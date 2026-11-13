@@ -1086,8 +1086,8 @@
       "route": "notices/list/list",
       "filesComplete": true,
       "handlers": [
-        "load",
-        "loadMore"
+        "loadMore",
+        "load"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
