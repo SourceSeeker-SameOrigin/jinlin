@@ -3,3 +3,5 @@
 .profile-address{background:#E4F0DF}.profile-action{min-width:128rpx;text-align:center;box-sizing:border-box;padding:12rpx 24rpx;line-height:1.5}.profile-heading .pill{padding:0 12rpx;font-weight:500}.account-item .menu-icon{width:64rpx;height:64rpx}.account-grid{margin-bottom:40rpx}.join-neighbors{display:flex;align-items:center;gap:24rpx;padding:24rpx;border-radius:20rpx;background:#EDF3E3}.join-icon{width:92rpx;height:92rpx;flex-shrink:0}.join-title{font-size:36rpx;font-weight:600}.legal-menu .menu-icon{width:44rpx;height:44rpx}.legal-menu .menu-row{min-height:92rpx;padding:18rpx 24rpx}.profile-heading .muted{line-height:1.4}
 
 .workspace-row{width:100%;margin:0;text-align:left;justify-content:flex-start;font-weight:500}.workspace-row .menu-icon{width:64rpx;height:64rpx}.workspace-row .menu-copy{line-height:1.5}.workspace-row .muted{font-weight:400}
+
+.workspace-error{padding:20rpx 24rpx;background:#FFF3EB;border-radius:16rpx;margin:12rpx 0 24rpx;line-height:1.5;word-break:break-all}.workspace-error .btn-secondary{margin-top:16rpx;min-height:88rpx}

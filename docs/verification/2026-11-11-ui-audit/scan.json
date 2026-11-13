@@ -180,7 +180,8 @@
         "load",
         "callHotline",
         "doorDeliveryChange",
-        "openWorkspace"
+        "openWorkspace",
+        "retryApplication"
       ],
       "missingHandlers": [],
       "missingRoutes": [],

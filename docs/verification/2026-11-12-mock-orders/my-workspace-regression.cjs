@@ -5,7 +5,7 @@ const results = [];
 function check(name, user, code, expected, extra = {}) {
   const r = runtime(); const p = r.instance('miniprogram/pages/me/me.js'); const modals = [];
   r.wx.showModal = value => modals.push(value.title);
-  p.data.user = user;
+  p.data.user = user; p.data.loading = false; // Successfully initialized page, no real session.
   p.data.community = { enabledFeatures: { merchants: true, stationDelivery: true, ...extra.features } };
   p.data.provider = extra.provider || null;
   try {
