@@ -20,6 +20,35 @@ async function test(name, run) { try { await run(); results.push({name,status:'P
   const old=p.load(true);await tick();const fresh=p.load(true);await tick();calls[1].resolve({list:[row('new')],hasMore:false});await fresh;calls[0].reject(Error('过期失败'));await old;
   assert.equal(p.data.error,'');assert.equal(p.data.rows[0]._id,'new');const last=p.load(true);await tick();p.onUnload();p.setData=()=>{throw Error('离页更新');};calls[2].reject(Error('迟到失败'));await last;
  });
+ for (const name of ['orders', 'providers', 'reports', 'stations', 'merchants', 'merchantServices']) {
+  for (const fails of [false, true]) await test(name + ' 隐藏后忽略迟到' + (fails ? '错误' : '结果') + '，返回读取第一页', async () => {
+    const gate = deferred();
+    let blocked = false;
+    const serviceList = name === 'merchantServices';
+    const { p, r } = setup(serviceList ? 'merchants' : name, async () => {
+      if (blocked) return gate.promise;
+      return { list: [row('visible')], hasMore: true };
+    });
+    await p.load(true);
+    blocked = true;
+    const pending = serviceList ? p.inspect(pick('visible')) : p.load(false);
+    await tick();
+    if (p.onHide) p.onHide();
+    const setData = p.setData.bind(p);
+    let hiddenWrites = 0;
+    p.setData = patch => { hiddenWrites++; setData(patch); };
+    if (fails) gate.reject(Error('隐藏后返回的错误'));
+    else gate.resolve({ list: [row('hidden')], hasMore: false });
+    await pending;
+    assert.equal(hiddenWrites, 0);
+    p.setData = setData;
+    blocked = false;
+    await p.onShow(); await tick();
+    assert.equal(r.requests.at(-1)[2].offset, 0);
+    assert.equal((p.data.rows || p.data.list)[0]._id, 'visible');
+    assert.equal(p.data.error, '');
+  });
+ }
  await test('商家和服务各121条完整分页，价格展示不变，终页不再请求',async()=>{
   const all=Array.from({length:121},(_,i)=>row('x'+i));const {r,p}=setup('merchants',async(fn,action,params)=>({list:all.slice(params.offset,params.offset+20),hasMore:params.offset+20<all.length}));
   await p.load();while(p.data.hasMore)await p.loadMore();assert.equal(p.data.list.length,121);assert.equal(p.data.offset,121);

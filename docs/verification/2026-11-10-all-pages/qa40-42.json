@@ -1,7 +1,7 @@
 {
   "scope": "Synthetic controlled page APIs and extracted actual cloud function; no cloud calls or business writes",
-  "total": 15,
-  "passed": 15,
+  "total": 27,
+  "passed": 27,
   "results": [
     {
       "name": "orders:下一页失败保留记录与草稿、重试同一offset，重复读取被挡",
@@ -33,6 +33,54 @@
     },
     {
       "name": "stations:过期失败不覆盖新成功，离页失败不更新",
+      "status": "PASS"
+    },
+    {
+      "name": "orders 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "orders 隐藏后忽略迟到错误，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "providers 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "providers 隐藏后忽略迟到错误，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "reports 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "reports 隐藏后忽略迟到错误，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "stations 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "stations 隐藏后忽略迟到错误，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "merchants 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "merchants 隐藏后忽略迟到错误，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "merchantServices 隐藏后忽略迟到结果，返回读取第一页",
+      "status": "PASS"
+    },
+    {
+      "name": "merchantServices 隐藏后忽略迟到错误，返回读取第一页",
       "status": "PASS"
     },
     {

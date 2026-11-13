@@ -2,23 +2,25 @@ const api = require('../../utils/api');
 const TYPES = { post:'帖子', comment:'评论', idle:'闲置', event:'活动', message:'聊天消息', merchant:'商家服务' };
 Page({
   data: { loading: false, busy: false, error: '', rows: [], hasMore: true, status: 'pending' },
-  onShow() { this.load(true); },
+  onShow() { this._hidden = false; return this.load(true); },
+  onHide() { this._hidden = true; this.sequence = (this.sequence || 0) + 1; },
   onUnload() { this._closed = true; this.sequence = (this.sequence || 0) + 1; },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
   retry() { return this.load(this._failedReset !== false); },
   async load(reset = false) {
-    if (this._closed || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
+    if (this._closed || this._hidden || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
     const sequence = this.sequence = (this.sequence || 0) + 1;
+    const isActive = () => !this._closed && !this._hidden && sequence === this.sequence;
     const offset = reset ? 0 : this.data.rows.length;
     this._failedReset = reset;
     this.setData({ loading: true, error: '', ...(reset ? { rows: [], hasMore: true } : {}) });
     try {
-      const result = await api.call('content', 'listReports', { status: this.data.status, offset }, { loading: false, silent: true });
-      if (this._closed || sequence !== this.sequence) return;
+      const result = await api.call('content', 'listReports', { status: this.data.status, offset }, { loading: false, silent: true, isActive });
+      if (!isActive()) return;
       const rows = result.list.map(item => ({ ...item, typeLabel: TYPES[item.targetType] || item.targetType }));
       this.setData({ rows: reset ? rows : [...this.data.rows, ...rows], hasMore: result.hasMore });
-    } catch (error) { if (!this._closed && sequence === this.sequence) this.setData({ error: error.message || '举报列表加载失败' }); }
-    finally { if (!this._closed && sequence === this.sequence) this.setData({ loading: false }); }
+    } catch (error) { if (isActive()) this.setData({ error: error.message || '举报列表加载失败' }); }
+    finally { if (isActive()) this.setData({ loading: false }); }
   },
   chooseStatus(event) { if (this._closed || this.data.busy) return; this.setData({ status: event.currentTarget.dataset.status }); this.load(true); },
   openChat(event) {

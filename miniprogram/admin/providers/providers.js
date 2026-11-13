@@ -3,29 +3,34 @@ const { display } = require('../../utils/time');
 Page({
   data: { loading: false, busy: false, error: '', rows: [], hasMore: true, statusIndex: 0,
     statuses: ['待审核', '已通过', '已拒绝', '已停用', '全部'] },
-  onShow() { this.load(true); },
+  onShow() { this._hidden = false; return this.load(true); },
+  onHide() {
+    this._hidden = true;
+    this.sequence = (this.sequence || 0) + 1;
+  },
   onUnload() { this._closed = true; this.sequence = (this.sequence || 0) + 1; },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
   retry() { return this.load(this._failedReset !== false); },
   filter(event) { if (this._closed || this.data.busy) return; this.setData({ statusIndex: Number(event.detail.value) }); this.load(true); },
   async load(reset = false) {
-    if (this._closed || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
+    if (this._closed || this._hidden || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
     const sequence = this.sequence = (this.sequence || 0) + 1;
+    const isActive = () => !this._closed && !this._hidden && sequence === this.sequence;
     const offset = reset ? 0 : this.data.rows.length;
     this._failedReset = reset;
     this.setData({ loading: true, error: '', ...(reset ? { rows: [], hasMore: true } : {}) });
     try {
       await getApp().ensureSession();
-      if (this._closed || sequence !== this.sequence) return;
+      if (!isActive()) return;
       const result = await api.call('admin', 'listProviders', { status: ['pending', 'approved', 'rejected', 'suspended', ''][this.data.statusIndex],
-        offset }, { loading: false, silent: true });
-      if (this._closed || sequence !== this.sequence) return;
+        offset }, { loading: false, silent: true, isActive });
+      if (!isActive()) return;
       const rows = result.list.map(row => { const certs = row.certs || []; return { ...row, certs,
         escortCert: certs.includes('escort'), petCert: certs.includes('pet'),
         insuranceText: display(row.insuranceUntil).slice(0, 10), note: '' }; });
       this.setData({ rows: reset ? rows : [...this.data.rows, ...rows], hasMore: result.hasMore });
-    } catch (error) { if (!this._closed && sequence === this.sequence) this.setData({ error: error.message || '审核列表加载失败' }); }
-    finally { if (!this._closed && sequence === this.sequence) this.setData({ loading: false }); }
+    } catch (error) { if (isActive()) this.setData({ error: error.message || '审核列表加载失败' }); }
+    finally { if (isActive()) this.setData({ loading: false }); }
   },
   note(event) { if (this._closed || this.data.loading || this.data.busy || !this.data.rows[event.currentTarget.dataset.index]) return; this.setData({ ['rows[' + event.currentTarget.dataset.index + '].note']: event.detail.value }); },
   async review(event) {

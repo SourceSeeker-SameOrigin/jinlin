@@ -45,6 +45,7 @@
       "route": "pages/service/express",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -64,6 +65,7 @@
       "route": "pages/service/trash",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -83,6 +85,7 @@
       "route": "pages/service/buy",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -102,6 +105,7 @@
       "route": "pages/service/help",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "address",
@@ -155,6 +159,7 @@
       "route": "pages/membership/index",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "slot",
@@ -175,7 +180,8 @@
         "load",
         "callHotline",
         "doorDeliveryChange",
-        "openWorkspace"
+        "openWorkspace",
+        "retryApplication"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -427,7 +433,7 @@
       "filesComplete": true,
       "handlers": [
         "chooseStatus",
-        "load",
+        "retry",
         "openChat",
         "resolve",
         "moderate"
@@ -498,9 +504,12 @@
       "filesComplete": true,
       "handlers": [
         "filter",
-        "load",
+        "retry",
         "inspect",
+        "loadMore",
+        "retryServices",
         "serviceStatus",
+        "loadMoreServices",
         "review"
       ],
       "missingHandlers": [],
@@ -514,7 +523,8 @@
       "handlers": [
         "load",
         "select",
-        "input"
+        "input",
+        "openExports"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -539,7 +549,7 @@
       "route": "admin/stations/stations",
       "filesComplete": true,
       "handlers": [
-        "load",
+        "retry",
         "review"
       ],
       "missingHandlers": [],
@@ -805,7 +815,9 @@
         "showSignups",
         "checkin",
         "cancel",
-        "retryCancellation"
+        "retryCancellation",
+        "retrySignups",
+        "loadMoreSignups"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -816,6 +828,7 @@
       "route": "pet/order",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "removePetDate",
@@ -950,6 +963,7 @@
       "handlers": [
         "address",
         "input",
+        "load",
         "submit"
       ],
       "missingHandlers": [],
@@ -1026,6 +1040,7 @@
       "route": "elder/meal",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "change",
@@ -1041,6 +1056,7 @@
       "route": "elder/escort",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "load",
         "addressChange",
         "change",
@@ -1056,6 +1072,7 @@
       "route": "recycle/order/order",
       "filesComplete": true,
       "handlers": [
+        "openCreatedOrder",
         "category",
         "note",
         "selectSlot",
@@ -1071,8 +1088,8 @@
       "route": "notices/list/list",
       "filesComplete": true,
       "handlers": [
-        "load",
-        "loadMore"
+        "loadMore",
+        "load"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -1595,7 +1612,8 @@
         }
       ],
       "errors": {
-        "error": "合成网络失败"
+        "error": "合成网络失败",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -1611,7 +1629,8 @@
         }
       ],
       "errors": {
-        "error": "此功能暂未开放"
+        "error": "此功能暂未开放",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -1627,7 +1646,8 @@
         }
       ],
       "errors": {
-        "error": "合成网络失败"
+        "error": "合成网络失败",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -2536,7 +2556,8 @@
         }
       ],
       "errors": {
-        "error": "合成网络失败"
+        "error": "合成网络失败",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -2560,7 +2581,8 @@
         }
       ],
       "errors": {
-        "error": "此功能暂未开放"
+        "error": "此功能暂未开放",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -2584,7 +2606,8 @@
         }
       ],
       "errors": {
-        "error": "合成网络失败"
+        "error": "合成网络失败",
+        "errorKind": "load"
       },
       "loading": false,
       "uncaught": null,
@@ -3460,6 +3483,10 @@
         {
           "name": "merchant",
           "action": "myApplication"
+        },
+        {
+          "name": "merchant",
+          "action": "myApplication"
         }
       ],
       "errors": {
@@ -3476,6 +3503,10 @@
         {
           "name": "merchant",
           "action": "myApplication"
+        },
+        {
+          "name": "merchant",
+          "action": "myApplication"
         }
       ],
       "errors": {
@@ -3489,6 +3520,10 @@
       "route": "merchant/apply/apply",
       "scenario": "unbound_network_failure",
       "calls": [
+        {
+          "name": "merchant",
+          "action": "myApplication"
+        },
         {
           "name": "merchant",
           "action": "myApplication"

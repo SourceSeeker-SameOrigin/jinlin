@@ -9,14 +9,20 @@ Page({
     statuses: ['pending', 'approved', 'rejected', 'suspended', ''],
     statusLabels: ['待审核', '已通过', '已拒绝', '已停用', '全部'],
     statusNames: { pending: '待审核', approved: '已通过', rejected: '已拒绝', suspended: '已停用' } },
-  onShow() { this.load(); },
+  onShow() { this._hidden = false; return this.load(true); },
+  onHide() {
+    this._hidden = true;
+    this.loadSequence = (this.loadSequence || 0) + 1;
+    this.inspectSequence = (this.inspectSequence || 0) + 1;
+  },
   onUnload() { this._closed = true; this.loadSequence = (this.loadSequence || 0) + 1; this.inspectSequence = (this.inspectSequence || 0) + 1; },
   onReachBottom() { return this.loadMore(); },
   loadMore() { return this.load(false); },
   retry() { return this.load(this._failedReset !== false); },
   async load(reset = true) {
-    if (this._closed || (!reset && (this.data.loading || !this.data.hasMore || this.data.busy))) return;
+    if (this._closed || this._hidden || (!reset && (this.data.loading || !this.data.hasMore || this.data.busy))) return;
     const sequence = this.loadSequence = (this.loadSequence || 0) + 1;
+    const isActive = () => !this._closed && !this._hidden && sequence === this.loadSequence;
     const offset = reset ? 0 : this.data.offset;
     this._failedReset = reset;
     if (reset) this.inspectSequence = (this.inspectSequence || 0) + 1;
@@ -24,13 +30,13 @@ Page({
       selected: null, services: [], servicesLoading: false, servicesError: '', servicesHasMore: false, servicesOffset: 0 } : {}) });
     try {
       await getApp().ensureSession();
-      if (this._closed || sequence !== this.loadSequence) return;
-      const result = await api.call('merchant', 'adminList', { status: this.data.statuses[this.data.statusIndex], offset }, { loading: false, silent: true });
-      if (this._closed || sequence !== this.loadSequence) return;
+      if (!isActive()) return;
+      const result = await api.call('merchant', 'adminList', { status: this.data.statuses[this.data.statusIndex], offset }, { loading: false, silent: true, isActive });
+      if (!isActive()) return;
       if (!result.list.length && result.hasMore) throw new Error('商家列表分页异常，请重试');
       this.setData({ list: appendUnique(reset ? [] : this.data.list, result.list), offset: offset + result.list.length, hasMore: result.hasMore });
-    } catch (error) { if (!this._closed && sequence === this.loadSequence) this.setData({ error: error.message || '商家申请加载失败' }); }
-    finally { if (!this._closed && sequence === this.loadSequence) this.setData({ loading: false }); }
+    } catch (error) { if (isActive()) this.setData({ error: error.message || '商家申请加载失败' }); }
+    finally { if (isActive()) this.setData({ loading: false }); }
   },
   async filter(event) {
     if (this._closed || this.data.busy) return;
@@ -49,20 +55,21 @@ Page({
   retryServices() { return this.loadServices(this._servicesFailedReset !== false); },
   async loadServices(reset = true) {
     const merchant = this.data.selected;
-    if (this._closed || !merchant || (!reset && (this.data.servicesLoading || !this.data.servicesHasMore || this.data.busy))) return;
+    if (this._closed || this._hidden || !merchant || (!reset && (this.data.servicesLoading || !this.data.servicesHasMore || this.data.busy))) return;
     const sequence = this.inspectSequence = (this.inspectSequence || 0) + 1;
+    const isActive = () => !this._closed && !this._hidden && sequence === this.inspectSequence;
     const offset = reset ? 0 : this.data.servicesOffset;
     this._servicesFailedReset = reset;
     this.setData({ servicesLoading: true, servicesError: '', ...(reset ? { services: [], servicesOffset: 0, servicesHasMore: false } : {}) });
     try {
-      const result = await api.call('merchant', 'adminServices', { merchantId: merchant._id, offset }, { loading: false, silent: true });
-      if (this._closed || sequence !== this.inspectSequence || this.data.selected?._id !== merchant._id) return;
+      const result = await api.call('merchant', 'adminServices', { merchantId: merchant._id, offset }, { loading: false, silent: true, isActive });
+      if (!isActive() || this.data.selected?._id !== merchant._id) return;
       if (!result.list.length && result.hasMore) throw new Error('服务列表分页异常，请重试');
       const services = result.list.map(item => ({ ...item, priceText: yuan(item.price) }));
       this.setData({ services: appendUnique(reset ? [] : this.data.services, services), servicesOffset: offset + result.list.length,
         servicesHasMore: result.hasMore });
-    } catch (error) { if (!this._closed && sequence === this.inspectSequence) this.setData({ servicesError: error.message || '服务加载失败' }); }
-    finally { if (!this._closed && sequence === this.inspectSequence) this.setData({ servicesLoading: false }); }
+    } catch (error) { if (isActive()) this.setData({ servicesError: error.message || '服务加载失败' }); }
+    finally { if (isActive()) this.setData({ servicesLoading: false }); }
   },
   async review(event) {
     const approved = event.currentTarget.dataset.approved === 'true', merchant = this.data.selected;
