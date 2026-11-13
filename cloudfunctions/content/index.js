@@ -186,7 +186,7 @@ async function listNotices(event, { user }) {
     _id: item._id, communityId: item.communityId, title: item.title, body: item.body,
     imageFileId: item.imageFileId && (item.moderationApprovedFileIds || []).includes(item.imageFileId) ? item.imageFileId : '',
     pinned: item.pinned === true, createdAt: item.createdAt, endAt: item.endAt }));
-  return { list, hasMore: result.data.length === 20 };
+  return { list, hasMore: result.data.length === 20, nextOffset: offset + result.data.length };
 }
 
 async function saveNotice(event, { user, openid }) {

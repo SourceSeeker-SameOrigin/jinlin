@@ -19,10 +19,15 @@ Page({
       const offset = sameList ? this.data.offset : 0;
       const result = await api.call('content', 'listNotices', { communityId, offset }, options);
       const rows = (result.list || []).map(item => ({ ...item, createdText: display(item.createdAt) }));
+      // Older content versions set hasMore only after reading a full 20-row database page.
+      const nextOffset = result.nextOffset ?? (offset + (result.hasMore ? 20 : rows.length));
+      if (!Number.isSafeInteger(nextOffset) || nextOffset < offset || (result.hasMore && nextOffset === offset)) {
+        throw new Error('公告分页位置异常，请重试');
+      }
       return {
         list: sameList ? this.data.list.concat(rows) : rows,
         listCommunityId: communityId,
-        offset: offset + rows.length,
+        offset: nextOffset,
         hasMore: result.hasMore
       };
     });

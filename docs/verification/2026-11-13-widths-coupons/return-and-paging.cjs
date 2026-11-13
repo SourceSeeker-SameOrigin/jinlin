@@ -40,9 +40,9 @@ async function pages() {
   const offsets = [];
   const r = runtime(async (_, action, data) => {
     assert.equal(action, 'listNotices'); offsets.push(data.offset);
-    if (offsets.length === 1) return rows('old', true);
+    if (offsets.length === 1) return { ...rows('old', true), nextOffset: 1 };
     if (offsets.length === 2) return pending.promise;
-    if (offsets.length === 3) return rows('new', true);
+    if (offsets.length === 3) return { ...rows('new', true), nextOffset: 1 };
     return rows('next');
   });
   const p = r.instance('miniprogram/notices/list/list.js');

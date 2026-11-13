@@ -9,7 +9,7 @@ const { runtime } = require('../2026-11-09-remediation/page-fixture.cjs');
     assert.equal(action, 'listNotices');
     calls.push([communityId, offset]);
     if (fail) throw Error('读取失败');
-    return { list: [{ _id: communityId + offset, createdAt: 1795000000000 }], hasMore: offset === 0 };
+    return { list: [{ _id: communityId + offset, createdAt: 1795000000000 }], nextOffset: offset + 1, hasMore: offset === 0 };
   });
   const user = env.app.globalData.user;
   const page = env.instance('miniprogram/notices/list/list.js');
