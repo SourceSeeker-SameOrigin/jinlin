@@ -12,6 +12,7 @@ const { couponDiscount } = require('../../../cloudfunctions/_shared/couponData')
     await page.load();
     assert.equal(page.data.error, '');
     labels[name] = page.data.list.map(item => item.discountText);
+    assert.deepEqual(Array.from(labels[name]), ['减免1%', '减免20%', '减免99%']);
   }
   const args = { serviceCode: 'trash', communityId: 'sample', listPrice: 1000 };
   const rows = items.map((item, i) => ({ value: item.value, mine: labels.mine[i], center: labels.center[i], discountFen: couponDiscount(item, args) }));

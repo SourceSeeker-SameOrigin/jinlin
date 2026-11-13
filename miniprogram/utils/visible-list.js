@@ -1,0 +1,43 @@
+// Only the newest read in the current visit may update the page.
+const lifecycle = {
+  onShow() {
+    if (this._unloaded) return;
+    this._hidden = false;
+    return this.load();
+  },
+  onHide() {
+    this._hidden = true;
+    this._visit = (this._visit || 0) + 1;
+  },
+  onUnload() {
+    this._unloaded = true;
+  }
+};
+
+function currentVisit(page) {
+  const visit = page._visit;
+  return () => !page._hidden && !page._unloaded && page._visit === visit;
+}
+
+async function readList(page, initial, failureMessage, fetchList, pendingWrite) {
+  const visible = currentVisit(page);
+  if (!visible()) return;
+  const sequence = page._readSequence = (page._readSequence || 0) + 1;
+  const active = () => visible() && page._readSequence === sequence;
+  page.setData({ ...initial, loading: true, error: '' });
+  try {
+    // A return during an explicit claim must read the resulting inventory.
+    if (pendingWrite) await pendingWrite.catch(() => {});
+    if (!active()) return;
+    const user = await getApp().ensureSession();
+    if (!active()) return;
+    const patch = await fetchList(user, { loading: false, silent: true, isActive: active });
+    if (active()) page.setData(patch);
+  } catch (error) {
+    if (active()) page.setData({ error: error.message || failureMessage });
+  } finally {
+    if (active()) page.setData({ loading: false });
+  }
+}
+
+module.exports = { lifecycle, currentVisit, readList };

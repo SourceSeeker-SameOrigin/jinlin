@@ -1,26 +1,38 @@
 const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
+const { lifecycle, currentVisit, readList } = require('../../utils/visible-list');
+const { discountText } = require('../presentation');
+
 Page({
+  ...lifecycle,
   data: { loading: false, busy: false, error: '', list: [] },
-  onShow() { this.load(); },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
-      await getApp().ensureSession();
-      const result = await api.call('coupon', 'center', {}, { loading: false, silent: true });
-      this.setData({ list: result.list.map(item => ({ ...item,
-        discountText: item.kind === 'amount_off' ? yuan(item.value) + ' 元' :
-          item.kind === 'percent_off' ? item.value + '% 优惠' : '免费',
-        thresholdText: item.threshold ? '满 ' + yuan(item.threshold) + ' 元可用' : '无门槛' })) });
-    } catch (error) { this.setData({ error: error.message || '优惠券加载失败' }); }
-    finally { this.setData({ loading: false }); }
+  load() {
+    return readList(this, { busy: false }, '优惠券加载失败', async (_, options) => {
+      const { list } = await api.call('coupon', 'center', {}, options);
+      return { list: list.map(item => ({
+        ...item, discountText: discountText(item),
+        thresholdText: item.threshold ? '满 ' + yuan(item.threshold) + ' 元可用' : '无门槛'
+      })) };
+    }, this._pendingClaim);
   },
   async claim(event) {
-    if (this.data.busy) return;
+    const active = currentVisit(this);
+    if (!active() || this.data.loading || this._pendingClaim || this.data.busy) return;
     this.setData({ busy: true });
-    try { await api.call('coupon', 'claim', { templateId: event.currentTarget.dataset.id });
-      wx.showToast({ title: '领取成功', icon: 'success' }); await this.load(); }
-    catch (error) { this.setData({ error: error.message || '领取失败' }); }
-    finally { this.setData({ busy: false }); }
+    try {
+      const request = api.call('coupon', 'claim', { templateId: event.currentTarget.dataset.id },
+        { loading: false, silent: true, isActive: active });
+      this._pendingClaim = request;
+      await request;
+      if (active()) {
+        wx.showToast({ title: '领取成功', icon: 'success' });
+        await this.load();
+      }
+    } catch (error) {
+      if (active()) this.setData({ error: error.message || '领取失败' });
+    } finally {
+      this._pendingClaim = null;
+      if (active()) this.setData({ busy: false });
+    }
   }
 });
