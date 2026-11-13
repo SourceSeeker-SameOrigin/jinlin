@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const { lifecycle, readList } = require('../../utils/visible-list');
 const serviceCatalog = require('../../utils/service-catalog');
 const CORE_SERVICES = [
   { code: 'express', name: '代取快递', icon: 'express', subtitle: '取件送到门口' },
@@ -10,28 +11,28 @@ Page({
   data: { loading: true, error: '', community: null, firstOrder: false,
     notice: null, ads: [], needsBinding: true, eventsEnabled: false,
     services: CORE_SERVICES, serviceCatalog },
-  onShow() { return this.load(); },
-  async load() {
-    this.setData({ loading: true, error: '', community: null, notice: null, ads: [],
-      firstOrder: false, eventsEnabled: false, services: CORE_SERVICES, serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: '待完善资料' })) });
-    try {
+  ...lifecycle,
+  load() {
+    const initial = { community: null, notice: null, ads: [], needsBinding: true, firstOrder: false,
+      eventsEnabled: false, services: CORE_SERVICES, serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: '待完善资料' })) };
+    return readList(this, initial, '加载失败，请重试', async (user, options) => {
       const app = getApp();
-      const user = await app.ensureSession();
       if (!user.communityId || !user.buildingId) {
         app.globalData.community = null;
-        this.setData({ needsBinding: true, services: CORE_SERVICES.map(item => ({ ...item, url: '/pages/bind/bind' })) });
-        return;
+        return { needsBinding: true, services: CORE_SERVICES.map(item => ({ ...item, url: '/pages/bind/bind' })) };
       }
-      const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true });
-      app.globalData.community = community;
+      const community = await api.call('catalog', 'getCommunity', { communityId: user.communityId }, options);
+      if (!options.isActive()) return;
       let homeContent = { notice: null, ads: [] };
-      try { homeContent = await api.call('content', 'homeContent', { communityId: community._id }, { loading: false, silent: true }); } catch (_) {}
+      try { homeContent = await api.call('content', 'homeContent', { communityId: community._id }, options); } catch (_) {}
+      if (!options.isActive()) return;
+      const features = community.enabledFeatures || {};
       const services = [...CORE_SERVICES];
-      if (community.enabledFeatures && community.enabledFeatures.recycle) services.push({ code: 'recycle', name: '回收上门', icon: 'recycle', subtitle: '预约分类回收', url: '/recycle/order/order' });
-      this.setData({ community, needsBinding: false, firstOrder: !user.firstPaidAt, services, eventsEnabled: community.enabledFeatures && community.enabledFeatures.events === true,
-        notice: homeContent.notice, ads: homeContent.ads || [], serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: community.enabledFeatures[item.feature] ? '可使用' : '未开通' })) });
-    } catch (error) { this.setData({ error: error.message || '加载失败，请重试' }); }
-    finally { this.setData({ loading: false }); }
+      if (features.recycle) services.push({ code: 'recycle', name: '回收上门', icon: 'recycle', subtitle: '预约分类回收', url: '/recycle/order/order' });
+      app.globalData.community = community;
+      return { community, needsBinding: false, firstOrder: !user.firstPaidAt, services, eventsEnabled: features.events === true,
+        notice: homeContent.notice, ads: homeContent.ads || [], serviceCatalog: serviceCatalog.map(item => ({ ...item, statusText: features[item.feature] ? '可使用' : '未开通' })) };
+    });
   },
   introduce(event) {
     const item = serviceCatalog.find(service => service.code === event.currentTarget.dataset.code);

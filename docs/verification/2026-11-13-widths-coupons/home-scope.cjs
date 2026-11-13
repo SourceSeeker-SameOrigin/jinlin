@@ -48,6 +48,22 @@ function fixture(action) {
     f.pending.get('A').resolve(); await a;
     check(hook+': no late UI or global writes',writes===0 && !f.env.app.globalData.community,{writes,global:f.env.app.globalData.community?._id||null});
   }
+  {
+    const f = fixture('getCommunity'), sessions = [];
+    f.env.app.ensureSession = () => new Promise(r => sessions.push(r));
+    const a = f.show('A'), b = f.show('B');
+    sessions[1]({communityId:'B',buildingId:'test'}); await tick();
+    f.pending.get('B').resolve(); await b; sessions[0]({}); await a;
+    check('stale unbound session cannot clear B', f.env.app.globalData.community?._id==='B' && !f.page.data.needsBinding, f.view());
+  }
+  {
+    const f=fixture('homeContent'), a=f.show('A'); await tick();
+    f.page.onHide(); const b=f.show('B'); await tick(); f.pending.get('B').reject(Error('optional content unavailable')); await b;
+    f.pending.get('A').resolve(); await a;
+    check('return reload with optional content failure',f.page.data.community?._id==='B' && f.env.app.globalData.community?._id==='B' && f.page.data.notice===null && !f.page.data.ads.length && !f.page.data.error,f.view());
+    f.env.app.globalData.user={}; await f.page.onShow();
+    check('current unbound clears previous community',f.page.data.needsBinding && !f.page.data.community && !f.env.app.globalData.community,f.view());
+  }
   console.log(JSON.stringify(cases,null,2));
   if(cases.some(c=>!c.pass)) process.exitCode=1;
 })().catch(e=>{console.error(e);process.exitCode=2});
