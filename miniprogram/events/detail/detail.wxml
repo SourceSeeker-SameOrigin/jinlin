@@ -21,9 +21,10 @@
 <view wx:if="{{item.mySignup}}" class="muted">报名状态：{{signupStatusNames[item.mySignup.status] || '状态待确认'}}<text wx:if="{{item.mySignup.checkinCode}}"> · 签到码 {{item.mySignup.checkinCode}}</text>
 </view>
 <private-media wx:if="{{item.mySignup.checkinQrUrl}}" media-class="qr" src="{{item.mySignup.checkinQrUrl}}" mode="aspectFit"/>
-<button wx:if="{{item.canSignup && item.remaining > 0}}" type="primary" loading="{{busy}}" bindtap="signup">报名</button>
-<button wx:if="{{item.mySignup.status === 'pending_pay'}}" type="primary" loading="{{busy}}" bindtap="signup">继续支付</button>
-<button wx:if="{{item.mySignup.status === 'signed' || item.mySignup.status === 'pending_pay'}}" loading="{{busy}}" bindtap="cancelSignup">取消报名</button>
+<view wx:if="{{actions.reason}}" class="muted">{{actions.reason}}</view>
+<button wx:if="{{actions.canJoin}}" disabled="{{loading || busy}}" type="primary" loading="{{busy}}" bindtap="signup">报名</button>
+<button wx:if="{{actions.canPay}}" disabled="{{loading || busy}}" type="primary" loading="{{busy}}" bindtap="signup">继续支付</button>
+<button wx:if="{{actions.canCancel}}" disabled="{{loading || busy}}" loading="{{busy}}" bindtap="cancelSignup">取消报名</button>
 </view>
 <view wx:if="{{loading}}" class="card">正在加载…</view>
 <button wx:if="{{item}}" class="ui-button" bindtap="reportContent">举报活动</button>
