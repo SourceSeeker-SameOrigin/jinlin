@@ -27,7 +27,8 @@
 <button wx:if="{{actions.canCancel}}" disabled="{{loading || busy}}" loading="{{busy}}" bindtap="cancelSignup">取消报名</button>
 </view>
 <view wx:if="{{loading}}" class="card">正在加载…</view>
-<button wx:if="{{item}}" class="ui-button" bindtap="reportContent">举报活动</button>
+<view wx:if="{{item && reportError}}" class="error">举报未确认：{{reportError}}</view>
+<button wx:if="{{item}}" class="ui-button" bindtap="reportContent">{{reportError ? '重试举报' : '举报活动'}}</button>
 </view>
 
 </block>

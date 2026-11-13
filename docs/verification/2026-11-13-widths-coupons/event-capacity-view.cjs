@@ -46,3 +46,13 @@ for(const status of [null,'cancelled','refunded','signed','pending_pay','checked
   }
 }
 console.log('活动详情实际模板：'+count+' 组满额/余位、截止及报名状态通过');
+
+// Independent failures must retain their own retry destination.
+for (const [error,reportError] of [['',''],['','提交失败'],['读取失败',''],['读取失败','提交失败']]) {
+  const view=texts(render({...page.data,loading:false,item:{title:'合成活动'},actions:{},error,reportError}));
+  assert.equal(view.buttons.includes('重试举报'),Boolean(reportError));
+  assert.equal(view.buttons.includes('举报活动'),!reportError);
+  assert.equal(view.buttons.includes('重试'),Boolean(error));
+  assert.equal(view.all.join('').includes('举报未确认'),Boolean(reportError));
+}
+console.log('活动详情模板：4 组举报与详情错误组合通过');

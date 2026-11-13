@@ -6,12 +6,16 @@ const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
 const { signupStatusNames } = require('../../utils/status-labels');
 Page({
-  data: { missingRecord: false, loading: true, busy: false, error: '', item: null, signupStatusNames },
+  data: { missingRecord: false, loading: true, busy: false, error: '', reportError: '', item: null, signupStatusNames },
   onLoad(options = {}) {
     this.eventId = typeof options.id === 'string' ? options.id.trim() : '';
     this.setData({ missingRecord: !this.eventId, loading: !!this.eventId });
   },
   ...lifecycle,
+  onShow() {
+    if (this._hidden) this.setData({ reportError: '' });
+    return lifecycle.onShow.call(this);
+  },
   onHide() { lifecycle.onHide.call(this); clearTimeout(this.deadlineTimer); },
   onUnload() { lifecycle.onUnload.call(this); clearTimeout(this.deadlineTimer); },
   refreshActions() {
@@ -44,12 +48,19 @@ Page({
     }
     return actions;
   },
-  async reportContent(event) {
+  async reportContent() {
     if (!this.eventId || !this.data.item || this.data.loading || this._hidden || this._unloaded) return;
-    if(this.reporting)return;this.reporting=true;
-    try { await reportAction.submit('event',this.eventId); }
-    catch(error){this.setData({error:error.message||'举报提交失败'});}
-    finally{this.reporting=false;}
+    if (this.reporting) return;
+    this.reporting = true;
+    const active = currentVisit(this);
+    try {
+      const submitted = await reportAction.submit('event', this.eventId, active);
+      if (submitted && active()) this.setData({ reportError: '' });
+    } catch (error) {
+      if (active()) this.setData({ reportError: error.message || '举报提交失败' });
+    } finally {
+      this.reporting = false;
+    }
   },
   async load() {
     if (!this.eventId) return;

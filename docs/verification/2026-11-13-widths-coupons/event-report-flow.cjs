@@ -37,14 +37,20 @@ async function run() {
   env.wx.showActionSheet=sheet;env.wx.showModal=o=>o.success({confirm:false});await page.reportContent();
   record('取消理由选择及取消说明均无请求、记录或成功提示',!env.requests.some(r=>r[1]==='report') && !reports().length&&!env.toasts.length);
   env.wx.showModal=o=>o.success({confirm:true,content:'字'.repeat(501)});await page.reportContent();
-  record('超500字在客户端拒绝',!env.requests.some(r=>r[1]==='report') && page.data.error.includes('500'));
+  record('超500字在客户端拒绝',!env.requests.some(r=>r[1]==='report') && page.data.reportError.includes('500') && page.data.error==='');
   env.wx.showModal=modal;
   loseReply=true;await page.reportContent();
-  record('服务端已写、响应丢失时显示失败且无成功提示',reports().length===1 && page.data.error.includes('响应未收到')&&!env.toasts.length);
+  record('服务端已写、响应丢失时显示失败且无成功提示',reports().length===1 && page.data.reportError.includes('响应未收到')&&!env.toasts.length);
+  page.setData({error:'独立的详情提示'});
+  env.wx.showModal=o=>o.success({confirm:false});
+  const beforeCancel=env.requests.length;
+  await page.reportContent();
+  record('取消重试不提交且保留上次举报反馈',env.requests.length===beforeCancel&&page.data.reportError.includes('响应未收到'));
+  env.wx.showModal=modal;
   await Promise.all([page.reportContent(),page.reportContent()]);
   record('重试并双击仅发一次、无重复记录',env.requests.filter(r=>r[1]==='report').length===2 &&
     reports().length===1 && env.toasts.length===1 && env.toasts[0]==='举报已提交');
-  record('同页重试成功后不残留过期错误',page.data.error==='');
+  record('同页重试成功后不残留过期错误',page.data.reportError==='' && page.data.error==='独立的详情提示');
   const adminEnv=environment('manager'), admin=adminEnv.instance('miniprogram/admin/reports/reports.js');
   await admin.load(true);const first=admin.data.rows[0];
   record('管理待处理队列收到同一条活动举报及正确理由说明',first?.typeLabel==='活动'&&first.targetId===id&&first.reason==='其他问题'&&first.text==='本地测试说明');
@@ -65,6 +71,40 @@ async function run() {
   await page.load();
   record('管理员明确解除隐藏后住户可重新读取活动',admin.data.rows[0]?.hidden===false&&page.data.item?.title==='合成活动');
   record('无报名、订单或账户角色变更',!(db.data.orders||[]).length&&!(db.data.signups||[]).length&&!db.writes.some(w=>w.table==='users'));
+  // Hold one dialog or cloud reply while this visit ends. No cloud connection.
+  for (const boundary of ['reason','confirm','success','failure']) {
+    let release, reached;
+    const ready = new Promise(resolve => { reached = resolve; });
+    const hold = fn => { release = fn; reached(); };
+    const lateEnv = runtime(async (name, action) => {
+      assert.equal(action, 'report');
+      return new Promise((resolve, reject) => hold(() => boundary === 'failure' ? reject(Error('旧错误')) : resolve({})));
+    });
+    const late = lateEnv.instance('miniprogram/events/detail/detail.js');
+    late.onLoad({id}); late.setData({loading:false,item:{_id:id}});
+    let modals=0, successToasts=0;
+    lateEnv.wx.showToast=()=>{successToasts++;};
+    lateEnv.wx.showActionSheet=o=>{
+      const choose=()=>o.success({tapIndex:0});
+      if(boundary==='reason') hold(choose); else choose();
+    };
+    lateEnv.wx.showModal=o=>{
+      modals++;
+      const confirm=()=>o.success({confirm:true,content:''});
+      if(boundary==='confirm') hold(confirm); else confirm();
+    };
+    const pending=late.reportContent();
+    await ready;
+    if(boundary==='failure') late.onUnload(); else late.onHide();
+    let writes=0;
+    const set=late.setData.bind(late);
+    late.setData=patch=>{writes++; set(patch);};
+    release(); await pending;
+    const expectedCalls=boundary==='reason'||boundary==='confirm'?0:1;
+    record('离页后 '+boundary+' 回调不产生过期反馈',
+      writes===0 && !successToasts && !late.reporting && lateEnv.requests.length===expectedCalls &&
+      (boundary!=='reason'||modals===0));
+  }
   page.onUnload();admin.onUnload();
   for(const r of results)console.log((r.ok?'PASS ':'FAIL ')+r.name);
   if(results.some(r=>!r.ok))process.exitCode=1;
