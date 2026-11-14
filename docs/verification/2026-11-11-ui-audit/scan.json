@@ -448,7 +448,8 @@
       "filesComplete": true,
       "handlers": [
         "load",
-        "preview"
+        "preview",
+        "loadMore"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -588,8 +589,8 @@
       "route": "coupons/center/center",
       "filesComplete": true,
       "handlers": [
-        "load",
-        "claim"
+        "claim",
+        "load"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
@@ -815,7 +816,9 @@
         "showSignups",
         "checkin",
         "cancel",
-        "retryCancellation"
+        "retryCancellation",
+        "retrySignups",
+        "loadMoreSignups"
       ],
       "missingHandlers": [],
       "missingRoutes": [],
