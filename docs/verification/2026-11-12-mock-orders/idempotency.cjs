@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../../..');
 const clone = x => structuredClone(x);
 // Optional in-memory mutations prove the checks detect broken guards; never edit source files.
-const mutation = process.argv[2] || null;
+const mutation = require.main === module ? process.argv[2] || null : null;
 const mutations = {
   create_guard: ['orderWrite.js', 'if (existing) {', 'if (false) {'],
   payment_guard: ['paymentState.js', 'if (order.payment.paidAt) {', 'if (false) {'],
@@ -104,7 +104,9 @@ const code = expected => e => e.code === expected;
 async function paid() { const h = harness(); const o = await h.create();
   await h.actions.mockPay({ orderId: o._id }, h.auth); return h; }
 
-(async () => {
+module.exports = { harness };
+
+if (require.main === module) (async () => {
   await check('create: 25 identical retries produce one order and one revision', async () => {
     const h = harness(); const first = await h.create(); const n = h.writes.length;
     for (let i = 0; i < 25; i++) { const o = await h.create(); assert.equal(o._id, first._id); assert.equal(o.createdNow, false); }

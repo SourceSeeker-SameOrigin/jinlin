@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { atomic, read, insert } = require('./transaction');
 const { ensure, integer } = require('./validate');
 const { couponId, couponDiscount } = require('./couponData');
+const { refundParts } = require('./refundState');
 const { addDays } = require('./time');
 
 function communityMatches(template, communityId) {
@@ -89,7 +90,7 @@ async function releaseOrderDiscounts(transaction, order, user, now) {
   return nextBalance;
 }
 
-async function restoreRefundedPoints(transaction, order, refunds, now) {
+async function restoreRefundedPoints(transaction, order, refunds, now, newRefundNo) {
   const points = integer(order.pricing.pointsRedeemed || 0, '抵扣积分');
   const serviceFee = integer(order.pricing.payAmount || 0, '服务费实付');
   if (!points || !serviceFee) return 0;
@@ -101,18 +102,23 @@ async function restoreRefundedPoints(transaction, order, refunds, now) {
   let cumulativeServiceRefund = 0;
   let restored = 0;
   let totalAdded = 0;
+  const unposted = [];
+  // 先核对所有已入账的退款，再分配未入账的积分，以兼容逆序回调。
   for (const refund of successful) {
-    const serviceAmount = refund.serviceAmount === undefined
-      ? Math.max(0, refund.amount - (refund.goodsAmount || 0)) : refund.serviceAmount;
-    cumulativeServiceRefund += serviceAmount;
-    const target = Math.floor(points * Math.min(cumulativeServiceRefund, serviceFee) / serviceFee);
+    const { service } = refundParts(refund);
     const ledgerId = 'points_restore_' + refund.outRefundNo;
     const existing = await read(transaction, 'pointsLedger', ledgerId);
-    if (existing) {
-      restored += Math.max(0, existing.delta || 0);
-      continue;
+    if (existing || (newRefundNo && refund.outRefundNo !== newRefundNo)) {
+      cumulativeServiceRefund += service;
+      if (existing) restored += Math.max(0, existing.delta || 0);
+    } else {
+      unposted.push({ refund, ledgerId, service });
     }
-    const delta = Math.max(0, target - restored);
+  }
+  for (const { refund, ledgerId, service } of unposted) {
+    cumulativeServiceRefund += service;
+    const target = Math.floor(points * Math.min(cumulativeServiceRefund, serviceFee) / serviceFee);
+    const delta = service > 0 ? Math.max(0, target - restored) : 0;
     const balance = integer(user.pointsBalance || 0, '积分余额') + delta;
     await insert(transaction, 'pointsLedger', { _id: ledgerId, openid: user.openid, delta,
       reason: 'refund', refId: order._id, refundId: refund.outRefundNo, balanceAfter: balance, createdAt: now });
@@ -156,12 +162,16 @@ async function awardReferralCoupons(transaction, order, referredUser, referrerPr
   return issuedCount;
 }
 
-async function finalizeRefundDiscounts(transaction, order, refunds, now) {
-  await restoreRefundedPoints(transaction, order, refunds, now);
-  const serviceRefunded = refunds.filter(item => item.status === 'success')
-    .reduce((sum, item) => sum + (item.serviceAmount === undefined ? item.amount : item.serviceAmount), 0);
-  const goodsRefunded = refunds.filter(item => item.status === 'success')
-    .reduce((sum, item) => sum + (item.goodsAmount || 0), 0);
+async function finalizeRefundDiscounts(transaction, order, refunds, now, newRefundNo) {
+  await restoreRefundedPoints(transaction, order, refunds, now, newRefundNo);
+  let serviceRefunded = 0;
+  let goodsRefunded = 0;
+  for (const refund of refunds) {
+    if (refund.status !== 'success') continue;
+    const { service, goods } = refundParts(refund);
+    serviceRefunded += service;
+    goodsRefunded += goods;
+  }
   if (serviceRefunded < order.pricing.payAmount || goodsRefunded < order.pricing.goodsCap) return false;
   if (order.pricing.couponId) {
     const coupon = await read(transaction, 'coupons', order.pricing.couponId);

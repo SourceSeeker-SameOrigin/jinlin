@@ -91,7 +91,8 @@ function createPayFlow(cloud, server) {
         item.outRefundNo === refund.outRefundNo && dispatched ? { ...item, dispatchedAt: new Date() } : item);
       await transaction.collection('orders').doc(orderId).update({ data: { refunds, updatedAt: new Date() } });
       if (status === 'success') {
-        await finalizeRefundDiscounts(transaction, order, refunds, new Date());
+        const alreadySuccessful = order.refunds.some(item => item.outRefundNo === refund.outRefundNo && item.status === 'success');
+        if (!alreadySuccessful) await finalizeRefundDiscounts(transaction, order, refunds, new Date(), refund.outRefundNo);
         await releaseReservation(transaction, order);
       }
       return { ...order, refunds };
@@ -134,7 +135,9 @@ function createPayFlow(cloud, server) {
       if (reserved.refund.status === 'success') await releaseReservation(transaction, resultingOrder);
       if (resultingOrder.serviceCode === 'pet' && resultingOrder.status === 'cancelled') await removePetSecret(transaction, resultingOrder);
       if (options.afterWrite) await options.afterWrite(transaction, resultingOrder);
-      await finalizeRefundDiscounts(transaction, resultingOrder, reserved.refunds, new Date());
+      if (reserved.refund.status === 'success') {
+        await finalizeRefundDiscounts(transaction, resultingOrder, reserved.refunds, new Date(), reserved.refund.outRefundNo);
+      }
       return { order: resultingOrder, refund: reserved.refund };
     });
     await dispatchRefund(result.order, result.refund);
