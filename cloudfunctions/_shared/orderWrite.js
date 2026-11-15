@@ -143,4 +143,4 @@ function createOrderWriter(server) {
   return { create, findReplay };
 }
 
-module.exports = { createOrderWriter };
+module.exports = { createOrderWriter, requestOrderId };

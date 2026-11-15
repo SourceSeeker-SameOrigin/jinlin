@@ -1,4 +1,4 @@
-<view class="page service-page"><view wx:if="{{restoredDraft}}" class="card restored">已恢复上次未完成的填写内容</view><view wx:if="{{createdOrderId}}" class="card">
+<view class="page service-page"><view wx:if="{{restoredDraft && community && !createdOrderId}}" class="card restored">{{recoveryHint || "已恢复上次未完成的填写内容"}}</view><view wx:if="{{createdOrderId}}" class="card">
     <view class="section-title">订单已创建</view>
     <view class="muted">请前往已有订单查看状态或继续支付，无需重复下单。</view>
     <view wx:if="{{navigationError}}" class="error">{{navigationError}}</view>

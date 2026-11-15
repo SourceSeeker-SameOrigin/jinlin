@@ -5,7 +5,7 @@ const { createOrderContext } = require('./lib/shared/orderContext');
 const { STATUS_GROUPS, listView, transitionPatch } = require('./lib/shared/orderData');
 const { orderView } = require('./lib/shared/views');
 const { ensure, integer, text } = require('./lib/shared/validate');
-const { createOrderWriter } = require('./lib/shared/orderWrite');
+const { createOrderWriter, requestOrderId } = require('./lib/shared/orderWrite');
 const { checkOrderContent } = require('./lib/shared/contentSafety');
 const { totalFee } = require('./lib/shared/paymentState');
 const { requireRole } = require('./lib/shared/auth');
@@ -30,6 +30,12 @@ const notify = createNotifier(cloud, server);
 function mockEnabled(config) {
   ensure(config.payMode === 'mock', '模拟支付未开启，请联系管理员', 'E_CONFIG');
   payConfig('mock');
+}
+
+async function lookupRequest(event, { user }) {
+  requireRole(user, ['resident']);
+  const order = await server.get('orders', requestOrderId(event, user));
+  return { orderId: order && order.kind === 'service' && order.userOpenid === user.openid ? order._id : null };
 }
 
 async function createNew(event, user) {
@@ -197,5 +203,5 @@ async function cancel(event, { openid }) {
   return { orderId: order._id, status: patch.status };
 }
 
-exports.main = server.entry({ quote, create, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates, subscribeVisitReport,
+exports.main = server.entry({ quote, create, lookupRequest, mockPay, listMine, detail, cancel, retryPayment, subscriptionTemplates, subscribeVisitReport,
   ...residentOrderActions(cloud, server) }, ['resident', 'admin', 'property'], 'order');

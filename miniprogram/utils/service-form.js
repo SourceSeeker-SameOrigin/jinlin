@@ -19,7 +19,7 @@ function draftForm(serviceCode, form) {
 module.exports = function serviceForm(serviceCode) {
   return {
     data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
-      createdOrderId: '', navigating: false, navigationError: '',
+      createdOrderId: '', recoveryHint: '', couponChoice: '__auto', navigating: false, navigationError: '',
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
       pointsToUse: 0, visitsPerDayOptions: [1,2], entryMethods: ['门锁密码','当面交钥匙','物业钥匙盒'],
@@ -50,23 +50,48 @@ module.exports = function serviceForm(serviceCode) {
       try {
         const user = await getApp().ensureSession();
         if (sequence !== this.loadSequence || this.hidden || this.unloaded) return;
-        if (!user.buildingId) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
-        this.draftKey = 'orderDraft:' + user._id + ':' + serviceCode;
+        const key = 'orderDraft:' + user._id + ':' + serviceCode;
+        if (this.draftKey && key !== this.draftKey) {
+          this.createdOrderId = ''; this.request = null; this.pendingSlot = null;
+          this.setData({ createdOrderId: '', form: { ...defaults[serviceCode], note: '' }, addresses: [],
+            recoveryHint: '', restoredDraft: false, couponChoice: '__auto', pointsToUse: 0, saving: false });
+        }
+        this.draftKey = key;
+        this.ownerId = user._id;
         if (serviceCode === 'escort' && !this.data.form.date) {
           const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
           const date = [tomorrow.getFullYear(), String(tomorrow.getMonth() + 1).padStart(2, '0'), String(tomorrow.getDate()).padStart(2, '0')].join('-');
           this.setData({ 'form.date': date, escortDateStart: this.dateOffset(0), escortDateEnd: this.dateOffset(30) });
         }
-        this.restoreDraft(user);
+        const selection = this.restoreDraft(user);
         if (this.createdOrderId) return;
-        if (this.idlePrefill) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
+        if (this.request) {
+          const result = await api.call('order', 'lookupRequest', { requestId: this.request.id }, { loading: false, silent: true, redirectOnForbidden: false });
+          if (sequence !== this.loadSequence || this.hidden || this.unloaded) return;
+          if (this.createdOrderId) return;
+          if (!result || !Object.prototype.hasOwnProperty.call(result, 'orderId') ||
+              (result.orderId !== null && (typeof result.orderId !== 'string' || !result.orderId))) throw Error('未能核实上次提交，请重新查询');
+          if (result.orderId) {
+            this.createdOrderId = result.orderId;
+            this.request = null;
+            this.setData({ createdOrderId: result.orderId });
+            try { this.saveDraft(); } catch (_) { /* The request ID is still saved. */ }
+            this.openCreatedOrder();
+            return;
+          }
+          this.setData({ recoveryHint: '暂未查到上次订单。请核对地址、时段和金额，再确认提交。' +
+            (serviceCode === 'pet' && Number(this.data.form.entryIndex) === 0 ? '请重新填写入户密码。' : '') });
+        }
+        if (!user.buildingId) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
+        if (this.idlePrefill && !this.request) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
           contactName: '', contactPhone: user.phone, isDefault: true }];
-        const selected = this.data.addresses[this.data.addressIndex];
+        const selected = selection || this.data.addresses[this.data.addressIndex];
         const previousIndex = selected ? addresses.findIndex(item => item.id === selected.id && item.communityId === selected.communityId) : -1;
         const addressIndex = previousIndex >= 0 ? previousIndex : Math.max(0, addresses.findIndex(item => item.isDefault));
         this.setData({ addresses, addressIndex });
+        if (this.request && selected && previousIndex < 0) this.setData({ recoveryHint: '原服务地址已不可用，请核对当前地址后再提交。' });
         await this.addressChange({ detail: { value: addressIndex } });
       } catch (error) { if (sequence === this.loadSequence && !this.hidden && !this.unloaded) this.setData({ error: error.message || '加载失败，请重试' }); }
       finally { if (sequence === this.loadSequence && !this.hidden && !this.unloaded) this.setData({ loading: false }); }
@@ -79,35 +104,48 @@ module.exports = function serviceForm(serviceCode) {
         this.setData({ createdOrderId: draft.createdOrderId });
         return;
       }
-      if (!draft || draft.userId !== user._id || draft.communityId !== user.communityId || Date.now() - draft.savedAt > 86400000) {
+      // A missing create response can outlive an ordinary 24-hour form draft.
+      if (!draft || draft.userId !== user._id || (!draft.request &&
+          (draft.communityId !== user.communityId || Date.now() - draft.savedAt > 86400000))) {
         if (draft) wx.removeStorageSync(this.draftKey);
         this.request = null;
         return;
       }
       const form = draftForm(serviceCode, draft.form || {});
-      // Pet request signatures can contain a lock password; never restore or persist them.
-      const request = serviceCode === 'pet' ? null : draft.request || null;
-      wx.setStorageSync(this.draftKey, { userId: draft.userId, communityId: draft.communityId,
-        savedAt: draft.savedAt, form, slot: draft.slot, request });
-      this.setData({ form: { ...this.data.form, ...form }, restoredDraft: true });
+      const request = draft.request && typeof draft.request.id === 'string' ? { id: draft.request.id } : null;
+      let selection = draft.selection || {};
+      if (request && !draft.selection && typeof draft.request.signature === 'string') {
+        try { selection = JSON.parse(draft.request.signature) || {}; } catch (_) { /* Look up by ID first. */ }
+      }
+      const { addressId, communityId, couponId, pointsToUse } = selection;
+      this.request = request;
       this.pendingSlot = draft.slot;
-      if (serviceCode !== 'pet') this.request = request;
+      if (request && serviceCode === 'pet') this.setData({ 'form.entryPassword': '' });
+      if (serviceCode === 'pet' && form.tasks) this.setData({ taskChoices: this.data.taskChoices.map(task => ({ ...task, checked: form.tasks.includes(task.value) })) });
+      this.setData({ form: { ...this.data.form, ...form }, restoredDraft: true,
+        couponChoice: couponId ?? '__auto', pointsToUse: pointsToUse ?? 0 });
+      wx.setStorageSync(this.draftKey, { userId: user._id, communityId: draft.communityId,
+        savedAt: draft.savedAt, form, slot: draft.slot, request, selection: { addressId, communityId, couponId, pointsToUse } });
+      return communityId ? { id: addressId || '', communityId } : null;
     },
     saveDraft() {
       const user = getApp().globalData.user;
-      if (!this.draftKey || !user || !user._id) return;
+      if (!this.draftKey || !user || !user._id || (this.ownerId && this.ownerId !== user._id)) return;
       if (this.createdOrderId) {
         wx.setStorageSync(this.draftKey, { userId: user._id, createdOrderId: this.createdOrderId });
         return;
       }
       const slot = this.data.slots[this.data.slotIndex] && this.data.slots[this.data.slotIndex].value;
+      const address = this.data.addresses[this.data.addressIndex];
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: user.communityId, savedAt: Date.now(),
-        form: draftForm(serviceCode, this.data.form), slot, request: serviceCode === 'pet' ? null : this.request });
+        form: draftForm(serviceCode, this.data.form), slot, request: this.request ? {id: this.request.id} : null,
+        selection: { addressId: address && address.id, communityId: address && address.communityId,
+          couponId: this.data.couponChoice === '__auto' ? null : this.data.couponChoice, pointsToUse: this.data.pointsToUse } });
     },
     address() { wx.navigateTo({ url: '/pages/bind/bind' }); },
     couponChange(event) {
-      this.couponChoiceSet = true;
-      this.couponId = event.detail.value === '__auto' ? undefined : event.detail.value;
+      this.setData({ couponChoice: event.detail.value });
+      this.saveDraft();
       this.queueQuote();
     },
     pointsChange(event) {
@@ -193,8 +231,8 @@ module.exports = function serviceForm(serviceCode) {
       const address = this.data.addresses[this.data.addressIndex];
       const params = { communityId: community._id, addressId: address && address.id || undefined, serviceCode, detail, note: form.note,
         slot: serviceCode === 'escort' ? undefined : (this.data.slots[this.data.slotIndex] ? this.data.slots[this.data.slotIndex].value : undefined) };
-      if (this.couponChoiceSet && this.couponId !== undefined) params.couponId = this.couponId;
-      if (this.data.pointsEnabled) params.pointsToUse = Number(this.data.pointsToUse || 0);
+      if (this.data.couponChoice !== '__auto') params.couponId = this.data.couponChoice;
+      if (this.data.pointsEnabled || this.data.pointsToUse) params.pointsToUse = Number(this.data.pointsToUse || 0);
       return params;
     },
     async refreshQuote() {
@@ -218,8 +256,13 @@ module.exports = function serviceForm(serviceCode) {
           quote: result.pricing, amount: result.pricing ? yuan(result.pricing.payAmount + result.pricing.goodsCap) : '--', quoteError: result.validationMessage || '' });
         if (this.pendingSlot) {
           const restoredIndex = slots.findIndex(item => JSON.stringify(item.value) === JSON.stringify(this.pendingSlot));
-          if (restoredIndex >= 0) this.setData({ slotIndex: restoredIndex });
           this.pendingSlot = null;
+          if (restoredIndex >= 0 && restoredIndex !== this.data.slotIndex) {
+            this.setData({ slotIndex: restoredIndex, quote: null, amount: '--' });
+            await this.refreshQuote();
+            return;
+          }
+          if (restoredIndex < 0 && this.request) this.setData({ recoveryHint: this.data.recoveryHint + ' 原时段已不可用，请核对新的时段。' });
         }
       } catch (error) {
         if (sequence === this.quoteSequence && !this.unloaded) this.setData({ quote: null, amount: '--', quoteError: error.message || '报价失败，请重试' });
@@ -229,6 +272,8 @@ module.exports = function serviceForm(serviceCode) {
     openCreatedOrder() {
       if (!this.createdOrderId || this.data.navigating || this.hidden || this.unloaded) return;
       this.setData({ navigating: true, navigationError: '' });
+      const key = this.draftKey;
+      const orderId = this.createdOrderId;
       const failed = () => {
         if (!this.hidden && !this.unloaded) this.setData({ navigating: false,
           navigationError: '订单已创建，暂未打开详情，请点击下方按钮重试。不会重复下单。' });
@@ -238,8 +283,8 @@ module.exports = function serviceForm(serviceCode) {
           success: () => {
             // A newer page may already own this draft key. Only clear our own receipt.
             try {
-              const saved = this.draftKey && wx.getStorageSync(this.draftKey);
-              if (saved && saved.createdOrderId === this.createdOrderId) wx.removeStorageSync(this.draftKey);
+              const saved = key && wx.getStorageSync(key);
+              if (saved && saved.createdOrderId === orderId) wx.removeStorageSync(key);
             } catch (_) { /* Keep the receipt for recovery if local storage is unavailable. */ }
           }, fail: failed });
       } catch (_) { failed(); }
@@ -247,27 +292,37 @@ module.exports = function serviceForm(serviceCode) {
     async submit() {
       if (this.data.saving || this.hidden || this.unloaded) return;
       if (this.createdOrderId) { this.openCreatedOrder(); return; }
-      if (!this.data.quote || this.data.quoteLoading) return;
+      if (!this.data.community || this.data.loading || !this.data.quote || this.data.quoteLoading) return;
+      const user = getApp().globalData.user;
+      const key = this.draftKey;
+      if (!key || !user || !user._id || (this.ownerId && this.ownerId !== user._id)) return;
+      const sameSession = () => this.draftKey === key && getApp().globalData.user?._id === user._id;
+      const visible = () => sameSession() && !this.hidden && !this.unloaded;
       this.setData({ saving: true, error: '' });
       try {
         const params = this.params();
-        const signature = JSON.stringify(params);
-        if (!this.request || this.request.signature !== signature) this.request = {
-          signature, id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
+        if (!this.request) this.request = {
+          id: Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) };
         this.saveDraft();
-        const created = await api.call('order', 'create', { ...params, requestId: this.request.id });
+        const requestId = this.request.id;
+        const created = await api.call('order', 'create', { ...params, requestId }, { isActive: visible });
         if (!created || typeof created.orderId !== 'string' || !created.orderId) throw Error('未取得订单编号，请重试');
+        try {
+          const saved = wx.getStorageSync(key);
+          if (saved?.userId === user._id && saved.request?.id === requestId) {
+            wx.setStorageSync(key, { userId: user._id, createdOrderId: created.orderId });
+          }
+        } catch (_) { /* The pending request can still recover the order. */ }
+        if (!sameSession() || this.createdOrderId) return;
         this.createdOrderId = created.orderId;
         this.request = null;
-        // Once confirmed, persist only the receipt, never the form or entry password.
-        try { this.saveDraft(); } catch (_) { /* The in-memory receipt still prevents another create. */ }
-        if (this.unloaded || this.hidden) return;
+        if (!visible()) return;
         this.setData({ createdOrderId: created.orderId, navigationError: '' });
         try { await pay(created); }
-        catch (error) { if (!this.unloaded && !this.hidden) wx.showToast({ title: error.message || '支付未完成，可到订单详情继续支付', icon: 'none' }); }
-        this.openCreatedOrder();
-      } catch (error) { if (!this.unloaded && !this.hidden) this.setData({ error: error.message || '下单失败，请重试' }); }
-      finally { if (!this.unloaded) this.setData({ saving: false }); }
+        catch (error) { if (visible()) wx.showToast({ title: error.message || '支付未完成，可到订单详情继续支付', icon: 'none' }); }
+        if (visible()) this.openCreatedOrder();
+      } catch (error) { if (visible()) this.setData({ error: error.message || '下单失败，请重试' }); }
+      finally { if (sameSession() && !this.unloaded) this.setData({ saving: false }); }
     }
   };
 };
