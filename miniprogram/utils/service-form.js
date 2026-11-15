@@ -17,8 +17,12 @@ function draftForm(serviceCode, form) {
 }
 
 module.exports = function serviceForm(serviceCode) {
+  const place = {
+    express: { list: 'stations', field: 'stationIndex', prompt: '请选择取件驿站' },
+    meal: { list: 'canteens', field: 'canteenIndex', prompt: '请选择合作食堂' }
+  }[serviceCode];
   return {
-    data: { serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
+    data: { placeOptions: [], placeNeedsSelection: false, serviceCode, loading: true, error: '', quoteError: '', saving: false, quoteLoading: false,
       createdOrderId: '', recoveryHint: '', couponChoice: '__auto', navigating: false, navigationError: '',
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
@@ -52,7 +56,7 @@ module.exports = function serviceForm(serviceCode) {
         if (sequence !== this.loadSequence || this.hidden || this.unloaded) return;
         const key = 'orderDraft:' + user._id + ':' + serviceCode;
         if (this.draftKey && key !== this.draftKey) {
-          this.createdOrderId = ''; this.request = null; this.pendingSlot = null;
+          this.createdOrderId = ''; this.request = null; this.pendingSlot = null; this.draftPlace = undefined;
           this.setData({ createdOrderId: '', form: { ...defaults[serviceCode], note: '' }, addresses: [],
             recoveryHint: '', restoredDraft: false, couponChoice: '__auto', pointsToUse: 0, saving: false });
         }
@@ -109,9 +113,11 @@ module.exports = function serviceForm(serviceCode) {
           (draft.communityId !== user.communityId || Date.now() - draft.savedAt > 86400000))) {
         if (draft) wx.removeStorageSync(this.draftKey);
         this.request = null;
+        this.draftPlace = undefined;
         return;
       }
       const form = draftForm(serviceCode, draft.form || {});
+      if (place) this.draftPlace = draft.place || null;
       const request = draft.request && typeof draft.request.id === 'string' ? { id: draft.request.id } : null;
       let selection = draft.selection || {};
       if (request && !draft.selection && typeof draft.request.signature === 'string') {
@@ -125,7 +131,7 @@ module.exports = function serviceForm(serviceCode) {
       this.setData({ form: { ...this.data.form, ...form }, restoredDraft: true,
         couponChoice: couponId ?? '__auto', pointsToUse: pointsToUse ?? 0 });
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: draft.communityId,
-        savedAt: draft.savedAt, form, slot: draft.slot, request, selection: { addressId, communityId, couponId, pointsToUse } });
+        savedAt: draft.savedAt, form, slot: draft.slot, request, ...(place ? { place: this.draftPlace } : {}), selection: { addressId, communityId, couponId, pointsToUse } });
       return communityId ? { id: addressId || '', communityId } : null;
     },
     saveDraft() {
@@ -138,7 +144,7 @@ module.exports = function serviceForm(serviceCode) {
       const slot = this.data.slots[this.data.slotIndex] && this.data.slots[this.data.slotIndex].value;
       const address = this.data.addresses[this.data.addressIndex];
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: user.communityId, savedAt: Date.now(),
-        form: draftForm(serviceCode, this.data.form), slot, request: this.request ? {id: this.request.id} : null,
+        form: draftForm(serviceCode, this.data.form), ...(place ? { place: this.draftPlace || null } : {}), slot, request: this.request ? {id: this.request.id} : null,
         selection: { addressId: address && address.id, communityId: address && address.communityId,
           couponId: this.data.couponChoice === '__auto' ? null : this.data.couponChoice, pointsToUse: this.data.pointsToUse } });
     },
@@ -155,6 +161,21 @@ module.exports = function serviceForm(serviceCode) {
       this.queueQuote();
     },
     dateOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); },
+    placeFields(community) {
+      if (!place) return {};
+      const options = community[place.list] || [];
+      const saved = this.draftPlace;
+      let index = options.length ? 0 : -1;
+      if (saved !== undefined) {
+        index = saved && saved.communityId === community._id ? options.findIndex(item => item.code === saved.code) : -1;
+      }
+      if (index >= 0) this.draftPlace = { communityId: community._id, code: options[index].code };
+      return { ['form.' + place.field]: index, placeNeedsSelection: index < 0,
+        placeOptions: [place.prompt, ...options.map(item => item.name)] };
+    },
+    selectPlace(event) {
+      this.change({ currentTarget: { dataset: { field: place.field } }, detail: { value: Number(event.detail.value) - 1 } });
+    },
     async addressChange(event) {
       const addressIndex = Number(event.detail.value);
       const address = this.data.addresses[addressIndex];
@@ -168,7 +189,7 @@ module.exports = function serviceForm(serviceCode) {
       try {
         const community = await api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true });
         if (!current()) return;
-        this.setData({ community, addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
+        this.setData({ community, ...this.placeFields(community), addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
         this.queueQuote();
       } catch (error) {
         if (current()) this.setData({ error: error.message || '地址加载失败', quoteLoading: false });
@@ -177,7 +198,14 @@ module.exports = function serviceForm(serviceCode) {
     change(event) {
       const key = event.currentTarget.dataset.field;
       if (!Object.prototype.hasOwnProperty.call(this.data.form, key)) return;
-      const value = key === 'sorted' ? event.detail.value.includes('sorted') :
+      if (place && key === place.field) {
+        const community = this.data.community;
+        if (!community) return;
+        const chosen = (community[place.list] || [])[Number(event.detail.value)];
+        this.draftPlace = chosen ? { communityId: community._id, code: chosen.code } : null;
+        this.setData({ placeNeedsSelection: !chosen });
+      }
+      const value = place && key === place.field ? Number(event.detail.value) : key === 'sorted' ? event.detail.value.includes('sorted') :
         key === 'visitsPerDay' ? String(Number(event.detail.value) + 1) :
         key === 'entryIndex' ? Number(event.detail.value) : event.detail.value;
       this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '' });
@@ -208,12 +236,12 @@ module.exports = function serviceForm(serviceCode) {
       const form = this.data.form;
       const community = this.data.community;
       let detail;
-      if (serviceCode === 'express') detail = { stationCode: (community.stations[Number(form.stationIndex)] || {}).code || '',
+      if (serviceCode === 'express') detail = { stationCode: ((community.stations || [])[Number(form.stationIndex)] || {}).code || '',
         pickupCodes: form.pickupText.split(/[\n,，]/).map(value => value.trim()).filter(Boolean),
         largeCount: Number(form.largeCount), placement: Number(form.placementIndex) === 1 ? 'hand' : 'door' };
       if (serviceCode === 'trash') detail = { bags: Number(form.bags), sorted: form.sorted, placement: 'door' };
       if (serviceCode === 'buy') detail = { shop: form.shop, items: form.items, goodsCap: toFen(form.goodsYuan) };
-      if (serviceCode === 'meal') detail = { canteenCode: (community.canteens[Number(form.canteenIndex)] || {}).code || '',
+      if (serviceCode === 'meal') detail = { canteenCode: ((community.canteens || [])[Number(form.canteenIndex)] || {}).code || '',
         items: form.items, goodsCap: toFen(form.goodsYuan) };
       if (serviceCode === 'escort') detail = { hospital: form.hospital, department: form.department, date: form.date,
         start: form.start, blocks: Number(form.blocks), pickup: form.pickup };
@@ -292,7 +320,7 @@ module.exports = function serviceForm(serviceCode) {
     async submit() {
       if (this.data.saving || this.hidden || this.unloaded) return;
       if (this.createdOrderId) { this.openCreatedOrder(); return; }
-      if (!this.data.community || this.data.loading || !this.data.quote || this.data.quoteLoading) return;
+      if (!this.data.community || this.data.loading || this.data.placeNeedsSelection || !this.data.quote || this.data.quoteLoading) return;
       const user = getApp().globalData.user;
       const key = this.draftKey;
       if (!key || !user || !user._id || (this.ownerId && this.ownerId !== user._id)) return;
