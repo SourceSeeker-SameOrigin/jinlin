@@ -57,7 +57,7 @@
 | couponTemplates | status_issueMode | status 升序、issueMode 升序 | 否 |
 | coupons | user_status_expiry | openid 升序、status 升序、validTo 升序 | 否 |
 | coupons | user_created | openid 升序、createdAt 倒序 | 否 |
-| coupons | user_created_id | openid 升序、createdAt 倒序、_id 倒序（QA76 分页，开发云待核） | 否 |
+| coupons | user_created_id | openid 升序、createdAt 倒序、_id 倒序（QA76 分页，开发云已回读确认） | 否 |
 | pointsLedger | user_created | openid 升序、createdAt 倒序 | 否 |
 | idleItems | feed | communityId 升序、scope 升序、status 升序、createdAt 倒序 | 否 |
 | idleItems | seller_created | sellerOpenid 升序、communityId 升序、createdAt 倒序 | 否 |
