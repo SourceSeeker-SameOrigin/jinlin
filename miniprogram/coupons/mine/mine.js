@@ -5,18 +5,46 @@ const { lifecycle, currentVisit, readList } = require('../../utils/visible-list'
 const { discountText } = require('../presentation');
 
 const STATUS = { unused: '未使用', locked: '已锁定', used: '已使用', expired: '已过期' };
+function present(item) {
+  return { ...item, statusText: STATUS[item.status] || item.status,
+    discountText: discountText(item), validText: display(item.validTo),
+    thresholdText: item.threshold ? '满 ' + yuan(item.threshold) + ' 元可用' : '无门槛' };
+}
+
+const firstPage = { offset: 0, hasMore: false, loadingMore: false, moreError: '', ownerId: '' };
+
 Page({
   ...lifecycle,
-  data: { loading: true, error: '', list: [], retrying: false, retryError: '', retryMessage: '', canRetry: false },
+  data: { ...firstPage, loading: true, error: '', list: [], retrying: false, retryError: '', retryMessage: '', canRetry: false },
   load() {
-    return readList(this, { canRetry: false, retrying: false }, '优惠券加载失败', async (_, options) => {
-      const { list } = await api.call('coupon', 'mine', {}, options);
-      return { canRetry: true, list: list.map(item => ({
-        ...item, statusText: STATUS[item.status] || item.status,
-        discountText: discountText(item), validText: display(item.validTo),
-        thresholdText: item.threshold ? '满 ' + yuan(item.threshold) + ' 元可用' : '无门槛'
-      })) };
+    return readList(this, { ...firstPage, list: [], canRetry: false, retrying: false }, '优惠券加载失败', async (user, options) => {
+      const result = await api.call('coupon', 'mine', { offset: 0 }, options);
+      return { canRetry: true, list: result.list.map(present), ownerId: user._id,
+        offset: result.nextOffset || 0, hasMore: !!result.hasMore };
     }, this._pendingClaim);
+  },
+  async loadMore() {
+    const visible = currentVisit(this);
+    const sequence = this._readSequence;
+    const active = () => visible() && sequence === this._readSequence;
+    if (!active() || this.data.loading || this.data.loadingMore || !this.data.hasMore) return;
+    this.setData({ loadingMore: true, moreError: '' });
+    try {
+      const user = await getApp().ensureSession();
+      if (!active()) return;
+      if (user._id !== this.data.ownerId) return this.load();
+      const offset = this.data.offset;
+      const result = await api.call('coupon', 'mine', { offset }, { loading: false, silent: true, isActive: active });
+      if (!active()) return;
+      if (getApp().globalData.user?._id !== user._id) return this.load();
+      const seen = new Set(this.data.list.map(item => item._id));
+      const next = result.list.filter(item => !seen.has(item._id)).map(present);
+      this.setData({ list: this.data.list.concat(next), offset: result.nextOffset, hasMore: !!result.hasMore });
+    } catch (error) {
+      if (active()) this.setData({ moreError: error.message || '优惠券加载失败，请重试' });
+    } finally {
+      if (active()) this.setData({ loadingMore: false });
+    }
   },
   async retryWelcome() {
     const active = currentVisit(this);

@@ -21,6 +21,10 @@
         </view>
       </block>
       <view class="coupon-empty" wx:else>还没有优惠券，去优惠券中心看看吧。</view>
+      <view wx:if="{{hasMore}}">
+        <view wx:if="{{moreError}}" class="error">{{moreError}}</view>
+        <button class="secondary" bindtap="loadMore" disabled="{{loadingMore}}" loading="{{loadingMore}}">{{moreError ? '重试加载更多' : '加载更多'}}</button>
+      </view>
     </block>
   </block>
   <navigator class="card menu-row" url="/coupons/center/center">
