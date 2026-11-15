@@ -32,14 +32,29 @@ function mockEnabled(config) {
   payConfig('mock');
 }
 
-async function create(event, { user }) {
-  requireRole(user, ['resident']);
+async function createNew(event, user) {
   const result = await context(event, user, { creating: true });
   if (result.pricing.payAmount + result.pricing.goodsCap > 0) payConfig(result.config.payMode);
   await checkOrderContent(cloud, user.openid, result.note, result.detail, result.config.blacklist);
-  const order = await writer.create(event, user, result);
+  return writer.create(event, user, result);
+}
+
+async function create(event, { user }) {
+  requireRole(user, ['resident']);
+  let order = await writer.findReplay(event, user);
+  if (!order) {
+    try { order = await createNew(event, user); }
+    catch (error) {
+      // 同编号的并发请求可能在本次报价或事务期间完成并锁券。
+      order = await writer.findReplay(event, user);
+      if (!order) throw error;
+    }
+  }
   if (order.createdNow && order.status === 'paid') await notify.newTask(order);
-  try { return await payments.prepare(order); }
+  try {
+    if (!order.createdNow && order.status === 'pending_pay') await requireOrderFeatures(server, order);
+    return await payments.prepare(order);
+  }
   catch (error) {
     // 已建单后统一返回订单编号，网络失败也可在详情页重试，避免再次下单。
     return { orderId: order._id, paymentError: error.code || 'E_PAYMENT' };

@@ -91,7 +91,7 @@ function harness() {
     pricing: { listPrice: 500, discount: 400, payAmount: 100, goodsCap: 0, freeByMembership: false } };
   const auth = { user, openid: user.openid };
   return { data, writes, writer, pay, actions, event, context, user, auth,
-    create: () => writer.create(event, user, context), conflict: () => { failNext = true; },
+    create: () => writer.create({ ...event, detail: context.detail, note: context.note, slot: context.slot }, user, context), conflict: () => { failNext = true; },
     current: () => clone(data.orders[0]), snapshot: () => JSON.stringify(data) };
 }
 

@@ -34,6 +34,8 @@ function fixture({ bound = true, global = false, local = false, roles = ['reside
       orderBy() { return chain; }, skip(value) { offset=value; return chain; }, async count(){return {total:(data[table]||[]).filter(row=>matches(row,filter)).length};}, async get() { if(faults.failCouponRead && table==='couponTemplates') throw Error('synthetic coupon failure'); return { data: structuredClone((data[table] || []).filter(row=>matches(row, filter)).slice(offset, offset+limit)) }; },
       async add({data:value}) { if(failBindEvent && table === 'events' && value.type === 'bind') throw Error('synthetic event write failure'); if(!allowWrites) throw Error('Unexpected write'); (data[table] ||= []).push(value); writes.push({table}); return {_id:'local-event'}; }, async update(patch) { return update(table,(data[table]||[]).filter(row=>matches(row,filter)),patch); } }; return chain;
   }};
+  // Database clones and dates created inside a simulated function must share a Date constructor.
+  const databaseDate = structuredClone(new Date()).constructor;
   const signed=[];let actor='actor';
   const cloud = { init() {}, database:()=>db, getWXContext:()=>({OPENID:actor}), DYNAMIC_CURRENT_ENV:'offline',
     getTempFileURL({fileList}) { signed.push(...fileList);return {fileList:fileList.map(item=>({fileID:item.fileID,status:0,tempFileURL:'https://synthetic.invalid/authorized'}))}; }, openapi:{phonenumber:{async getPhoneNumber(){return {phoneInfo:{purePhoneNumber:'13800000000'}};}},security:{async msgSecCheck() { if(!securityResult) throw Error('Unexpected security call'); return securityResult; }}} };
@@ -43,8 +45,11 @@ function fixture({ bound = true, global = false, local = false, roles = ['reside
     const module = {exports:{}}; cache.set(file,module);
     const requireLocal = name => { if (name === 'wx-server-sdk') return cloud; if (['crypto','node:crypto'].includes(name)) return require('crypto');
       if (name === 'https') return {request(){throw Error('Unexpected network');}};
+      if (file.startsWith(path.join(root, 'cloudfunctions') + path.sep) && name.startsWith('./lib/shared/')) {
+        return load(path.join(root, 'cloudfunctions/_shared', name.slice('./lib/shared/'.length)), cache);
+      }
       if (!name.startsWith('.')) throw Error('Unknown dependency '+name); return load(path.resolve(path.dirname(file),name),cache); };
-    vm.runInNewContext('(function(require,module,exports){'+fs.readFileSync(file,'utf8')+'\n})', { Date, JSON, Set, Map, Promise, Buffer, process:{env:mockPay ? {ALLOW_MOCK_PAY:"true"} : {}}, console:{error(){}} }, {filename:file})(requireLocal,module,module.exports);
+    vm.runInNewContext('(function(require,module,exports){'+fs.readFileSync(file,'utf8')+'\n})', { Date: databaseDate, JSON, Set, Map, Promise, Buffer, process:{env:mockPay ? {ALLOW_MOCK_PAY:"true"} : {}}, console:{error(){}} }, {filename:file})(requireLocal,module,module.exports);
     return module.exports;
   }
   return { data, writes, faults, signed, db, load, cloud, setActor(value){actor=value;}, call: (name, action, input={})=>load('cloudfunctions/'+name+'/index.js').main({...input,action}) };
