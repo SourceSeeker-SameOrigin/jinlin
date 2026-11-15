@@ -34,7 +34,7 @@ function mockEnabled(config) {
 
 async function create(event, { user }) {
   requireRole(user, ['resident']);
-  const result = await context(event, user);
+  const result = await context(event, user, { creating: true });
   if (result.pricing.payAmount + result.pricing.goodsCap > 0) payConfig(result.config.payMode);
   await checkOrderContent(cloud, user.openid, result.note, result.detail, result.config.blacklist);
   const order = await writer.create(event, user, result);
