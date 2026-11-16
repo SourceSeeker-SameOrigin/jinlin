@@ -25,7 +25,7 @@ function draftForm(serviceCode, form) {
   return Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(form, key)).map(key => [key, form[key]]));
 }
 
-module.exports = function serviceForm(serviceCode) {
+module.exports = function serviceForm(serviceCode, escortStartHint) {
   const place = {
     express: { list: 'stations', field: 'stationIndex', prompt: '请选择取件驿站' },
     meal: { list: 'canteens', field: 'canteenIndex', prompt: '请选择合作食堂' }
@@ -174,6 +174,10 @@ module.exports = function serviceForm(serviceCode) {
       if (start !== this.data.escortDateStart || date !== this.data.form.date || reselect !== this.data.escortDateNeedsSelection) {
         this.setData({ escortDateStart: start, escortDateEnd: end, 'form.date': date, escortDateNeedsSelection: reselect });
       }
+      if (escortStartHint && this.data.community) {
+        const hint = reselect ? '' : escortStartHint(this.data.community.dutyWindows, date, this.data.form.blocks, now);
+        if (hint !== this.data.escortStartHint) this.setData({ escortStartHint: hint });
+      }
       if (reselect) {
         this.quoteSequence = (this.quoteSequence || 0) + 1;
         this.setData({ quote: null, amount: '--', quoteLoading: false, quoteError: '' });
@@ -198,9 +202,12 @@ module.exports = function serviceForm(serviceCode) {
       const now = new Date();
       this.checkBookingDates(now);
       const midnight = Date.parse(ymd(addDays(now, 1)) + 'T00:00:00+08:00');
+      const delay = serviceCode === 'escort' && this.data.form.date === ymd(now)
+        ? 60000 - (now.getTime() % 60000) : midnight - now.getTime();
+      clearTimeout(this.bookingMidnightTimer);
       this.bookingMidnightTimer = setTimeout(() => {
         if (!this.hidden && !this.unloaded && !this.createdOrderId) this.watchBookingDates();
-      }, midnight - now.getTime());
+      }, delay);
     },
     placeFields(community) {
       if (!place) return {};
@@ -231,6 +238,7 @@ module.exports = function serviceForm(serviceCode) {
         const community = await api.call('catalog', 'getCommunity', { communityId: address.communityId }, { loading: false, silent: true });
         if (!current()) return;
         this.setData({ community, ...this.placeFields(community), addressText: community.name + ' ' + address.buildingName + ' ' + address.unit + ' ' + address.room });
+        if (serviceCode === 'escort') this.checkEscortDate();
         this.queueQuote();
       } catch (error) {
         if (current()) this.setData({ error: error.message || '地址加载失败', quoteLoading: false });
@@ -251,7 +259,8 @@ module.exports = function serviceForm(serviceCode) {
         key === 'entryIndex' ? Number(event.detail.value) : event.detail.value;
       this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '',
         ...(key === 'tasks' ? { taskChoices: petTaskChoices(value) } : {}) });
-      if (serviceCode === 'escort' && key === 'date') this.checkEscortDate();
+      if (serviceCode === 'escort' && key === 'date') this.watchBookingDates();
+      if (serviceCode === 'escort' && key === 'blocks') this.checkEscortDate();
       this.saveDraft();
       this.queueQuote();
     },
