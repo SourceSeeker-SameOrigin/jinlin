@@ -10,6 +10,15 @@ const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, 
   help: { categoryIndex: 0, desc: '', blocks: '1' },
   pet: { dates: [], visitsPerDay: '1', catCount: '1', dogCount: '0', otherCount: '0', tasks: ['feed','water'], entryIndex: 1, entryPassword: '' } };
 
+const petTasks = [
+  { value: 'feed', label: '喂食' }, { value: 'water', label: '换水' },
+  { value: 'litter', label: '清理猫砂' }, { value: 'walk', label: '遛狗' }, { value: 'play', label: '陪玩' }
+];
+
+function petTaskChoices(selected) {
+  return petTasks.map(task => ({ ...task, checked: selected.includes(task.value) }));
+}
+
 // Only known, non-secret fields may survive a page session.
 function draftForm(serviceCode, form) {
   const keys = Object.keys(defaults[serviceCode]).filter(key => key !== 'entryPassword').concat('note');
@@ -27,8 +36,7 @@ module.exports = function serviceForm(serviceCode) {
       community: null, addressText: '', addresses: [], addressIndex: 0, form: { ...defaults[serviceCode], note: '' }, slots: [], slotIndex: 0,
       quote: null, amount: '--', couponOptions: [], couponsEnabled: false, pointsEnabled: false, pointsBalance: 0,
       pointsToUse: 0, visitsPerDayOptions: [1,2], entryMethods: ['门锁密码','当面交钥匙','物业钥匙盒'],
-      taskChoices: [{ value: 'feed', label: '喂食', checked: true }, { value: 'water', label: '换水', checked: true },
-        { value: 'litter', label: '清理猫砂', checked: false }, { value: 'walk', label: '遛狗', checked: false }, { value: 'play', label: '陪玩', checked: false }],
+      taskChoices: petTaskChoices(defaults.pet.tasks),
       petDateStart: '', petHasExpiredDates: false, placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
     onLoad(options) {
       if (serviceCode === 'help' && options && options.idleTitle) {
@@ -59,6 +67,7 @@ module.exports = function serviceForm(serviceCode) {
         if (this.draftKey && key !== this.draftKey) {
           this.createdOrderId = ''; this.request = null; this.pendingSlot = null; this.draftPlace = undefined;
           this.setData({ createdOrderId: '', form: { ...defaults[serviceCode], note: '' }, addresses: [],
+            ...(serviceCode === 'pet' ? { taskChoices: petTaskChoices(defaults.pet.tasks) } : {}),
             recoveryHint: '', restoredDraft: false, couponChoice: '__auto', pointsToUse: 0, saving: false });
         }
         this.draftKey = key;
@@ -124,8 +133,9 @@ module.exports = function serviceForm(serviceCode) {
       this.request = request;
       this.pendingSlot = draft.slot;
       if (request && serviceCode === 'pet') this.setData({ 'form.entryPassword': '' });
-      if (serviceCode === 'pet' && form.tasks) this.setData({ taskChoices: this.data.taskChoices.map(task => ({ ...task, checked: form.tasks.includes(task.value) })) });
-      this.setData({ form: { ...this.data.form, ...form }, restoredDraft: true,
+      const restoredForm = { ...this.data.form, ...form };
+      this.setData({ form: restoredForm, restoredDraft: true,
+        ...(serviceCode === 'pet' ? { taskChoices: petTaskChoices(restoredForm.tasks) } : {}),
         couponChoice: couponId ?? '__auto', pointsToUse: pointsToUse ?? 0 });
       wx.setStorageSync(this.draftKey, { userId: user._id, communityId: draft.communityId,
         savedAt: draft.savedAt, form, slot: draft.slot, request, ...(place ? { place: this.draftPlace } : {}), selection: { addressId, communityId, couponId, pointsToUse } });
@@ -239,9 +249,9 @@ module.exports = function serviceForm(serviceCode) {
       const value = place && key === place.field ? Number(event.detail.value) : key === 'sorted' ? event.detail.value.includes('sorted') :
         key === 'visitsPerDay' ? String(Number(event.detail.value) + 1) :
         key === 'entryIndex' ? Number(event.detail.value) : event.detail.value;
-      this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '' });
+      this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '',
+        ...(key === 'tasks' ? { taskChoices: petTaskChoices(value) } : {}) });
       if (serviceCode === 'escort' && key === 'date') this.checkEscortDate();
-      if (key === 'tasks') this.setData({ taskChoices: this.data.taskChoices.map(item => ({ ...item, checked: value.includes(item.value) })) });
       this.saveDraft();
       this.queueQuote();
     },
