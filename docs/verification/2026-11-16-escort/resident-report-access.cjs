@@ -41,9 +41,15 @@ async function pageChecks() {
   check('刷新移除旧记录',!page.data.visits.length);
   pending.shift().reject(Object.assign(Error('模拟拒绝'),{code:'E_FORBIDDEN'})); await next;
   check('拒绝后清空记录及媒体引用',!page.data.visits.length && !!page.data.error);
+  const retry=page.load(); await tick(); pending.shift().resolve(record('retry')); await retry;
+  check('主动重试仅展示本轮结果',page.data.visits[0]?._id==='retry' && !page.data.error);
+  check('拒绝留页可重试',ui.requests.every(r=>r[3].redirectOnForbidden===false));
   const old=page.load(); await tick(); const fresh=page.load(); await tick();
   pending.pop().resolve(record('new')); await fresh; pending.shift().resolve(record('old')); await old;
   check('拒绝旧响应覆盖',page.data.visits[0]?._id==='new');
+  const oldError=page.load();await tick();const latest=page.load();await tick();
+  pending.pop().resolve(record('latest'));await latest;pending.shift().reject(Error('过期错误'));await oldError;
+  check('旧错误不覆盖新成功',!page.data.error && page.data.visits[0]?._id==='latest');
   for(const phase of ['onHide','onUnload']) {
     const task=page.load(); await tick(); page[phase]?.();
     pending.shift().resolve(record('late')); await task;
