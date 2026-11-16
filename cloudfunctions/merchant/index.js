@@ -57,15 +57,27 @@ async function myApplication(event, { openid }) {
     status: merchant.status, reviewNote: merchant.reviewNote || '', communityIds: merchant.communityIds } : null };
 }
 
+async function residentPage(query, sortField, offset, present) {
+  query = query.orderBy(sortField, 'asc').orderBy('_id', 'asc');
+  if (offset === undefined) {
+    const rows = await query.limit(100).get();
+    return { list: rows.data.map(present) };
+  }
+  const start = integer(offset, '分页位置');
+  const rows = await query.skip(start).limit(21).get();
+  const list = rows.data.slice(0, 20).map(present);
+  return { list, nextOffset: start + list.length, hasMore: rows.data.length > 20 };
+}
+
 async function listForCommunity(event, { user }) {
   requireRole(user, ['resident', 'admin']);
   if (!event.communityId && !user.communityId) await server.featureEntry('merchants', user);
   const communityId = text(event.communityId, '小区');
   requireCommunityAccess(user, communityId);
   await assertEnabled(communityId);
-  const rows = await db.collection('merchants').where({ status: 'approved', communityIds: command.in([communityId]) })
-    .orderBy('name', 'asc').limit(100).get();
-  return { list: rows.data.filter(item => !item.moderationHidden).map(visibleMerchant) };
+  const query = db.collection('merchants').where({ status: 'approved', communityIds: command.in([communityId]),
+    moderationHidden: command.neq(true) });
+  return residentPage(query, 'name', event.offset, visibleMerchant);
 }
 
 async function servicesForMerchant(event, { user }) {
@@ -77,9 +89,9 @@ async function servicesForMerchant(event, { user }) {
   requireCommunityAccess(user, communityId);
   ensure(merchant.communityIds.includes(communityId), '商家不属于当前小区');
   await assertEnabled(communityId);
-  const rows = await db.collection('merchantServices').where({ merchantId: merchant._id, status: 'on' })
-    .orderBy('title', 'asc').limit(100).get();
-  return { merchant: visibleMerchant(merchant), list: rows.data.map(item => visibleService(item, user.openid)) };
+  const query = db.collection('merchantServices').where({ merchantId: merchant._id, status: 'on' });
+  const page = await residentPage(query, 'title', event.offset, item => visibleService(item, user.openid));
+  return { merchant: visibleMerchant(merchant), ...page };
 }
 
 async function adminList(event, { user }) {
@@ -197,7 +209,7 @@ async function createBooking(event, { user, openid }) {
     sameSnapshot(currentService, serviceItem, ['merchantId', 'title', 'desc', 'priceType', 'price', 'unit', 'status']);
     const currentMerchant = await read(transaction, 'merchants', merchant._id);
     sameSnapshot(currentMerchant, merchant, ['status', 'communityIds', 'commissionRate', 'category']);
-    ensure(currentMerchant.status === 'approved' && currentService.status === 'on', '商家服务状态已变化，请重试', 'E_CONFLICT');
+    ensure(currentMerchant.status === 'approved' && !currentMerchant.moderationHidden && currentService.status === 'on', '商家服务状态已变化，请重试', 'E_CONFLICT');
     const currentCommunity = await read(transaction, 'communities', community._id);
     sameSnapshot(currentCommunity, community, ['status', 'rates', 'features']);
     ensure(currentCommunity.status === 'active', '小区暂不可用');
