@@ -27,11 +27,14 @@ const rows = require('./qa25-routes.json');
     const p = r.instance('miniprogram/' + route + '.js');
     p.onLoad({ [param]: ' fixture-record ' });
     assert.equal(p[field], 'fixture-record'); assert.equal(p.data.missingRecord, false);
-    if (p.load) await p.load(); else { await p.onShow(); await p.submit(); }
+    // QA85: these task pages load only while visible; reproduce the actual page lifecycle.
+    if (['pet/work','provider/task/task'].includes(route)) await p.onShow();
+    else if (route === 'shops/booking/booking') { await p.onShow(); await p.submit(); } // First serviceId request is on submit.
+    else if (p.load) await p.load(); else { await p.onShow(); await p.submit(); }
     assert(r.requests.some(a => a[2][field] === 'fixture-record'), route + ' normal path preserved');
     const template = fs.readFileSync('miniprogram/' + route + '.wxml', 'utf8');
     assert(template.includes('wx:if="{{missingRecord}}"'));
-    assert(template.includes('<block wx:else>'));
+    assert(/<\/(?:view|block)>\s*<(?:view|block)\s+wx:else[\s>]/.test(template));
     assert(template.includes('url="/' + dest + '" open-type="' + nav + '"'));
     results.push({ route, case: 'valid identifier retains API + guarded template + return route', pass: true });
   }

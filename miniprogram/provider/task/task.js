@@ -1,3 +1,4 @@
+const entryDisplay = require('../../utils/entry-display');
 const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
 const { slotText } = require('../../utils/time');
@@ -6,24 +7,34 @@ const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilitie
   { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
   { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
-  data: { missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+  data: { readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
     weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
     vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
   onLoad(options = {}) {
     this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
     this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
   },
-  onShow() { this.visible = true; this.load(); },
-  onHide() { this.visible = false; this.stopLocationTimer(); },
-  onUnload() { this.visible = false; this.stopLocationTimer(); },
+  onShow() { this.visible = true; return this.load(); },
+  leavePage() {
+    this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
+    entryDisplay.clear(this);
+    this.stopLocationTimer();
+  },
+  onHide() { this.leavePage(); },
+  onUnload() { this.leavePage(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   async load() {
-    if (!this.orderId) return;
-    this.setData({ loading: true, error: '' });
+    if (!this.orderId || !this.visible) return;
+    const token = this.taskRead = (this.taskRead || 0) + 1;
+    const current = () => this.visible && this.taskRead === token;
+    entryDisplay.clear(this);
+    this.setData({ loading: true, error: '', ...(this.data.order?.serviceCode === 'vacant' ? { order: null } : {}) });
     this.stopLocationTimer();
     try {
       await getApp().ensureSession();
+      if (!current()) return;
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
+      if (!current()) return;
       const entryText = order.detail && ({ password: '门锁密码（点击当天读取）', key_handover: '钥匙交接', property_keybox: '物业钥匙柜' }[order.detail.entry] || '');
       const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
       this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
@@ -32,8 +43,8 @@ Page({
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
       }
-    } catch (error) { this.setData({ error: error.message || '任务加载失败' }); }
-    finally { this.setData({ loading: false }); }
+    } catch (error) { if (current()) this.setData({ error: error.message || '任务加载失败' }); }
+    finally { if (current()) this.setData({ loading: false }); }
   },
   async uploadLocation() {
     if (!this.orderId) return;
@@ -68,16 +79,12 @@ Page({
       this.setData({ ['photoByItem.' + key]: [...(this.data.photoByItem[key] || []), ...files] });
     } catch (error) { this.setData({ error: error.message || '照片上传失败，请重试' }); }
   },
-  async revealEntry() {
-    if (!this.orderId) return;
-    if (this.data.busy) return;
-    this.setData({ busy: true, error: '' });
-    try {
-      const result = await api.call('vacant', 'revealEntry', { orderId: this.orderId });
-      wx.showModal({ title: '门锁密码', content: result.entry, showCancel: false });
-    } catch (error) { this.setData({ error: error.message || '无法读取入户信息' }); }
-    finally { this.setData({ busy: false }); }
+  revealEntry() {
+    const order = this.data.order;
+    if (!this.orderId || this.data.busy || order?.serviceCode !== 'vacant' || order.detail?.entry !== 'password') return;
+    return entryDisplay.reveal(this, () => api.call('vacant', 'revealEntry', { orderId: this.orderId }));
   },
+  closeSecret() { entryDisplay.clear(this); },
   async submitVacantReport() {
     if (!this.orderId) return;
     if (this.data.busy) return;
