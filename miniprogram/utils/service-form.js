@@ -1,6 +1,6 @@
 const api = require('./api');
 const { yuan, toFen } = require('./money');
-const { slotText } = require('./time');
+const { slotText, ymd, addDays } = require('./time');
 const { pay } = require('./payment');
 
 const defaults = { express: { pickupText: '', largeCount: '0', stationIndex: 0, placementIndex: 0 },
@@ -40,6 +40,7 @@ module.exports = function serviceForm(serviceCode) {
     },
     onShow() { this.hidden = false; this.load(); },
     invalidateRequests() {
+      clearTimeout(this.escortMidnightTimer);
       clearTimeout(this.quoteTimer);
       this.quoteSequence = (this.quoteSequence || 0) + 1;
       this.addressSequence = (this.addressSequence || 0) + 1;
@@ -62,11 +63,6 @@ module.exports = function serviceForm(serviceCode) {
         }
         this.draftKey = key;
         this.ownerId = user._id;
-        if (serviceCode === 'escort' && !this.data.form.date) {
-          const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-          const date = [tomorrow.getFullYear(), String(tomorrow.getMonth() + 1).padStart(2, '0'), String(tomorrow.getDate()).padStart(2, '0')].join('-');
-          this.setData({ 'form.date': date, escortDateStart: this.dateOffset(0), escortDateEnd: this.dateOffset(30) });
-        }
         const selection = this.restoreDraft(user);
         if (this.createdOrderId) return;
         if (this.request) {
@@ -87,6 +83,7 @@ module.exports = function serviceForm(serviceCode) {
             (serviceCode === 'pet' && Number(this.data.form.entryIndex) === 0 ? '请重新填写入户密码。' : '') });
         }
         if (!user.buildingId) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
+        if (serviceCode === 'escort') this.watchEscortDate();
         if (this.idlePrefill && !this.request) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
@@ -160,7 +157,27 @@ module.exports = function serviceForm(serviceCode) {
       this.saveDraft();
       this.queueQuote();
     },
-    dateOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-'); },
+    checkEscortDate(now = new Date()) {
+      const start = ymd(now), end = ymd(addDays(now, 30));
+      const date = this.data.form.date || ymd(addDays(now, 1));
+      const reselect = date < start || date > end;
+      if (start !== this.data.escortDateStart || date !== this.data.form.date || reselect !== this.data.escortDateNeedsSelection) {
+        this.setData({ escortDateStart: start, escortDateEnd: end, 'form.date': date, escortDateNeedsSelection: reselect });
+      }
+      if (reselect) {
+        this.quoteSequence = (this.quoteSequence || 0) + 1;
+        this.setData({ quote: null, amount: '--', quoteLoading: false, quoteError: '' });
+      }
+      return !reselect;
+    },
+    watchEscortDate() {
+      const now = new Date();
+      this.checkEscortDate(now);
+      const midnight = Date.parse(ymd(addDays(now, 1)) + 'T00:00:00+08:00');
+      this.escortMidnightTimer = setTimeout(() => {
+        if (!this.hidden && !this.unloaded && !this.createdOrderId) this.watchEscortDate();
+      }, midnight - now.getTime());
+    },
     placeFields(community) {
       if (!place) return {};
       const options = community[place.list] || [];
@@ -209,6 +226,7 @@ module.exports = function serviceForm(serviceCode) {
         key === 'visitsPerDay' ? String(Number(event.detail.value) + 1) :
         key === 'entryIndex' ? Number(event.detail.value) : event.detail.value;
       this.setData({ ['form.' + key]: value, quote: null, amount: '--', quoteError: '' });
+      if (serviceCode === 'escort' && key === 'date') this.checkEscortDate();
       if (key === 'tasks') this.setData({ taskChoices: this.data.taskChoices.map(item => ({ ...item, checked: value.includes(item.value) })) });
       this.saveDraft();
       this.queueQuote();
@@ -265,6 +283,7 @@ module.exports = function serviceForm(serviceCode) {
     },
     async refreshQuote() {
       if (!this.data.community || this.hidden || this.unloaded) return;
+      if (serviceCode === 'escort' && !this.checkEscortDate()) return;
       const sequence = (this.quoteSequence || 0) + 1;
       this.quoteSequence = sequence;
       this.setData({ quoteLoading: true, quoteError: '' });
@@ -320,6 +339,7 @@ module.exports = function serviceForm(serviceCode) {
     async submit() {
       if (this.data.saving || this.hidden || this.unloaded) return;
       if (this.createdOrderId) { this.openCreatedOrder(); return; }
+      if (serviceCode === 'escort' && !this.checkEscortDate()) return;
       if (!this.data.community || this.data.loading || this.data.placeNeedsSelection || !this.data.quote || this.data.quoteLoading) return;
       const user = getApp().globalData.user;
       const key = this.draftKey;
