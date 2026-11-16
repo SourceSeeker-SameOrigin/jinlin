@@ -85,6 +85,30 @@ check('推荐人账号变化时完单和记账一起回滚', async () => {
   assert.equal(db.data.orders[0].status, 'delivered');
   assert.equal(db.writes.length, 0);
 });
+check('第二个模板读取失败时整单回滚，重试与重放只发应得的两张券', async () => {
+  const db = referralFixture();
+  db.data.couponTemplates.push({ ...db.data.couponTemplates[0], _id: 'second' });
+  db.faults.failTemplateId = 'second';
+  assert.equal((await confirm(db)).code, 'E_INTERNAL');
+  assert.equal(db.data.orders[0].status, 'delivered');
+  assert.deepEqual(db.data.orders[0].timeline, []);
+  assert.equal(db.writes.length, 0);
+  assert.equal((db.data.ledger || []).length, 0);
+  assert.equal((db.data.coupons || []).length, 0);
+  assert.ok(db.data.couponTemplates.every(t => t.issued === 0));
+  assert.equal(db.data.users[1].couponCounts, undefined);
+
+  db.faults.failTemplateId = null;
+  assert.equal((await confirm(db)).ok, true);
+  const committedWrites = db.writes.length;
+  assert.equal((await confirm(db)).ok, true);
+  assert.equal(db.writes.length, committedWrites);
+  assert.equal(db.data.orders[0].status, 'completed');
+  assert.equal(db.data.orders[0].timeline.length, 1);
+  assert.equal(db.data.ledger.length, 1);
+  assert.deepEqual(db.data.coupons.map(c => c.templateId).sort(), ['second', 'template']);
+  assert.ok(db.data.couponTemplates.every(t => t.issued === 1 && db.data.users[1].couponCounts[t._id] === 1));
+});
 check('第 101 个模板可用时能赠券', async () => {
   const db = referralFixture();
   const active = db.data.couponTemplates[0];
