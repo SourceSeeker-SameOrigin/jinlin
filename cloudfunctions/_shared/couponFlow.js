@@ -132,18 +132,39 @@ async function restoreRefundedPoints(transaction, order, refunds, now, newRefund
   return totalAdded;
 }
 
-async function awardReferralCoupons(transaction, order, referredUser, referrerProvider, now, enabled) {
-  if (!enabled || order.kind !== 'service' || order.pricing.payAmount <= 0 ||
-    referredUser.firstPaidOrderId !== order._id || !referrerProvider || !referrerProvider.openid ||
-    referrerProvider.communityId !== order.communityId) return 0;
-  const recipient = await transaction.collection('users').where({ openid: referrerProvider.openid }).limit(1).get();
-  const user = recipient.data && recipient.data[0];
-  if (!user) return 0;
-  const rows = await transaction.collection('couponTemplates').where({ issueMode: 'referral', status: 'active' }).get();
+function qualifiesForReferralCoupon(order, referredUser, provider) {
+  return order.kind === 'service' && order.pricing.payAmount > 0 &&
+    referredUser && referredUser.firstPaidOrderId === order._id &&
+    provider && provider.openid && provider.communityId === order.communityId;
+}
+
+async function findReferralCandidates(server, order, enabled) {
+  if (!enabled || !order.userId || order.status !== 'delivered' ||
+      order.kind !== 'service' || order.pricing.payAmount <= 0) return null;
+  const user = await server.get('users', order.userId);
+  const providerId = user && user.source && user.source.referrerProviderId;
+  if (!providerId || user.firstPaidOrderId !== order._id) return null;
+  const provider = await server.get('providers', providerId);
+  if (!qualifiesForReferralCoupon(order, user, provider)) return null;
+  const recipient = await server.one('users', { openid: provider.openid });
+  const templates = recipient ? await server.all('couponTemplates', { issueMode: 'referral', status: 'active' }) : [];
+  return { providerId, openid: provider.openid, recipientId: recipient && recipient._id,
+    templateIds: [...new Set(templates.filter(t => communityMatches(t, order.communityId)).map(t => t._id))] };
+}
+
+async function awardReferralCoupons(transaction, order, referredUser, referrerProvider, now, enabled, candidates) {
+  if (!enabled || !qualifiesForReferralCoupon(order, referredUser, referrerProvider)) return 0;
+  ensure(candidates && candidates.providerId === referrerProvider._id && candidates.openid === referrerProvider.openid,
+    '推荐人资料已变化，请重试', 'E_CONFLICT');
+  if (!candidates.recipientId) return 0;
+  const user = await read(transaction, 'users', candidates.recipientId);
+  ensure(user && user.openid === candidates.openid, '推荐人账号已变化，请重试', 'E_CONFLICT');
   const counts = user.couponCounts || {};
   let issuedCount = 0;
-  for (const template of rows.data || []) {
-    if (!communityMatches(template, order.communityId)) continue;
+  for (const templateId of candidates.templateIds) {
+    const template = await read(transaction, 'couponTemplates', templateId);
+    if (!template || template.issueMode !== 'referral' || template.status !== 'active' ||
+        !communityMatches(template, order.communityId)) continue;
     const count = counts[template._id] || 0;
     if (count >= template.perUserLimit || template.issued >= template.totalLimit) continue;
     const id = couponId(user.openid, template._id, order._id);
@@ -154,7 +175,6 @@ async function awardReferralCoupons(transaction, order, referredUser, referrerPr
     await transaction.collection('couponTemplates').doc(template._id).update({ data: {
       issued: (template.issued || 0) + 1, updatedAt: now
     } });
-    template.issued = (template.issued || 0) + 1;
     counts[template._id] = count + 1;
     issuedCount++;
   }
@@ -194,4 +214,4 @@ async function releaseCoupon(transaction, order, now) {
 }
 
 module.exports = { communityMatches, issueOne, issueAutomatic, lockOrderDiscounts, markCouponUsed,
-  releaseCoupon, releaseOrderDiscounts, restoreRefundedPoints, awardReferralCoupons, finalizeRefundDiscounts };
+  releaseCoupon, releaseOrderDiscounts, restoreRefundedPoints, findReferralCandidates, awardReferralCoupons, finalizeRefundDiscounts };

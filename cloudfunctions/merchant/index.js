@@ -105,12 +105,16 @@ async function review(event, { user, openid }) {
   const note = noteValue.trim();
   const status = event.approved ? 'approved' : 'rejected';
   const now = new Date();
+  const applicantOpenid = merchant.staffOpenids && merchant.staffOpenids[0];
+  ensure(applicantOpenid, '商家申请人资料缺失', 'E_CONFIG');
+  const applicant = await server.one('users', { openid: applicantOpenid });
+  ensure(applicant, '商家申请人账号不存在', 'E_CONFIG');
   await atomic(db, async transaction => {
     const current = await read(transaction, 'merchants', merchant._id);
     ensure(current && current.status === 'pending', '申请已被其他管理员处理', 'E_CONFLICT');
-    const staff = await transaction.collection('users').where({ openid: current.staffOpenids[0] }).limit(1).get();
-    ensure(staff.data.length === 1, '商家申请人账号不存在', 'E_CONFIG');
-    const account = staff.data[0];
+    ensure(current.staffOpenids && current.staffOpenids[0] === applicantOpenid, '申请人已变更，请刷新后重试', 'E_CONFLICT');
+    const account = await read(transaction, 'users', applicant._id);
+    ensure(account && account.openid === applicantOpenid, '申请人账号已变更，请刷新后重试', 'E_CONFLICT');
     await transaction.collection('merchants').doc(current._id).update({ data: { status, reviewNote: note,
       reviewedBy: openid, reviewedAt: now, updatedAt: now } });
     await transaction.collection('users').doc(account._id).update({ data: { roles: [...new Set([...(account.roles || ['resident']),

@@ -93,8 +93,10 @@ test('被推荐人首笔付费订单完成时给推荐人发券，并以订单�
   const order = { _id: 'first-paid-order', kind: 'service', communityId: 'c1', pricing: { payAmount: 99 } };
   const referred = { _id: 'referred-user', firstPaidOrderId: order._id };
   const referrer = { _id: 'provider-1', openid: 'referrer', communityId: 'c1' };
-  expect(await awardReferralCoupons(tx, order, referred, referrer, now, true)).toBe(1);
-  expect(await awardReferralCoupons(tx, order, referred, referrer, now, true)).toBe(0);
+  const candidates = { providerId: referrer._id, openid: referrer.openid, recipientId: 'referrer-user',
+    templateIds: ['referral-template'] };
+  expect(await awardReferralCoupons(tx, order, referred, referrer, now, true, candidates)).toBe(1);
+  expect(await awardReferralCoupons(tx, order, referred, referrer, now, true, candidates)).toBe(0);
   expect(await awardReferralCoupons(tx, { ...order, _id: 'later-order' },
     { ...referred, firstPaidOrderId: 'later-order' }, referrer, now, false)).toBe(0);
   const issued = [...data.coupons.values()][0];
