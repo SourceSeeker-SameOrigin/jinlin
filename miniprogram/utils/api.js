@@ -14,7 +14,10 @@ async function call(name, action, data = {}, options = {}) {
     if (result.data && result.data._media) {
       const links = require('./media-links');
       const snapshot = JSON.parse(JSON.stringify(data));
-      links.register(result.data._media, () => call(name, action, snapshot, { loading: false, silent: true }));
+      const mediaRedirectOnForbidden = options.mediaRedirectOnForbidden;
+      links.register(result.data._media, () => call(name, action, snapshot, {
+        loading: false, silent: true, redirectOnForbidden: mediaRedirectOnForbidden, mediaRedirectOnForbidden
+      }));
       delete result.data._media;
     }
     return result.data;

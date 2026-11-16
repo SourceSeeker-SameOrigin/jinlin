@@ -21,7 +21,7 @@ Page({
     if (!this.orderId) return;
     return readList(this, { visits: [] }, '记录加载失败，请重试', async (_, options) => {
       const result = await api.call('pet', 'listVisits', { orderId: this.orderId }, {
-        ...options, redirectOnForbidden: false
+        ...options, redirectOnForbidden: false, mediaRedirectOnForbidden: false
       });
       return { visits: result.list || [] };
     });
