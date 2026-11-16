@@ -29,7 +29,7 @@ module.exports = function serviceForm(serviceCode) {
       pointsToUse: 0, visitsPerDayOptions: [1,2], entryMethods: ['门锁密码','当面交钥匙','物业钥匙盒'],
       taskChoices: [{ value: 'feed', label: '喂食', checked: true }, { value: 'water', label: '换水', checked: true },
         { value: 'litter', label: '清理猫砂', checked: false }, { value: 'walk', label: '遛狗', checked: false }, { value: 'play', label: '陪玩', checked: false }],
-      today: new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10), placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
+      petDateStart: '', petHasExpiredDates: false, placements: ['放门口', '当面交'], categories: ['搬重物 / 桶装水上楼', '陪老人线下办事', '其他'] },
     onLoad(options) {
       if (serviceCode === 'help' && options && options.idleTitle) {
         const title = options.idleTitle;
@@ -40,7 +40,7 @@ module.exports = function serviceForm(serviceCode) {
     },
     onShow() { this.hidden = false; this.load(); },
     invalidateRequests() {
-      clearTimeout(this.escortMidnightTimer);
+      clearTimeout(this.bookingMidnightTimer);
       clearTimeout(this.quoteTimer);
       this.quoteSequence = (this.quoteSequence || 0) + 1;
       this.addressSequence = (this.addressSequence || 0) + 1;
@@ -83,7 +83,7 @@ module.exports = function serviceForm(serviceCode) {
             (serviceCode === 'pet' && Number(this.data.form.entryIndex) === 0 ? '请重新填写入户密码。' : '') });
         }
         if (!user.buildingId) { wx.redirectTo({ url: '/pages/bind/bind' }); return; }
-        if (serviceCode === 'escort') this.watchEscortDate();
+        if (serviceCode === 'escort' || serviceCode === 'pet') this.watchBookingDates();
         if (this.idlePrefill && !this.request) this.setData({ form: { ...this.data.form, ...this.idlePrefill } });
         const addresses = user.addresses && user.addresses.length ? user.addresses : [{ id: '', communityId: user.communityId,
           buildingId: user.buildingId, buildingName: user.buildingName, unit: user.unit, room: user.room,
@@ -170,12 +170,26 @@ module.exports = function serviceForm(serviceCode) {
       }
       return !reselect;
     },
-    watchEscortDate() {
+    checkBookingDates(now = new Date()) {
+      if (serviceCode === 'escort') return this.checkEscortDate(now);
+      if (serviceCode !== 'pet') return true;
+      const tomorrow = ymd(addDays(now, 1));
+      const expired = this.data.form.dates.some(date => date < tomorrow);
+      if (tomorrow !== this.data.petDateStart || expired !== this.data.petHasExpiredDates) {
+        this.setData({ petDateStart: tomorrow, petHasExpiredDates: expired });
+      }
+      if (expired) {
+        this.quoteSequence = (this.quoteSequence || 0) + 1;
+        this.setData({ quote: null, amount: '--', quoteLoading: false, quoteError: '' });
+      }
+      return !expired;
+    },
+    watchBookingDates() {
       const now = new Date();
-      this.checkEscortDate(now);
+      this.checkBookingDates(now);
       const midnight = Date.parse(ymd(addDays(now, 1)) + 'T00:00:00+08:00');
-      this.escortMidnightTimer = setTimeout(() => {
-        if (!this.hidden && !this.unloaded && !this.createdOrderId) this.watchEscortDate();
+      this.bookingMidnightTimer = setTimeout(() => {
+        if (!this.hidden && !this.unloaded && !this.createdOrderId) this.watchBookingDates();
       }, midnight - now.getTime());
     },
     placeFields(community) {
@@ -233,15 +247,32 @@ module.exports = function serviceForm(serviceCode) {
     },
     addPetDate(event) {
       if (serviceCode !== 'pet') return;
+      this.checkBookingDates();
       const date = event.detail.value;
-      if (!date || this.data.form.dates.includes(date)) return;
-      if (this.data.form.dates.length >= 15) { this.setData({ quoteError: '最多选择 15 个服务日期' }); return; }
-      const dates = [...this.data.form.dates, date].sort();
-      this.setData({ 'form.dates': dates, quote: null, amount: '--', quoteError: '' }); this.saveDraft(); this.queueQuote();
+      const original = event.currentTarget?.dataset?.date;
+      const dates = this.data.form.dates;
+      if (!date || date < this.data.petDateStart) {
+        wx.showToast({ title: '请选择北京时间明天或之后的日期', icon: 'none' });
+        return;
+      }
+      if (original && (!dates.includes(original) || original >= this.data.petDateStart)) return;
+      if (dates.includes(date)) {
+        wx.showToast({ title: '该服务日期已选', icon: 'none' });
+        return;
+      }
+      if (!original && dates.length >= 15) {
+        wx.showToast({ title: '最多选择 15 个服务日期', icon: 'none' });
+        return;
+      }
+      this.setPetDates([...dates.filter(item => item !== original), date].sort());
     },
     removePetDate(event) {
-      const dates = this.data.form.dates.filter(date => date !== event.currentTarget.dataset.date);
-      this.setData({ 'form.dates': dates, quote: null, amount: '--' }); this.saveDraft(); this.queueQuote();
+      this.setPetDates(this.data.form.dates.filter(date => date !== event.currentTarget.dataset.date));
+    },
+    setPetDates(dates) {
+      this.setData({ 'form.dates': dates, quote: null, amount: '--', quoteError: '' });
+      this.saveDraft();
+      if (this.checkBookingDates()) this.queueQuote();
     },
     slotChange(event) { this.setData({ slotIndex: Number(event.detail.value), quote: null, amount: '--' }); this.saveDraft(); this.queueQuote(); },
     queueQuote() {
@@ -283,7 +314,7 @@ module.exports = function serviceForm(serviceCode) {
     },
     async refreshQuote() {
       if (!this.data.community || this.hidden || this.unloaded) return;
-      if (serviceCode === 'escort' && !this.checkEscortDate()) return;
+      if (!this.checkBookingDates()) return;
       const sequence = (this.quoteSequence || 0) + 1;
       this.quoteSequence = sequence;
       this.setData({ quoteLoading: true, quoteError: '' });
@@ -339,7 +370,8 @@ module.exports = function serviceForm(serviceCode) {
     async submit() {
       if (this.data.saving || this.hidden || this.unloaded) return;
       if (this.createdOrderId) { this.openCreatedOrder(); return; }
-      if (serviceCode === 'escort' && !this.checkEscortDate()) return;
+      if (!this.checkBookingDates()) return;
+      if (serviceCode === 'pet' && !this.data.form.dates.length) return;
       if (!this.data.community || this.data.loading || this.data.placeNeedsSelection || !this.data.quote || this.data.quoteLoading) return;
       const user = getApp().globalData.user;
       const key = this.draftKey;

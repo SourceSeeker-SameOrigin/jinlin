@@ -35,7 +35,7 @@ async function checkZone() {
     await suspended.load();
     await suspended.refreshQuote();
     assert.ok(suspended.data.quote);
-    const midnight = timers.get(page.escortMidnightTimer);
+    const midnight = timers.get(page.bookingMidnightTimer);
     assert.equal(midnight.ms, 1000);
     now += 2000;
     midnight.fn();
@@ -60,7 +60,7 @@ async function checkZone() {
     await restored.refreshQuote();
     assert.equal(restored.data.escortDateNeedsSelection, false);
     assert.ok(restored.data.quote);
-    const timerBeforeHide = restored.escortMidnightTimer;
+    const timerBeforeHide = restored.bookingMidnightTimer;
     restored.onHide();
     assert.equal(timers.has(timerBeforeHide), false);
     now += 86400000;
