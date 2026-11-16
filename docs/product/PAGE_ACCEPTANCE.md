@@ -663,6 +663,8 @@
 
 ### P51 上门喂宠
 
+- 0.1.4 真机录屏：最早可确定 11 月 17 日，新增一次只加一天。滚到 23 日后取消仍保留原四天与 640 元报价；狗数量与遛狗校验、增加一只狗后的 1040 元报价已核对。喂宠返回首页、真机跨午夜和 QA83 新前端待验。
+
 - 路径：pet/order。前置：真实微信用户，业务页需对应绑定/参与关系；pet。
 - 页面操作清点：load、addressChange、removePetDate、addPetDate、change、slotChange、retryQuote、submit。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
 - 后端关联：catalog.getCommunity、order.create、order.detail、order.mockPay、order.quote、order.subscriptionTemplates。
@@ -831,6 +833,8 @@
 - 记录：版本____ / 设备____ / 角色____ / U1–U7____ / F1–F6____ / 实际结果____ / 证据____ / 用户签收____。
 
 ### P67 陪诊预约
+
+- 0.1.4 真机录屏：默认明日，滚动后取消保留原日期，确定后更新日期，实际返回首页。超出值班时段的 09:00、10:00 受到拦截；有效时段成功报价与真机跨午夜仍待验。
 
 - 路径：elder/escort。前置：真实微信用户，业务页需对应绑定/参与关系；elder。
 - 页面操作清点：load、addressChange、change、retryQuote、submit。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
