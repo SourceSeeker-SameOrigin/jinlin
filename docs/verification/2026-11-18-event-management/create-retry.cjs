@@ -65,7 +65,7 @@ function setup(failure, role) {
     page
   };
 }
-(async () => {
+if (require.main === module) (async () => {
   const results = [];
   for (const role of process.env.QA109_SPONSOR ? ['admin'] : ['admin', 'property', 'merchant']) for (const failure of ['none', 'after-create', 'before-publish', 'after-publish']) {
     const s = setup(failure, role);
@@ -84,6 +84,7 @@ function setup(failure, role) {
       firstStatuses: first.map(e => e.status),
       finalCount: s.db.data.events.length,
       finalStatuses: s.db.data.events.map(e => e.status),
+      reviewRequested: s.db.data.events.map(e => !!e.reviewRequestedAt),
       ledgerCount: (s.db.data.ledger || []).length,
       ledgerAmounts: (s.db.data.ledger || []).map(e => e.amounts.platform),
       createCalls: s.env.requests.filter(r => r[1] === 'create').length,
@@ -92,7 +93,10 @@ function setup(failure, role) {
   }
   console.log(JSON.stringify(results, null, 2));
   assert.equal(results[0].finalCount, 1);
-  const unmet = results.filter(row => row.finalCount !== 1);
+  const unmet = results.filter(row => row.finalCount !== 1 ||
+    row.finalStatuses[0] !== (row.role === 'admin' ? 'published' : 'draft') ||
+    row.role !== 'admin' && !row.reviewRequested[0] ||
+    process.env.QA109_SPONSOR && (row.ledgerCount !== 1 || row.ledgerAmounts[0] !== 500));
   if (unmet.length) {
     console.error('QA109 未通过恢复场景数', unmet.length);
     process.exitCode = 1;
@@ -101,3 +105,5 @@ function setup(failure, role) {
   console.error(e);
   process.exitCode = 1;
 });
+
+module.exports = { setup };

@@ -1,4 +1,7 @@
 const api = require('../../utils/api');
+const formDefaults = { title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
+  startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
+  sponsorName: '', sponsorAmount: '0', sponsorNote: '' };
 const { ymd } = require('../../utils/time');
 const { eventStatusNames, signupStatusNames, refundJobStatusNames } = require('../../utils/status-labels');
 
@@ -17,9 +20,9 @@ Page({
     sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false,
     eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
     rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0,
-    communities: [], communityIndex: 0, communityId: '', ready: false },
+    communities: [], communityIndex: 0, communityId: '', ready: false, recovery: '', recoveryStatus: '', recoveryTitle: '' },
   onShow() { this.inactive = false; return this.load(); },
-  onHide() { this.inactive = true; this.invalidateReads(); },
+  onHide() { this.inactive = true; this.invalidateReads(); this.setData({ ready: false }); },
   onUnload() { this.inactive = true; this.invalidateReads(); },
   invalidateReads() {
     this.loadSequence = (this.loadSequence || 0) + 1;
@@ -29,11 +32,23 @@ Page({
     if (this.inactive) return;
     this.invalidateReads();
     const sequence = this.loadSequence;
-    this.setData({ loading: true, ready: false, error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
+    let loadingUserId;
+    const current = () => !this.inactive && sequence === this.loadSequence &&
+      (!loadingUserId || getApp().globalData.user?._id === loadingUserId);
+    this.setData({ loading: true, ready: false, busy: false, recovery: '', error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
       eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
       rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0 });
     try {
       const user = await getApp().ensureSession();
+      if (!current()) return;
+      if (!user || !user._id) throw new Error('登录状态不可用，请重试');
+      loadingUserId = user._id;
+      if (!current()) return;
+      if (this.userId && this.userId !== user._id) this.setData({ ...formDefaults, communityId: '' });
+      this.userId = user._id;
+      this.storageKey = 'event-creation:' + encodeURIComponent(user._id);
+      this.receipt = wx.getStorageSync(this.storageKey) || null;
+      if (this.receipt) this.setData({ ...this.receipt.form, recovery: 'lookup', recoveryTitle: this.receipt.input.title });
       const isAdmin = user.roles.includes('admin');
       if (!isAdmin && !user.roles.some(role => ['property', 'merchant'].includes(role))) throw new Error('仅管理员、物业或商家可管理活动');
       const communities = [];
@@ -47,17 +62,19 @@ Page({
         if (!user.communityId) throw new Error('尚未分配活动管理小区');
         communities.push(await api.call('catalog', 'getCommunity', { communityId: user.communityId }, { loading: false, silent: true }));
       }
-      if (sequence !== this.loadSequence) return;
-      const selectedId = isAdmin ? this.data.communityId || user.communityId : user.communityId;
+      if (!current() || getApp().globalData.user?._id !== user._id) return;
+      const selectedId = isAdmin ? this.receipt?.input.communityIds[0] || this.data.communityId || user.communityId : user.communityId;
       const communityIndex = Math.max(0, communities.findIndex(item => item._id === selectedId));
       const communityId = (communities[communityIndex] || {})._id || '';
       this.setData({ isAdmin, communities, communityIndex, communityId });
       if (!communityId) throw new Error('请先配置并选择管理小区');
       const result = await api.call('event', 'adminList', { communityId }, { loading: false, silent: true });
-      if (sequence === this.loadSequence) this.setData({ list: result.list, ready: true,
+      if (!current() || getApp().globalData.user?._id !== user._id) return;
+      this.setData({ list: result.list, ready: true,
         eventOffset: result.list.length, eventMore: result.hasMore === true && result.list.length > 0 });
-    } catch (error) { if (sequence === this.loadSequence) this.setData({ error: error.message || '活动管理加载失败' }); }
-    finally { if (sequence === this.loadSequence) this.setData({ loading: false }); }
+      if (this.receipt) await this.lookupPending(current);
+    } catch (error) { if (current()) this.setData({ error: error.message || '活动管理加载失败' }); }
+    finally { if (current()) this.setData({ loading: false }); }
   },
   async loadMoreEvents() {
     const { ready, communityId, eventOffset, eventMore, eventLoading } = this.data;
@@ -78,7 +95,7 @@ Page({
     }
   },
   async chooseCommunity(event) {
-    if (!this.data.isAdmin || this.data.loading || this.data.busy) return;
+    if (!this.data.isAdmin || this.data.loading || this.data.busy || this.receipt) return;
     const community = this.data.communities[Number(event.detail.value)];
     if (!community || community._id === this.data.communityId) return;
     this.setData({ communityId: community._id });
@@ -97,37 +114,98 @@ Page({
     try { await api.call('event', action, { eventId }); await this.load(); }
     catch (error) { this.setData({ error: error.message || '操作失败', errorFromForm: false }); }
   },
-  input(event) { const field = event.currentTarget.dataset.field; this.setData({ [field]: event.detail.value }); },
-  typeChange(event) { this.setData({ type: this.data.types[Number(event.detail.value)] || 'interest' }); },
+  canEditCreation() {
+    return !this.inactive && this.data.ready && !this.data.loading && !this.data.busy &&
+      getApp().globalData.user?._id === this.userId && (!this.receipt || this.data.recovery === 'confirm');
+  },
+  input(event) {
+    const field = event.currentTarget.dataset.field;
+    if (Object.prototype.hasOwnProperty.call(formDefaults, field) && this.canEditCreation()) this.setData({ [field]: event.detail.value });
+  },
+  typeChange(event) {
+    if (this.canEditCreation()) this.setData({ type: this.data.types[Number(event.detail.value)] || 'interest' });
+  },
+  async lookupPending(current) {
+    const receipt = this.receipt;
+    const result = await api.call('event', 'lookupCreation', { requestId: receipt.requestId },
+      { silent: true, loading: false, redirectOnForbidden: false, isActive: current });
+    if (!current() || getApp().globalData.user?._id !== this.userId) return null;
+    if (!result || (result.eventId !== null && !result.eventId)) throw new Error('原活动结果暂不可用，请重试核对');
+    const done = result.eventId && (result.status !== 'draft' || result.reviewRequired);
+    this.setData({ recovery: !result.eventId ? 'confirm' : done ? 'done' : 'submit',
+      recoveryStatus: done ? result.status === 'draft' ? '已提交管理员审核' : eventStatusNames[result.status] || '已保存' : '',
+      recoveryTitle: receipt.input.title });
+    return result;
+  },
+  newActivity() {
+    if (this.inactive || this.data.busy || this.data.loading || this.data.recovery !== 'done' ||
+      getApp().globalData.user?._id !== this.userId) return;
+    const saved = wx.getStorageSync(this.storageKey);
+    if (saved?.requestId !== this.receipt?.requestId) return this.load();
+    wx.removeStorageSync(this.storageKey);
+    this.receipt = null;
+    this.setData({ ...formDefaults, recovery: '', recoveryStatus: '', recoveryTitle: '', error: '' });
+  },
+  creationInput(user) {
+    const toDate = (date, time, label) => {
+      if (!date) throw new Error('请选择' + label + '日期');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error(label + '日期或时间不正确');
+      const value = new Date(date + 'T' + time + ':00+08:00');
+      if (!Number.isFinite(value.getTime()) || ymd(value) !== date) throw new Error(label + '日期不存在');
+      return value.toISOString();
+    };
+    return { title: this.data.title, desc: this.data.desc, location: this.data.location, type: this.data.type,
+      fee: this.data.type === 'charity' ? 0 : amountFen(this.data.fee, '活动费用'), capacity: Number(this.data.capacity),
+      communityIds: [user.roles.includes('admin') ? this.data.communityId : user.communityId],
+      sponsors: user.roles.includes('admin') && this.data.sponsorName && Number(this.data.sponsorAmount) > 0 ?
+        [{ name: this.data.sponsorName, amount: amountFen(this.data.sponsorAmount, '赞助金额'), note: this.data.sponsorNote }] : [],
+      startAt: toDate(this.data.startDate, this.data.startTime, '活动开始'),
+      endAt: toDate(this.data.endDate, this.data.endTime, '活动结束'),
+      signupDeadline: toDate(this.data.deadlineDate, this.data.deadlineTime, '报名截止') };
+  },
   async createActivity() {
-    if (this.data.busy || this.data.loading || !this.data.ready || !this.data.communityId) return;
-    const communityId = this.data.communityId;
+    if (this.inactive || this.data.busy || this.data.loading || !this.data.ready || !this.data.communityId || this.data.recovery === 'done') return;
+    if (!this.userId || getApp().globalData.user?._id !== this.userId) return this.load();
+    const sequence = this.loadSequence, userId = this.userId;
+    const current = () => !this.inactive && sequence === this.loadSequence && getApp().globalData.user?._id === userId;
+    const options = { silent: true, redirectOnForbidden: false, isActive: current };
     this.setData({ busy: true, error: '', errorFromForm: true });
     try {
-      const toDate = (date, time, label) => {
-        if (!date) throw new Error('请选择' + label + '日期');
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error(label + '日期或时间不正确');
-        const value = new Date(date + 'T' + time + ':00+08:00');
-        if (!Number.isFinite(value.getTime()) || ymd(value) !== date) throw new Error(label + '日期不存在');
-        return value;
-      };
-      const startAt = toDate(this.data.startDate, this.data.startTime, '活动开始');
-      const endAt = toDate(this.data.endDate, this.data.endTime, '活动结束');
-      const signupDeadline = toDate(this.data.deadlineDate, this.data.deadlineTime, '报名截止');
       const user = await getApp().ensureSession();
-      const created = await api.call('event', 'create', { title: this.data.title, desc: this.data.desc, location: this.data.location,
-        type: this.data.type, fee: this.data.type === 'charity' ? 0 : amountFen(this.data.fee, '活动费用'), capacity: Number(this.data.capacity), communityIds: [user.roles.includes('admin') ? communityId : user.communityId],
-        sponsors: user.roles.includes('admin') && this.data.sponsorName && Number(this.data.sponsorAmount) > 0 ? [{ name: this.data.sponsorName,
-          amount: amountFen(this.data.sponsorAmount, '赞助金额'), note: this.data.sponsorNote }] : [],
-        startAt, endAt, signupDeadline });
-      await api.call('event', 'publish', { eventId: created.eventId });
-      this.setData({ title: '', desc: '', location: '' }); await this.load();
+      if (!current() || user._id !== userId) return;
+      const saved = wx.getStorageSync(this.storageKey);
+      if (saved?.requestId !== this.receipt?.requestId) { await this.load(); return; }
+      let created;
+      if (this.receipt) {
+        const wasConfirmedAbsent = this.data.recovery === 'confirm';
+        created = await this.lookupPending(current);
+        if (!current() || !created || this.data.recovery === 'done') return;
+        // A failed lookup never authorizes another write. A confirmed miss needs an explicit click.
+        if (!created.eventId && !wasConfirmedAbsent) return;
+      }
+      if (!created?.eventId) {
+        const input = this.creationInput(user);
+        const form = Object.fromEntries(Object.keys(formDefaults).map(key => [key, this.data[key]]));
+        const receipt = { requestId: this.receipt?.requestId || 'event_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10), input, form };
+        wx.setStorageSync(this.storageKey, receipt);
+        this.receipt = receipt;
+        this.setData({ recovery: 'lookup', recoveryTitle: input.title });
+        created = await api.call('event', 'create', { ...input, requestId: receipt.requestId }, options);
+        if (!current()) return;
+        if (!created?.eventId) throw new Error('活动保存结果暂不可用，请核对原活动');
+      }
+      if (created.status === 'draft' && !created.reviewRequired) {
+        await api.call('event', 'publish', { eventId: created.eventId }, options);
+        if (!current()) return;
+      }
+      await this.load();
     } catch (error) {
-      this.setData({ error: error.message || '活动创建失败', errorFromForm: true }, () => {
-        wx.pageScrollTo({ scrollTop: 0, duration: 200 });
-      });
+      if (current()) this.setData({ error: error.message || '活动提交结果待核对', errorFromForm: true,
+        recovery: this.receipt ? 'lookup' : '' }, () => wx.pageScrollTo({ scrollTop: 0, duration: 200 }));
+    } finally {
+      if (current()) this.setData({ busy: false });
+      else if (!this.inactive && sequence === this.loadSequence) await this.load();
     }
-    finally { this.setData({ busy: false }); }
   },
   async scan() {
     try {

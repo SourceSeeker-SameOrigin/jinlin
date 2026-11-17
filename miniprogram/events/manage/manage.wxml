@@ -8,7 +8,7 @@
 </view>
 <view class="card" wx:if="{{communities.length}}">
 <view class="label">活动管理小区</view>
-<picker wx:if="{{isAdmin}}" range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="chooseCommunity" disabled="{{loading || busy}}">
+<picker wx:if="{{isAdmin}}" range="{{communities}}" range-key="name" value="{{communityIndex}}" bindchange="chooseCommunity" disabled="{{loading || busy || recovery}}">
 <view class="picker">{{communities[communityIndex].name}} · 点击切换</view>
 </picker>
 <view wx:else>{{communities[communityIndex].name}}</view>
@@ -16,8 +16,15 @@
 </view>
 <view wx:if="{{error}}" class="error">{{error}}<button wx:if="{{!errorFromForm}}" bindtap="load">重试</button>
 </view>
-<view class="card">
-<view class="section-title">创建活动</view>
+<view wx:if="{{ready && recovery}}" class="card">
+<view class="section-title">原活动提交结果</view>
+<view>{{recoveryTitle}}</view>
+<view class="muted">{{recovery === 'done' ? recoveryStatus : recovery === 'confirm' ? '暂未查到原活动，请确认下方资料后沿用原编号提交。' : recovery === 'submit' ? '活动已保存，可继续提交这一场活动。' : '提交结果尚未确认，请先核对原活动，避免重复创建。'}}</view>
+<button wx:if="{{recovery === 'lookup' || recovery === 'submit'}}" class="ui-button" loading="{{busy}}" disabled="{{busy || loading}}" bindtap="createActivity">{{recovery === 'lookup' ? '核对原活动并恢复提交' : '继续提交原活动'}}</button>
+<button wx:if="{{recovery === 'done'}}" class="ui-button" disabled="{{busy || loading}}" bindtap="newActivity">创建下一场活动</button>
+</view>
+<view class="card" wx:if="{{ready && !loading && (!recovery || recovery === 'confirm')}}">
+<view class="section-title">{{recovery === 'confirm' ? '确认原活动资料' : '创建活动'}}</view>
 <view class="field">
 <view class="label">活动标题</view>
 <input placeholder="活动标题" value="{{title}}" data-field="title" bindinput="input"/>
@@ -71,7 +78,7 @@
 <input placeholder="赞助说明" value="{{sponsorNote}}" data-field="sponsorNote" bindinput="input"/>
 </view>
 </view>
-<button type="primary" loading="{{busy}}" disabled="{{busy || loading || !ready || !communityId}}" bindtap="createActivity">保存并提交活动审核</button>
+<button type="primary" loading="{{busy}}" disabled="{{busy || loading || !ready || !communityId}}" bindtap="createActivity">{{recovery === 'confirm' ? '确认并用原编号提交' : '保存并提交活动审核'}}</button>
 </view>
 <view class="card">
 <button bindtap="scan">扫描签到码</button>

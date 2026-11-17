@@ -10,7 +10,8 @@ function setup(call) {
   const setData = p.setData;
   p.setData = function (patch, done) { setData.call(this, patch); if (done) done(); };
   r.wx.pageScrollTo = options => { assert(p.data.error); scrolls.push(options); };
-  r.app.globalData.user = { roles: ['property'], communityId: 'fixture_community' };
+  r.app.globalData.user = { _id: 'qa14-user', roles: ['property'], communityId: 'fixture_community' };
+  p.userId = 'qa14-user'; p.storageKey = 'event-creation:qa14-user';
   p.setData({ ready: true, loading: false, communityId: 'fixture_community', ...dates, title: '合成草稿', desc: '保留说明', location: '合成地点', fee: '12.34' });
   return { r, p, scrolls };
 }
@@ -50,7 +51,7 @@ async function test(name, fn) {
     assert.equal(scrolls.length, 0);
   });
   await test('其他操作错误恢复原重试展示', async () => {
-    const { p } = setup(); p.setData({ errorFromForm: true });
+    const { p } = setup(); p.setData({ errorFromForm: true, list: [{ _id: 'fixture', status: 'published' }] });
     await p.checkin({ currentTarget: { dataset: { id: 'fixture' } } });
     assert.equal(p.data.errorFromForm, false); assert.equal(p.data.error, '请先扫描活动签到码');
   });
