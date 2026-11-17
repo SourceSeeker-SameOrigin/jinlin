@@ -90,6 +90,10 @@
 </view>
 <button wx:if="{{item.cancelRefund.status === 'attention' && item.cancelRefund.failedCount > 0}}" data-id="{{item._id}}" bindtap="retryCancellation">重试失败退款</button>
 </view>
+<view wx:if="{{ready && eventMore}}" class="card">
+<view wx:if="{{eventError}}" class="error">{{eventError}}</view>
+<button class="ui-button" loading="{{eventLoading}}" disabled="{{eventLoading}}" bindtap="loadMoreEvents">{{eventError ? '重试本页活动' : '加载更多活动'}}</button>
+</view>
 <view wx:if="{{loading}}" class="card">正在加载…</view>
 <view class="card" wx:if="{{rosterId}}">
 <view class="section-title">{{rosterTitle}} · 报名名单</view>

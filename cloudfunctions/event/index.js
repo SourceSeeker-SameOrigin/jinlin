@@ -271,19 +271,25 @@ async function cancelSignup(event, { openid }) {
   return { signupId: id, status: 'cancelled' };
 }
 
+function managesActivity(user, item) {
+  return item && (user.roles.includes('admin') || (item.ownerOpenid === user.openid &&
+    user.communityId && Array.isArray(item.communityIds) && item.communityIds.includes(user.communityId)));
+}
+
 async function checkin(event, { user }) {
   requireRole(user, ['admin', 'property', 'merchant']);
   text(event.eventId, '活动'); text(event.checkinCode, '签到码');
   const item = await server.get('events', event.eventId);
-  ensure(item && (user.roles.includes('admin') || item.ownerOpenid === user.openid), '无权为该活动签到', 'E_FORBIDDEN');
+  ensure(managesActivity(user, item), '无权为该活动签到', 'E_FORBIDDEN');
   await enabled(item.communityIds[0]);
   ensure(item.status === 'published', '活动未发布或已结束，不能签到', 'E_CONFLICT');
   const signupItem = await server.one('signups', { eventId: item._id, checkinCode: event.checkinCode });
   ensure(signupItem && signupItem.status === 'signed', '签到码无效或已签到', 'E_CONFLICT');
   return atomic(db, async transaction => {
     const currentEvent = await read(transaction, 'events', item._id);
-    ensure(currentEvent && (user.roles.includes('admin') || currentEvent.ownerOpenid === user.openid),
-      '无权为该活动签到', 'E_FORBIDDEN');
+    const operator = await read(transaction, 'users', user._id);
+    requireRole(operator, ['admin', 'property', 'merchant']);
+    ensure(operator.openid === user.openid && managesActivity(operator, currentEvent), '无权为该活动签到', 'E_FORBIDDEN');
     ensure(currentEvent.status === 'published', '活动状态已变化，不能签到', 'E_CONFLICT');
     const current = await read(transaction, 'signups', signupItem._id);
     ensure(current && current.eventId === item._id && current.checkinCode === event.checkinCode && current.status === 'signed',
@@ -300,7 +306,7 @@ async function checkin(event, { user }) {
 async function listSignups(event, { user }) {
   requireRole(user, ['admin', 'property', 'merchant']); text(event.eventId, '活动');
   const item = await server.get('events', event.eventId);
-  ensure(item && (user.roles.includes('admin') || item.ownerOpenid === user.openid && item.communityIds.includes(user.communityId)), '无权查看报名名单', 'E_FORBIDDEN');
+  ensure(managesActivity(user, item), '无权查看报名名单', 'E_FORBIDDEN');
   const offset = integer(event.offset === undefined ? 0 : event.offset, '分页位置', 0, 100000);
   const rows = await db.collection('signups').where({ eventId: item._id, status: command.in(['signed', 'checked_in']) })
     .orderBy('createdAt', 'asc').skip(offset).limit(50).get();

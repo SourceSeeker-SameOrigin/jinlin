@@ -133,6 +133,22 @@ async function main() {
   const result = await revoked.db.call('event', 'checkin', { eventId: id, checkinCode: validCode });
   console.log('community changed before transaction:', result.ok, revoked.db.data.signups[0].status);
   if (result.ok || revoked.db.data.signups[0].status !== 'signed') failures.push('QA108: moved before transaction still checked in');
+  for (const [label, revoke] of [
+    ['role removed', data => { data.users[1].roles = ['resident']; }],
+    ['blocked', data => { data.users[1].blocked = true; }],
+    ['different login identity', data => { data.users[1].openid = 'other-person'; }],
+    ['user removed', data => { data.users.splice(1, 1); }],
+    ['organizer changed', data => { data.events[0].ownerOpenid = 'other-person'; }]
+  ]) {
+    const s = scenario('merchant');
+    const valid = await s.enroll(id);
+    s.db.setActor('manager');
+    s.db.faults.beforeTransaction = revoke;
+    const denied = await s.db.call('event', 'checkin', { eventId: id, checkinCode: valid });
+    assert.equal(denied.code, 'E_FORBIDDEN', label);
+    assert.equal(s.db.data.signups[0].status, 'signed', label);
+    assert.equal(s.db.data.events[0].checkinRevision || 0, 0, label);
+  }
   for (const failure of failures) console.log('UNMET', failure);
   if (failures.length) process.exitCode = 1;
 }

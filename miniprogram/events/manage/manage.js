@@ -15,6 +15,7 @@ Page({
     startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
     types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
     sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false,
+    eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
     rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0,
     communities: [], communityIndex: 0, communityId: '', ready: false },
   onShow() { this.inactive = false; return this.load(); },
@@ -29,6 +30,7 @@ Page({
     this.invalidateReads();
     const sequence = this.loadSequence;
     this.setData({ loading: true, ready: false, error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
+      eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
       rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0 });
     try {
       const user = await getApp().ensureSession();
@@ -52,9 +54,28 @@ Page({
       this.setData({ isAdmin, communities, communityIndex, communityId });
       if (!communityId) throw new Error('请先配置并选择管理小区');
       const result = await api.call('event', 'adminList', { communityId }, { loading: false, silent: true });
-      if (sequence === this.loadSequence) this.setData({ list: result.list, ready: true });
+      if (sequence === this.loadSequence) this.setData({ list: result.list, ready: true,
+        eventOffset: result.list.length, eventMore: result.hasMore === true && result.list.length > 0 });
     } catch (error) { if (sequence === this.loadSequence) this.setData({ error: error.message || '活动管理加载失败' }); }
     finally { if (sequence === this.loadSequence) this.setData({ loading: false }); }
+  },
+  async loadMoreEvents() {
+    const { ready, communityId, eventOffset, eventMore, eventLoading } = this.data;
+    if (this.inactive || !ready || !eventMore || eventLoading) return;
+    const sequence = this.loadSequence;
+    this.setData({ eventLoading: true, eventError: '' });
+    try {
+      const result = await api.call('event', 'adminList', { communityId, offset: eventOffset }, { loading: false, silent: true });
+      if (sequence !== this.loadSequence) return;
+      const seen = new Set(this.data.list.map(item => item._id));
+      const additions = result.list.filter(item => !seen.has(item._id) && seen.add(item._id));
+      this.setData({ list: this.data.list.concat(additions), eventOffset: eventOffset + result.list.length,
+        eventMore: result.hasMore === true && result.list.length > 0 });
+    } catch (error) {
+      if (sequence === this.loadSequence) this.setData({ eventError: error.message || '活动续页加载失败' });
+    } finally {
+      if (sequence === this.loadSequence) this.setData({ eventLoading: false });
+    }
   },
   async chooseCommunity(event) {
     if (!this.data.isAdmin || this.data.loading || this.data.busy) return;
