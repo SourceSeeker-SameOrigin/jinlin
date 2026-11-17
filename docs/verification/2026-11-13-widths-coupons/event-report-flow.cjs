@@ -81,7 +81,7 @@ async function run() {
       return new Promise((resolve, reject) => hold(() => boundary === 'failure' ? reject(Error('旧错误')) : resolve({})));
     });
     const late = lateEnv.instance('miniprogram/events/detail/detail.js');
-    late.onLoad({id}); late.setData({loading:false,item:{_id:id}});
+    late.onLoad({id}); late.detailUserId = lateEnv.app.globalData.user._id; late.setData({loading:false,item:{_id:id}});
     let modals=0, successToasts=0;
     lateEnv.wx.showToast=()=>{successToasts++;};
     lateEnv.wx.showActionSheet=o=>{
