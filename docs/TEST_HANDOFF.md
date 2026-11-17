@@ -692,3 +692,5 @@ QA100 付费活动详情已在 320、375、390、430 宽完成实际页面离开
 - 本轮无真实活动、报名、赞助账或资金写入；开发云 QA109 更新、体验版及真机恢复尚未验收。现有体验版记录为 0.1.13，本轮未切换。
 
 [创建重试](verification/2026-11-18-event-management/qa109-retry.json) · [赞助回归](verification/2026-11-18-event-management/qa109-sponsor.json) · [恢复与事务](verification/2026-11-18-event-management/qa109-recovery.json) · [模拟器准备脚本](verification/2026-11-18-event-management/simulator-setup.cjs)
+
+**QA109 固定包就绪，未部署。** 源码 `7d94d5e` 已推送任务分支。`/tmp/jinlin-deploy-7d94d5e/event.zip` 共 76 文件、129994 字节，SHA-256 `22d0b19f5b9569743821be5ab6a7720e4c66fd050835ef96f67d4b72d0548a46`。以已回读的 68392d5 包为基准，仅 index.js 改变。直接加载解压包复跑恢复 27/27、创建重试 12/12、赞助 4/4 及名单／签到跨区回归通过。开发云部署尚待具体包授权，未执行真实活动写入或体验版切换。[固定包核验](verification/2026-11-18-event-management/qa109-package.json)
