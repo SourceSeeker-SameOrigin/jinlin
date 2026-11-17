@@ -12,6 +12,15 @@ for(const route of pages){
  const approvedRetryRoutes=['admin/reports/reports','admin/merchants/merchants','admin/stations/stations'];
  const previousEvents=previous.events.map(e=>e==='load'&&approvedRetryRoutes.includes(route)?'retry':e);
  const oldEvents=previousEvents.filter(x=>!(x==='phone'&&['pages/bind/bind','provider/apply/apply'].includes(route)));
+ // QA80 replaced exactly one generic change handler per location picker.
+ const placeFields = { 'pages/service/express': 'stationIndex', 'elder/meal': 'canteenIndex' };
+ if (placeFields[route]) {
+   const locationPicker = (xml.match(/<picker\b[^>]*>/g) || []).find(tag =>
+     tag.includes('form.' + placeFields[route]) && /\bbindchange="selectPlace"/.test(tag));
+   if (!locationPicker) issues.push({ route, missingLocationPickerBinding: 'selectPlace' });
+   const index = oldEvents.indexOf('change');
+   if (index !== -1) oldEvents[index] = 'selectPlace';
+ }
  const remaining=[...events];for(const event of oldEvents){const i=remaining.indexOf(event);if(i<0)issues.push({route,missingEvent:event});else remaining.splice(i,1);}
  for(const m of xml.matchAll(/src="(\/assets\/[^{}"]+)"/g))if(!fs.existsSync(path.join(root,m[1])))issues.push({route,missingAsset:m[1]});
  const shell=['pages/index/index','pages/bind/bind','pages/me/me'].includes(route)||xml.includes('page-masthead');if(!shell)issues.push({route,missingDesignShell:true});
