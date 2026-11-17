@@ -1,15 +1,15 @@
 const api = require('./api');
 const subscriptions = require('./subscriptions');
 
-async function pay(created) {
+async function pay(created, isActive = () => true) {
   if (created.free) return true;
   if (created.mock) {
     const answer = await new Promise(resolve => wx.showModal({ title: '模拟支付',
       content: '当前为开发测试支付，不会扣款。是否确认模拟支付？', success: resolve,
       fail: () => resolve({ confirm: false }) }));
-    if (!answer.confirm) return false;
-    await api.call('order', 'mockPay', { orderId: created.orderId });
-    subscriptions.request(['accepted', 'delivered']);
+    if (!answer.confirm || !isActive()) return false;
+    await api.call('order', 'mockPay', { orderId: created.orderId }, { isActive });
+    if (isActive()) subscriptions.request(['accepted', 'delivered']);
     return true;
   }
   if (created.payment) {

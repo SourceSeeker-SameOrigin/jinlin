@@ -30,11 +30,14 @@ async function resolve(file, force = false) {
   pending.set(file, request);
   try { return await request; } finally { pending.delete(file); }
 }
-async function preview(options) {
+async function preview(options, isActive = () => true) {
   try {
     const urls = await Promise.all(options.urls.map(file => resolve(file)));
+    if (!isActive()) return;
     const index = options.urls.indexOf(options.current);
     wx.previewImage({ ...options, urls, current: urls[Math.max(0, index)] });
-  } catch (error) { wx.showToast({ title: error.message || '图片暂不可用', icon: 'none' }); }
+  } catch (error) {
+    if (isActive()) wx.showToast({ title: error.message || '图片暂不可用', icon: 'none' });
+  }
 }
 module.exports = { register, resolve, preview };

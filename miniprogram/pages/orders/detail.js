@@ -117,7 +117,7 @@ Page({
   pay() {
     return this.runAction(this.data.order, 'canPay', async (current, options) => {
       const payment = await api.call('order', 'retryPayment', { orderId: this.orderId }, options);
-      if (current()) await pay(payment);
+      if (current()) await pay(payment, current);
     });
   },
   callProvider() {
@@ -150,8 +150,7 @@ Page({
   previewVacant(event) {
     if (!this.data.order) return;
     const urls = this.data.vacantPhotoGroups.flatMap(group => group.photos);
-    const current = event.currentTarget.dataset.url;
-    if (urls.includes(current)) require('../../utils/media-links').preview({ current, urls });
+    return this.previewOrderPhoto(event.currentTarget.dataset.url, urls);
   },
   openChat() {
     if (!this.orderId) return;
@@ -179,8 +178,12 @@ Page({
   },
   preview(event) {
     const photos = this.data.order && this.data.order.photos;
-    const current = event.currentTarget.dataset.url;
-    if (photos && photos.includes(current)) require('../../utils/media-links').preview({ current, urls: photos });
+    return this.previewOrderPhoto(event.currentTarget.dataset.url, photos);
+  },
+  previewOrderPhoto(current, urls) {
+    const sequence = this.sequence;
+    if (!this.data.order || !this.active(sequence) || !urls || !urls.includes(current)) return;
+    return require('../../utils/media-links').preview({ current, urls }, () => this.active(sequence));
   },
   openPetReports() {
     if (this.data.order && this.data.order.serviceCode === 'pet') wx.navigateTo({ url: '/pet/reports?id=' + encodeURIComponent(this.orderId) });
