@@ -65,9 +65,16 @@ Page({
   async load() {
     if (!this.eventId) return;
     clearTimeout(this.deadlineTimer);
-    return readList(this, { item: null, actions: {} }, '活动加载失败', async (_, options) => {
+    const initial = { item: null, actions: {} };
+    if (this.cancelPending) {
+      this.cancelPending = false;
+      initial.busy = false;
+    }
+    this.detailUserId = null;
+    return readList(this, initial, '活动加载失败', async (user, options) => {
       const item = await api.call('event', 'detail', { eventId: this.eventId }, options);
       if (!options.isActive()) return;
+      this.detailUserId = user._id;
       item.feeText = item.fee ? '¥' + yuan(item.fee) : '免费';
       item.startText = display(item.startAt); item.endText = display(item.endAt); item.deadlineText = display(item.signupDeadline);
       return { item, actions: this.actionsFor(item) };
@@ -120,14 +127,27 @@ Page({
     finally { if (visible()) this.setData({ busy: false }); }
   },
   async cancelSignup() {
-    if (!this.eventId) return;
-    if (this.data.busy || this.data.loading || !this.refreshActions().canCancel) return;
-    const visible = currentVisit(this);
-    const modal = await new Promise(resolve => wx.showModal({ title: '取消报名', content: '确认取消本次报名吗？截止前将按规则全额退款。', success: resolve }));
-    if (!modal.confirm || !visible() || this.data.loading || this.data.busy || !this.refreshActions().canCancel) return;
+    const eventId = this.eventId;
+    const read = this._readSequence;
+    const visible = currentUserAction(currentVisit(this));
+    const current = () => visible() && this.detailUserId === getApp().globalData.user?._id &&
+      this._readSequence === read && this.eventId === eventId;
+    if (!eventId || !current() || this.data.busy || this.data.loading || !this.refreshActions().canCancel) return;
+    this.cancelPending = true;
     this.setData({ busy: true, error: '' });
-    try { await api.call('event', 'cancelSignup', { eventId: this.eventId }); await this.load(); }
-    catch (error) { this.setData({ error: error.message || '取消失败' }); }
-    finally { this.setData({ busy: false }); }
+    try {
+      const modal = await new Promise(resolve => wx.showModal({ title: '取消报名',
+        content: '确认取消本次报名吗？截止前将按规则全额退款。', success: resolve, fail: () => resolve({ confirm: false }) }));
+      if (!modal.confirm || !current() || !this.refreshActions().canCancel) return;
+      await api.call('event', 'cancelSignup', { eventId }, { isActive: current });
+      if (current()) await this.load();
+    } catch (error) {
+      if (current()) this.setData({ error: error.message || '取消失败' });
+    } finally {
+      if (current()) {
+        this.cancelPending = false;
+        this.setData({ busy: false });
+      }
+    }
   }
 });

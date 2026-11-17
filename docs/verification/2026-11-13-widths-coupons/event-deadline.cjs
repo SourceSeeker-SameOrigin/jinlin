@@ -15,7 +15,7 @@ async function scenario(status, crossing) {
   let subscriptions=0,modals=0;
   env.wx.requestSubscribeMessage=async o=>{subscriptions++;if(crossing==='subscription')now=2000;o.success({});};
   env.wx.showModal=o=>{modals++;if(crossing==='confirmation')now=2000;o.success({confirm:true});};
-  const p=env.instance('miniprogram/events/detail/detail.js');p.onLoad({id:'test'});p.data.loading=false;
+  const p=env.instance('miniprogram/events/detail/detail.js');p.onLoad({id:'test'});p.data.loading=false;p.detailUserId=env.app.globalData.user._id;
   p.data.item={signupDeadline:2000,startAt:4000,status:'published',featureEnabled:true,remaining:1,canSignup:!status,mySignup:status?{status}:null};
   const before=p.refreshActions();
   if(crossing==='before-click')now=2000;
