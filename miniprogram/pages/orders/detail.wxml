@@ -7,7 +7,7 @@
     <view class="card">
       <view class="page-masthead"><image class="masthead-icon" src="/assets/icons/orders.png"/><view class="masthead-copy"><view class="page-title">{{order.statusText}}</view><view class="masthead-subtitle">邻里互助，安心到家</view></view></view>
       <view wx:if="{{order.status === 'paid'}}">服务员接单后会给您打电话</view>
-      <view>{{order.serviceName}} · ¥{{amount}}</view>
+      <view>{{order.serviceName}} · <text wx:if="{{order.status === 'pending_quote'}}">待商家报价</text><text wx:else>¥{{amount}}</text></view>
       <button class="ui-button" wx:if="{{order.canChat}}" bindtap="openChat">站内聊天<text wx:if="{{unread}}"> · {{unread}} 条未读</text></button>
       <view wx:if="{{order.pricing.couponDiscount}}">优惠券抵扣 ¥{{couponDiscountText}}</view>
       <view wx:if="{{pointsRedeemed}}">环保积分抵扣 {{pointsRedeemed}} 分</view>
