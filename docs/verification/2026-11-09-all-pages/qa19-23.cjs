@@ -65,8 +65,11 @@ function page(route,handler,options={}){
   const d=deferred();const {p}=page('chat/room/room',async()=>{await d.promise;return {list:[],unread:0,readOnly:false};});p.onLoad({conversationId:'fixture'});const loading=p.start();await Promise.resolve();p.onHide();d.resolve();await loading;assert(!p.data.ready&&!p.timer);
  });
  function booking(handler,options){const f=page('shops/booking/booking',handler,options);f.p.onLoad({serviceId:'fixture-service'});f.p.data.requirement='需求';return f;}
- await test('QA21丢失响应同内容重试复用编号；修改需求/地址后新编号',async()=>{
-  const {p,r}=booking(async()=>{throw Error('合成响应丢失');});await p.onShow();await p.submit();await p.submit();assert.equal(r.requests[0][2].requestId,r.requests[1][2].requestId);p.data.requirement='新需求';await p.submit();assert.notEqual(r.requests[1][2].requestId,r.requests[2][2].requestId);p.data.addresses=[{id:'fixture-address'}];await p.submit();assert.notEqual(r.requests[2][2].requestId,r.requests[3][2].requestId);assert.equal(r.navigation.length,0);
+ await test('QA21/QA94结果未知先核对，确认后复用编号',async()=>{
+  const {p,r}=booking(async(n,a)=>{if(a==='lookupBooking')return {orderId:null};throw Error('合成响应丢失');});
+  await p.onShow();await p.submit();await p.submit();assert.equal(p.data.recovery,'confirm');await p.submit();
+  assert.deepEqual(r.requests.map(x=>x[1]),['createBooking','lookupBooking','createBooking']);
+  assert.equal(new Set(r.requests.map(x=>x[2].requestId)).size,1);assert.equal(r.navigation.length,0);
  });
  for(const mode of ['pending_quote','paymentError','paymentThrow','paymentFalse','paid'])await test('QA21确认订单后只去详情，不重建 '+mode,async()=>{
   let pays=0;const {p,r}=booking(async()=>({orderId:'fixture-order',status:mode==='pending_quote'?'pending_quote':'pending_pay',paymentError:mode==='paymentError'}),{payment:{pay:async()=>{pays++;if(mode==='paymentThrow')throw Error('合成支付取消');return mode!=='paymentFalse';}}});await p.onShow();await p.submit();assert(r.navigation.some(n=>n[1]==='/pages/orders/detail?id=fixture-order'));await p.submit();assert.equal(r.requests.length,1);assert.equal(pays,['pending_quote','paymentError'].includes(mode)?0:1);

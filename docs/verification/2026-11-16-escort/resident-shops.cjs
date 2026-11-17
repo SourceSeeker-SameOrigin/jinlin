@@ -125,4 +125,5 @@ for (const type of ['fixed','quote']) {
     await assert.rejects(()=>call('merchant','createBooking',{...req,requestId:'qa93_new_request'}));assert.equal(JSON.stringify(db.data.orders[0]),old);assert.equal(db.data.orders.length,1);
   });
 }
-(async()=>{for(const [name,run] of cases){await run();console.log('通过',name);} console.log(cases.length+' 组通过');})().catch(e=>{console.error(e);process.exitCode=1;});
+module.exports = { setup };
+if (require.main === module) (async()=>{for(const [name,run] of cases){await run();console.log('通过',name);} console.log(cases.length+' 组通过');})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1454,6 +1454,7 @@
       "feature": "merchants",
       "calls": [
         "merchant.createBooking",
+        "merchant.lookupBooking",
         "order.detail",
         "order.mockPay",
         "order.subscriptionTemplates"

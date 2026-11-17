@@ -774,7 +774,7 @@
 
 - 路径：shops/booking/booking。前置：真实微信用户，业务页需对应绑定/参与关系；merchants。
 - 页面操作清点：load、address、input、submit、openOrder。逐项触发，验证文字、数据、导航及失败恢复，不把事件存在当作功能通过。
-- 后端关联：merchant.createBooking、order.detail、order.mockPay、order.subscriptionTemplates。
+- 后端关联：merchant.createBooking、merchant.lookupBooking、order.detail、order.mockPay、order.subscriptionTemplates。
 - 本轮检查：QA55：430宽受控初始化失败时显示错误及只读重试，表单/提交隐藏；实际点击重试后ready=true、loading=false、loadError=false、错误清除，需求草稿保留，地址/表单/提交恢复可见；实际返回首页。仅合成服务编号的初始化样本，无预约创建或付款。 21:30后补验320/375宽：受控初始化失败隐藏表单和提交、错误与重试可见；实际点重试后错误清除、草稿保留、表单恢复，实际返回首页，所见布局无截断/重叠。390本轮补齐同样受控错误、实际重试、草稿保留、表单恢复及返回首页。
 - 功能证据：未完成完整业务闭环；具体已有成功样本与前置见PAGE_ACCEPTANCE及TEST_HANDOFF。
 - 未完成：有效商家服务预约、报价/付款及云端请求幂等；真实多地址、320/375/390新版布局、真机/键盘/大字体及完整视觉签收；离页与并发边界目前仅隔离回归
@@ -1040,3 +1040,5 @@ P58 周边商家在示例花园临时开启时，实际云端旧入口、首批�
 P58、P59 本轮分页及旧服务清理的模拟器补验已完成。320、375、390、430 CSS px 均有页面实测回执，两页共 8 项通过。开发云非空服务详情与住户真机点击仍待验。[四宽结果](../verification/2026-11-16-escort/qa91-93-simulator-widths.json)
 
 P60 提交预约的双地址表单已在 320、375、390、430 CSS px 量测。地址选择器、输入框和提交按钮均在水平边界内，纵向排列无重叠，选择和输入处理函数可更新页面。原生选址、真机键盘及真实预约待验。订单响应丢失后重试和切换账号的边界见 [P60 补验记录](../TEST_HANDOFF.md)。
+
+P60 商家预约 QA94、QA95 已用合成住户完成固定价及报价制的断网找回、按原编号重提和换人清空检查。新版恢复状态已有 430 宽模拟器记录，其他宽度和真机结论见 [联调台账](../TEST_HANDOFF.md)。

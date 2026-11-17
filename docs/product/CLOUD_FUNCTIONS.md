@@ -93,7 +93,7 @@
 |P57 [商家预约订单](../../miniprogram/merchant/orders/orders.js)|merchant.completeBooking、merchant.merchantOrders、merchant.merchantTransition、merchant.quoteBooking|
 |P58 [社区商家](../../miniprogram/shops/list/list.js)|content.adEvent、content.adsForSlot、merchant.listForCommunity|
 |P59 [商家详情](../../miniprogram/shops/detail/detail.js)|content.report、merchant.servicesForMerchant|
-|P60 [提交预约](../../miniprogram/shops/booking/booking.js)|merchant.createBooking、order.detail、order.mockPay、order.subscriptionTemplates|
+|P60 [提交预约](../../miniprogram/shops/booking/booking.js)|merchant.createBooking、merchant.lookupBooking、order.detail、order.mockPay、order.subscriptionTemplates|
 |P61 [申请驿站账号](../../miniprogram/station/apply/apply.js)|station.applicationOptions、station.apply、station.myApplication|
 |P62 [驿站工作台](../../miniprogram/station/workbench/workbench.js)|station.exportStatement、station.listMyBatches|
 |P63 [创建送上门批次](../../miniprogram/station/create/create.js)|station.createBatch|

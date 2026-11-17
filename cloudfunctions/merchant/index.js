@@ -171,11 +171,26 @@ async function myServices(event, { openid }) {
   return { merchant: visibleMerchant(merchant), list: rows.data.map(item => visibleService(item, openid)) };
 }
 
-async function createBooking(event, { user, openid }) {
-  requireRole(user, ['resident']);
+function bookingId(event, openid) {
   text(event.requestId, '请求编号', 80);
   ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
   text(event.serviceId, '服务');
+  return 'mo_' + crypto.createHash('sha256').update(openid + ':' + event.requestId).digest('hex').slice(0, 40);
+}
+
+async function lookupBooking(event, { user, openid }) {
+  requireRole(user, ['resident']);
+  const id = bookingId(event, openid);
+  const order = await server.get('orders', id);
+  if (!order) return { orderId: null };
+  ensure(order.kind === 'merchant' && order.userOpenid === openid && order.detail?.serviceId === event.serviceId,
+    '请求编号与本次预约不匹配', 'E_CONFLICT');
+  return { orderId: order._id };
+}
+
+async function createBooking(event, { user, openid }) {
+  requireRole(user, ['resident']);
+  const id = bookingId(event, openid);
   const serviceItem = await server.get('merchantServices', event.serviceId);
   ensure(serviceItem && serviceItem.status === 'on', '该服务暂不可预约');
   const merchant = await server.get('merchants', serviceItem.merchantId);
@@ -191,7 +206,6 @@ async function createBooking(event, { user, openid }) {
   ensure(typeof requirementValue === 'string' && [...requirementValue].length <= 500, '预约需求不能超过 500 字');
   const requirement = requirementValue.trim();
   await checkOrderContent(cloud, openid, requirement, { desc: serviceItem.title + ' ' + serviceItem.desc }, (await server.config()).blacklist);
-  const id = 'mo_' + crypto.createHash('sha256').update(openid + ':' + event.requestId).digest('hex').slice(0, 40);
   const now = new Date();
   const config = await server.config();
   const result = await atomic(db, async transaction => {
@@ -334,5 +348,5 @@ async function adminServices(event, { user }) {
 }
 
 exports.main = server.entry({ apply, myApplication, listForCommunity, servicesForMerchant, adminList, review,
-  upsertService, myServices, setServiceStatus, adminServices, createBooking, quoteBooking, merchantOrders, merchantTransition,
+  upsertService, myServices, setServiceStatus, adminServices, lookupBooking, createBooking, quoteBooking, merchantOrders, merchantTransition,
   completeBooking }, ['resident', 'merchant', 'admin'], 'merchant');
