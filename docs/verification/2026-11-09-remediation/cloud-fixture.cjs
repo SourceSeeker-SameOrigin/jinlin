@@ -1,7 +1,7 @@
 // Executes actual cloud entries against synthetic records; selected cancellation and event creation tests mutate only the local fixture. No network or cloud writes.
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert');
 const root = process.cwd();
-function fixture({ bound = true, global = false, local = false, roles = ['resident'], records = {}, allowWrites = false, mockPay = false, securityResult = null, failBindEvent = false, failCouponRead = false, transactionConflict = false } = {}) {
+function fixture({ bound = true, global = false, local = false, roles = ['resident'], records = {}, allowWrites = false, mockPay = false, paymentEnv, securityResult = null, failBindEvent = false, failCouponRead = false, transactionConflict = false } = {}) {
   const user = { _id: 'u', openid: 'actor', roles, communityId: bound ? 'c' : null };
   const data = { users: [user], config: [{ _id: 'global', complaintWindowHours:24, blacklist:[], features: Object.fromEntries(['board','idle','events','chat','coupons','merchants','stationDelivery','autoPayout','notices','ads'].map(k=>[k, global])) }],
     communities: [{ _id: 'c', status: 'active', features: local === null ? {} : Object.fromEntries(['board','idle','events','chat','coupons','merchants','stationDelivery','autoPayout','notices','ads'].map(k=>[k, local])) }], ...records };
@@ -49,7 +49,7 @@ function fixture({ bound = true, global = false, local = false, roles = ['reside
         return load(path.join(root, 'cloudfunctions/_shared', name.slice('./lib/shared/'.length)), cache);
       }
       if (!name.startsWith('.')) throw Error('Unknown dependency '+name); return load(path.resolve(path.dirname(file),name),cache); };
-    vm.runInNewContext('(function(require,module,exports){'+fs.readFileSync(file,'utf8')+'\n})', { Date: databaseDate, JSON, Set, Map, Promise, Buffer, process:{env:mockPay ? {ALLOW_MOCK_PAY:"true"} : {}}, console:{error(){}} }, {filename:file})(requireLocal,module,module.exports);
+    vm.runInNewContext('(function(require,module,exports){'+fs.readFileSync(file,'utf8')+'\n})', { Date: databaseDate, JSON, Set, Map, Promise, Buffer, process:{env:paymentEnv || (mockPay ? {ALLOW_MOCK_PAY:"true"} : {})}, console:{error(){}} }, {filename:file})(requireLocal,module,module.exports);
     return module.exports;
   }
   return { data, writes, faults, signed, db, load, cloud, setActor(value){actor=value;}, call: (name, action, input={})=>load('cloudfunctions/'+name+'/index.js').main({...input,action}) };

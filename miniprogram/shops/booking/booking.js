@@ -108,7 +108,9 @@ Page({
       this.setData({ error: '原预约地址不可用，请先确认有效地址' }); return;
     }
     const version = this.viewVersion;
-    const current = () => !this.closed && !this.hidden && this.viewVersion === version;
+    const userId = this.userId;
+    const current = () => !this.closed && !this.hidden && this.viewVersion === version &&
+      getApp().globalData.user?._id === userId;
     this.submitting = true;
     this.setData({ busy: true, error: '' });
     try {
@@ -124,13 +126,13 @@ Page({
       const result = await api.call('merchant', 'createBooking', { serviceId: this.serviceId, requirement,
         ...(selected?.id ? { addressId: selected.id } : {}), requestId }, { silent: true, redirectOnForbidden: false, isActive: current });
       if (!result?.orderId) throw new Error('预约结果暂不可用');
-      this.orderId = result.orderId;
       if (!current()) return;
+      this.orderId = result.orderId;
       this.setData({ recovery: 'found' });
       if (result.status === 'pending_quote') wx.showToast({ title: '已提交，等待商家报价', icon: 'success' });
       else if (result.paymentError) wx.showToast({ title: '订单已建立，请在详情重试支付', icon: 'none' });
       else {
-        const paid = await pay(result);
+        const paid = await pay(result, current);
         if (!current()) return;
         if (paid) wx.showToast({ title: '预约已提交', icon: 'success' });
       }

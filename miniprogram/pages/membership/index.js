@@ -103,6 +103,9 @@ Page({
     const addressId = address && address.id || undefined;
     const userId = this.userId;
     const receiptKey = this.receiptKey;
+    const sequence = this.sequence;
+    const current = () => !this.closed && !this.hidden && this.sequence === sequence &&
+      getApp().globalData.user?._id === userId && this.userId === userId;
     this.purchasePending = true;
     this.setData({ busy: true, error: '' });
     try {
@@ -117,11 +120,11 @@ Page({
       if (this.userId === userId) this.receipt = receipt;
       this.request = null;
       try { wx.setStorageSync(receiptKey, receipt); } catch (_) { /* Keep the in-memory lock even when storage fails. */ }
-      if (this.closed || this.hidden || this.userId !== userId) return;
+      if (!current()) return;
       this.setData({ createdOrderId: receipt.orderId, entryPassword: '', navigationError: '' });
-      try { await pay(created); }
-      catch (error) { if (!this.closed && !this.hidden) wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }
-      this.openCreatedOrder();
+      try { await pay(created, current); }
+      catch (error) { if (current()) wx.showToast({ title: error.message || '支付未完成，可到订单页重试', icon: 'none' }); }
+      if (current()) this.openCreatedOrder();
     } catch (error) { if (!this.closed && !this.hidden) this.setData({ error: error.message }); }
     finally { this.purchasePending = false; if (!this.closed && !this.hidden) this.setData({ busy: false }); }
   },

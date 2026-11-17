@@ -19,6 +19,11 @@ function currentVisit(page) {
   return () => !page._hidden && !page._unloaded && page._visit === visit;
 }
 
+function currentUserAction(visible) {
+  const userId = getApp().globalData.user?._id;
+  return () => Boolean(userId) && getApp().globalData.user?._id === userId && visible();
+}
+
 async function readList(page, initial, failureMessage, fetchList, pendingWrite) {
   const visible = currentVisit(page);
   if (!visible()) return;
@@ -40,4 +45,4 @@ async function readList(page, initial, failureMessage, fetchList, pendingWrite) 
   }
 }
 
-module.exports = { lifecycle, currentVisit, readList };
+module.exports = { lifecycle, currentVisit, currentUserAction, readList };

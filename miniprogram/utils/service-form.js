@@ -396,7 +396,8 @@ module.exports = function serviceForm(serviceCode, escortStartHint) {
       const key = this.draftKey;
       if (!key || !user || !user._id || (this.ownerId && this.ownerId !== user._id)) return;
       const sameSession = () => this.draftKey === key && getApp().globalData.user?._id === user._id;
-      const visible = () => sameSession() && !this.hidden && !this.unloaded;
+      const sequence = this.loadSequence;
+      const visible = () => sameSession() && !this.hidden && !this.unloaded && sequence === this.loadSequence;
       this.setData({ saving: true, error: '' });
       try {
         const params = this.params();
@@ -417,7 +418,7 @@ module.exports = function serviceForm(serviceCode, escortStartHint) {
         this.request = null;
         if (!visible()) return;
         this.setData({ createdOrderId: created.orderId, navigationError: '' });
-        try { await pay(created); }
+        try { await pay(created, visible); }
         catch (error) { if (visible()) wx.showToast({ title: error.message || '支付未完成，可到订单详情继续支付', icon: 'none' }); }
         if (visible()) this.openCreatedOrder();
       } catch (error) { if (visible()) this.setData({ error: error.message || '下单失败，请重试' }); }

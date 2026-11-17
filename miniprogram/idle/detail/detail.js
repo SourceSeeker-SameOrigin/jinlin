@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const { lifecycle, currentVisit, currentUserAction } = require('../../utils/visible-list');
 const { display } = require('../../utils/time');
 const { yuan } = require('../../utils/money');
 const { pay } = require('../../utils/payment');
@@ -8,7 +9,11 @@ Page({
     this.itemId = typeof options.id === 'string' ? options.id.trim() : '';
     this.setData({ missingRecord: !this.itemId, loading: !!this.itemId });
   },
-  onShow() { this.load(); },
+  ...lifecycle,
+  onShow() {
+    if (this._hidden) this.setData({ busy: false });
+    return lifecycle.onShow.call(this);
+  },
   async load() {
     if (!this.itemId) return;
     this.setData({ loading: true, error: '' });
@@ -44,19 +49,22 @@ Page({
   async buy() {
     if (!this.itemId) return;
     if (this.data.busy) return;
+    const current = currentUserAction(currentVisit(this));
     const answer = await new Promise(resolve => wx.showModal({ title: '担保交易',
       content: '支付后商品将为你保留；收到商品后请在 72 小时内确认。', success: resolve }));
-    if (!answer.confirm) return;
+    if (!answer.confirm || !current() || this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try {
       const requestId = 'idle_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
-      const result = await api.call('idle', 'buy', { itemId: this.itemId, requestId });
+      const result = await api.call('idle', 'buy', { itemId: this.itemId, requestId }, { isActive: current });
+      if (!current()) return;
       if (result.paymentError) throw new Error('支付暂不可用，请在订单页重试');
-      await pay(result);
+      await pay(result, current);
+      if (!current()) return;
       wx.navigateTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(result.orderId) });
       await this.load();
-    } catch (error) { this.setData({ error: error.message || '担保交易未完成' }); }
-    finally { this.setData({ busy: false }); }
+    } catch (error) { if (current()) this.setData({ error: error.message || '担保交易未完成' }); }
+    finally { if (current()) this.setData({ busy: false }); }
   },
   carry() {
     if (!this.itemId) return;

@@ -1,4 +1,4 @@
-const { lifecycle, currentVisit, readList } = require('../../utils/visible-list');
+const { lifecycle, currentVisit, currentUserAction, readList } = require('../../utils/visible-list');
 const reportAction = require('../../utils/report');
 const api = require('../../utils/api');
 const { pay } = require('../../utils/payment');
@@ -13,7 +13,7 @@ Page({
   },
   ...lifecycle,
   onShow() {
-    if (this._hidden) this.setData({ reportError: '' });
+    if (this._hidden) this.setData({ reportError: '', busy: false });
     return lifecycle.onShow.call(this);
   },
   onHide() { lifecycle.onHide.call(this); clearTimeout(this.deadlineTimer); },
@@ -76,9 +76,11 @@ Page({
   async signup() {
     if (!this.eventId) return;
     if (this.data.busy || this.data.loading) return;
-    const visible = currentVisit(this);
+    const visible = currentUserAction(currentVisit(this));
+    const read = this._readSequence;
+    const current = () => visible() && read === this._readSequence;
     const allowed = () => {
-      if (!visible() || this.data.loading) return false;
+      if (!current() || this.data.loading) return false;
       const actions = this.refreshActions();
       return actions.canJoin || actions.canPay;
     };
@@ -91,13 +93,31 @@ Page({
         await new Promise(resolve => wx.requestSubscribeMessage({ tmplIds: [templates.eventReminder], success: resolve, fail: resolve }));
       }
       if (!allowed()) return;
-      const result = await api.call('event', 'signup', { eventId: this.eventId });
-      if (result.mock) await api.call('order', 'mockPay', { orderId: result.orderId });
-      else if (result.payment) await pay(result.payment);
+      const result = await api.call('event', 'signup', { eventId: this.eventId }, { isActive: current });
+      if (!current()) return;
+
+      if (result.status === 'pending_pay') {
+        try {
+          await pay(result, current, { serviceNotifications: false });
+        } catch (error) {
+          if (current()) {
+            await this.load();
+            if (visible() && !String(error.errMsg || '').includes('cancel')) {
+              this.setData({ error: error.message || '支付未完成，可继续支付' });
+            }
+          }
+          return;
+        }
+      }
+      if (!current()) return;
       await this.load();
-      wx.showToast({ title: result.status === 'pending_pay' ? (result.duplicate ? '请继续完成支付' : '请完成支付') : '报名成功', icon: 'none' });
-    } catch (error) { this.setData({ error: error.message || '报名失败，请重试' }); }
-    finally { this.setData({ busy: false }); }
+      if (!visible() || !this.data.item) return;
+      const status = this.data.item.mySignup?.status;
+      if (status === 'signed' || status === 'pending_pay') {
+        wx.showToast({ title: status === 'signed' ? '报名成功' : '报名待付款，可继续支付', icon: 'none' });
+      }
+    } catch (error) { if (current()) this.setData({ error: error.message || '报名失败，请重试' }); }
+    finally { if (visible()) this.setData({ busy: false }); }
   },
   async cancelSignup() {
     if (!this.eventId) return;

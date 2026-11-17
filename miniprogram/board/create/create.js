@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const { lifecycle, currentVisit, currentUserAction } = require('../../utils/visible-list');
 const { uploadPhotos } = require('../../utils/media');
 const { ymd, addDays } = require('../../utils/time');
 const { toFen } = require('../../utils/money');
@@ -14,7 +15,11 @@ Page({
     const today = ymd(new Date());
     this.setData({ type, scope: 'community', departDate: today, returnDate: today,
       slotDate: type === 'task' ? ymd(addDays(new Date(), 1)) : today, today }); },
-  onShow() { this.load(); },
+  ...lifecycle,
+  onShow() {
+    if (this._hidden) this.setData({ busy: false });
+    return lifecycle.onShow.call(this);
+  },
   async load() {
     if (this.loadInFlight) return;
     this.loadInFlight = true;
@@ -55,6 +60,7 @@ Page({
   },
   async submit() {
     if (!this.data.ready || this.data.loading || this.data.busy) return;
+    const current = currentUserAction(currentVisit(this));
     this.setData({ busy: true, error: '' });
     try {
       const data = { requestId: this.requestId,
@@ -73,17 +79,19 @@ Page({
         destinationType: this.data.destinationType, departAt: new Date(this.data.departDate + 'T' + this.data.departTime + ':00+08:00'),
         returnAt: this.data.returnDate && this.data.returnTime ? new Date(this.data.returnDate + 'T' + this.data.returnTime + ':00+08:00') : null,
         disclaimerAgreed: this.data.disclaimerAgreed };
-      const result = await api.call('board', 'create', data);
+      const result = await api.call('board', 'create', data, { isActive: current });
+      if (!current()) return;
       if (result.imageWarnings.length) wx.showToast({ title: '内容已发布，部分图片未提交审核', icon: 'none' });
       if (this.data.type === 'task') {
         if (result.paymentError || !result.payment) {
           wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(result.orderId) }); return;
         }
-        const paid = await pay({ ...result.payment, orderId: result.orderId });
+        const paid = await pay({ ...result.payment, orderId: result.orderId }, current);
+        if (!current()) return;
         if (!paid) { wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(result.orderId) }); return; }
       }
       wx.redirectTo({ url: '/board/detail/detail?id=' + encodeURIComponent(result.postId) });
-    } catch (error) { this.setData({ error: error.message || '发布失败' }); }
-    finally { this.setData({ busy: false }); }
+    } catch (error) { if (current()) this.setData({ error: error.message || '发布失败' }); }
+    finally { if (current()) this.setData({ busy: false }); }
   }
 });
