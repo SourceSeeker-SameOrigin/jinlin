@@ -56,5 +56,17 @@
       },
       "shown": "cancelled"
     }
-  ]
+  ],
+  "repeatAfterNavigationTimeout": {
+    "width": 390,
+    "afterSwitch": 0,
+    "afterRefresh": 0,
+    "afterReturn": 0,
+    "fresh": 1,
+    "states": {
+      "alpha": "signed",
+      "beta": "cancelled"
+    },
+    "shown": "cancelled"
+  }
 }
