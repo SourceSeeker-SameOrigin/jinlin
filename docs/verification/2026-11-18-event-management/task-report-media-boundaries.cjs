@@ -15,6 +15,9 @@ function fixture() {
   return {env,page,order,uploads,toasts,read:f=>read=f,write:f=>write=f,upload:f=>upload=f,
     writes:()=>env.requests.filter(r=>r[1]==='recordReport')};
 }
+function reportDraft(f) {
+  f.page.setData({ photoByItem: Object.fromEntries(f.page.data.vacantItems.map(item => [item.key, ['synthetic-' + item.key]])) });
+}
 async function boundary(f,b) {
   if(b==='hidden')f.page.onHide();
   if(b==='unloaded')f.page.onUnload();
@@ -28,12 +31,12 @@ async function boundary(f,b) {
 }
 (async()=>{
   for(const b of ['ready','hidden','unloaded','changed-user','changed-order','read-failed','completed','disabled']) await check('report-before-'+b,async()=>{
-    const f=fixture();await f.page.onShow();await boundary(f,b);await f.page.submitVacantReport();
+    const f=fixture();await f.page.onShow();reportDraft(f);await boundary(f,b);await f.page.submitVacantReport();
     assert.equal(f.writes().length,b==='ready'?1:0,'recordReport call count=' + f.writes().length);
     return {calls:f.writes().length};
   });
   for(const outcome of ['success','failure'])for(const b of ['ready','hidden','unloaded','changed-user','changed-order','refreshed'])await check('report-late-'+outcome+'-'+b,async()=>{
-    const f=fixture(),wait=deferred();f.write(()=>wait.promise);await f.page.onShow();const op=f.page.submitVacantReport();
+    const f=fixture(),wait=deferred();f.write(()=>wait.promise);await f.page.onShow();reportDraft(f);const op=f.page.submitVacantReport();
     await boundary(f,b);let updates=0;const set=f.page.setData.bind(f.page);f.page.setData=p=>{updates++;set(p);};
     const reads=f.env.requests.filter(r=>r[1]==='detail').length;
     outcome==='success'?wait.resolve({}):wait.reject(Error('合成提交失败'));await op;
@@ -84,19 +87,19 @@ async function boundary(f,b) {
     });
   }
   await check('report-duplicate-and-retry',async()=>{
-    const f=fixture(),wait=deferred();f.write(()=>wait.promise);await f.page.onShow();const op=f.page.submitVacantReport();await f.page.submitVacantReport();assert.equal(f.writes().length,1);
+    const f=fixture(),wait=deferred();f.write(()=>wait.promise);await f.page.onShow();reportDraft(f);const op=f.page.submitVacantReport();await f.page.submitVacantReport();assert.equal(f.writes().length,1);
     wait.reject(Error('合成提交失败'));await op;assert.equal(f.page.data.busy,false);f.write(async()=>({}));await f.page.submitVacantReport();assert.equal(f.writes().length,2);
     assert.equal(f.writes()[0][3].redirectOnForbidden,false);assert.equal(f.writes()[0][3].silent,true);
   });
   await check('report-old-result-does-not-unlock-new-operation',async()=>{
-    const f=fixture(),old=deferred(),next=deferred();let count=0;f.write(()=>++count===1?old.promise:next.promise);await f.page.onShow();
+    const f=fixture(),old=deferred(),next=deferred();let count=0;f.write(()=>++count===1?old.promise:next.promise);await f.page.onShow();reportDraft(f);
     const one=f.page.submitVacantReport();await f.page.load();const two=f.page.submitVacantReport();old.resolve({});await one;assert.equal(f.page.data.busy,true);assert.equal(f.toasts.length,0);
     next.reject(Error('新请求失败'));await two;assert.equal(f.page.data.busy,false);assert.equal(f.page.data.error,'新请求失败');
   });
   for(const b of ['ready','hidden','changed-user'])await check('report-actual-api-forbidden-'+b,async()=>{
     const f=fixture(),wait=deferred(),effects=[],module={exports:{}};
     vm.runInNewContext(fs.readFileSync('miniprogram/utils/api.js','utf8'),{module,wx:{cloud:{callFunction:()=>wait.promise},showToast:()=>effects.push('toast'),switchTab:()=>effects.push('redirect')}});
-    f.write((d,o)=>module.exports.call('vacant','recordReport',d,o));await f.page.onShow();const op=f.page.submitVacantReport();await boundary(f,b);
+    f.write((d,o)=>module.exports.call('vacant','recordReport',d,o));await f.page.onShow();reportDraft(f);const op=f.page.submitVacantReport();await boundary(f,b);
     wait.resolve({result:{ok:false,code:'E_FORBIDDEN',message:'拒绝操作'}});await op;
     assert.deepEqual(effects,[]);assert.equal(f.page.data.error,b==='ready'?'拒绝操作':'');
   });

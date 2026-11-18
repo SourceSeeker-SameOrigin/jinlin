@@ -1,0 +1,52 @@
+{
+  "width": 390,
+  "writes": [],
+  "uploads": [],
+  "records": [
+    {
+      "mode": "vacant",
+      "error": "",
+      "uploading": false,
+      "busy": false,
+      "counts": {}
+    },
+    {
+      "mode": "vacant",
+      "status": "in_service",
+      "error": "",
+      "uploading": false,
+      "busy": false,
+      "counts": {}
+    },
+    {
+      "mode": "vacant",
+      "status": "in_service",
+      "error": "",
+      "uploading": false,
+      "busy": false,
+      "counts": {
+        "windows": 4,
+        "utilities": 1,
+        "leakMold": 1,
+        "ventilation": 1,
+        "mail": 1,
+        "photos": 1
+      }
+    },
+    {
+      "mode": "vacant",
+      "status": "in_service",
+      "error": "",
+      "uploading": false,
+      "busy": false,
+      "counts": {
+        "windows": 3,
+        "utilities": 1,
+        "leakMold": 1,
+        "ventilation": 1,
+        "mail": 1,
+        "photos": 1
+      }
+    }
+  ]
+}

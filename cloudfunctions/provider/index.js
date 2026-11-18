@@ -180,6 +180,7 @@ async function deliver(event, { openid }) {
   ensure(order.serviceCode !== 'vacant', '空置房巡检请填写逐项报告后提交', 'E_BAD_STATE');
   if (order.status === 'delivered') return { orderId: order._id, status: order.status };
   await requireOrderFeatures(server, order);
+  ensure(order.serviceCode !== 'pet', '喂宠服务请在上门清单中逐次完成或登记漏次', 'E_BAD_STATE');
   ensure(order.status === 'in_service', '请先开始服务，再提交完成', 'E_BAD_STATE');
   if (order.serviceCode === 'recycle') {
     const updated = await recycleFlow.deliver(order, event, openid);

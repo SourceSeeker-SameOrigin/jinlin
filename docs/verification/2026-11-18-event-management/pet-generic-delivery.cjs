@@ -26,25 +26,30 @@ const results = [];
     for (const record of [db.data.config[0], db.data.communities[0]]) {
       record.features.pet = !c.disabled; record.features.vacantHome = true;
     }
+    const packaged = process.env.QA119_PROVIDER_PACKAGE ? db.load(process.env.QA119_PROVIDER_PACKAGE).main : null;
+    const callProvider = data => packaged ? packaged({ ...data, action: 'deliver' }) : db.call('provider', 'deliver', data);
     let response;
     const env = runtime(async (name, action, data) => {
       if (name === 'order' && action === 'detail') return structuredClone(db.data.orders[0]);
       if (name !== 'provider' || action !== 'deliver') throw Error('Unexpected write');
-      response = await db.call(name, action, data);
+      response = await callProvider(data);
       if (!response.ok) throw Object.assign(Error(response.message), { code: response.code });
       return response.data;
     });
     const page = env.instance('miniprogram/provider/task/task.js');
     page.onLoad({ id: order._id }); await page.onShow();
     page.setData({ photos: ['cloud://synthetic-env/orders/synthetic-task/proof.jpg'] });
-    if (['pet-already-delivered', 'vacant-specialized-report'].includes(c.name)) {
-      // The page already blocks these states; independently verify direct entry rejection/idempotency.
-      response = await db.call('provider', 'deliver', { orderId: order._id, photos: page.data.photos });
-    } else await page.act({ currentTarget: { dataset: { action: 'deliver' } } });
+    await page.act({ currentTarget: { dataset: { action: 'deliver' } } });
+    const pageCalls = env.requests.filter(r => r[0] === 'provider' && r[1] === 'deliver').length;
+    if (!response) {
+      // Also check direct invocation: hiding a button is not server-side enforcement.
+      response = await callProvider({ orderId: order._id, photos: page.data.photos });
+    }
     const observed = { ok: response?.ok, code: response?.code, parent: db.data.orders[0].status,
-      visit: db.data.visits[0].status, writes: db.writes.length };
+      visit: db.data.visits[0].status, writes: db.writes.length, pageCalls };
     try {
       assert.equal(response?.ok, c.allowed, JSON.stringify(observed));
+      if (c.service === 'pet') assert.equal(pageCalls, 0, 'pet page must use specialized flow');
       assert.equal(db.data.visits[0].status, c.visit || 'pending');
       if (!c.allowed || c.status === 'delivered') assert.equal(db.writes.length, 0);
       results.push({ name: c.name, pass: true, observed });

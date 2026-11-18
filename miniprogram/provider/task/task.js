@@ -111,6 +111,18 @@ Page({
   vacantNotes(event) { this.setData({ vacantNotes: event.detail.value }); },
   vacantAttention(event) { this.setData({ vacantAttention: event.detail.value }); },
   vacantPhoto(event) { return this.uploadTaskPhoto('vacant', event.currentTarget.dataset.key); },
+  removeVacantPhoto(event) {
+    if (!this.visible || this.data.loading || !this.data.taskReady || this.data.busy || this.data.uploading) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
+    const { key, file } = event.currentTarget.dataset;
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.taskUploadAllowed({ ...context, serviceCode: 'vacant', type: 'vacant', key })) return;
+    const photos = this.data.photoByItem[key] || [];
+    if (!Number.isInteger(index) || index < 0 || index >= photos.length || photos[index] !== file) return;
+    // 只编辑当前报告草稿，不删除云文件。
+    this.setData({ ['photoByItem.' + key]: photos.filter((_, i) => i !== index), error: '' });
+  },
   revealEntry() {
     const order = this.data.order;
     if (!this.orderId || this.data.busy || order?.serviceCode !== 'vacant' || order.detail?.entry !== 'password') return;
@@ -126,6 +138,14 @@ Page({
       this.data.taskReady && !this.data.loading && this.data.order?.serviceCode === 'vacant' &&
       this.data.order.featureEnabled && this.data.order.status === 'in_service';
     if (!current() || this.reportRequest) return;
+    const invalid = vacantItems.filter(item => {
+      const count = (this.data.photoByItem[item.key] || []).length;
+      return count < 1 || count > 3;
+    });
+    if (invalid.length) {
+      this.setData({ error: invalid.map(item => item.label).join('、') + '：每项需1—3张照片，请补拍或移除多余照片' });
+      return;
+    }
     const request = this.reportRequest = {};
     const active = () => this.reportRequest === request && current();
     const attention = this.data.vacantAttention;
@@ -150,7 +170,7 @@ Page({
     const order = this.data.order;
     return this.taskContext && this.taskContext.userId === request.userId && this.taskContext.orderId === request.orderId &&
       order?.featureEnabled && order.status === 'in_service' && order.serviceCode === request.serviceCode &&
-      (request.type === 'photos' || (request.type === 'receipt' && ['buy', 'meal'].includes(order.serviceCode)) ||
+      ((request.type === 'photos' && order.serviceCode !== 'pet') || (request.type === 'receipt' && ['buy', 'meal'].includes(order.serviceCode)) ||
         (request.type === 'vacant' && order.serviceCode === 'vacant' && vacantItems.some(item => item.key === request.key)));
   },
   applyTaskUpload() {
@@ -166,7 +186,11 @@ Page({
     if (error) patch.error = error;
     else if (files?.length) {
       if (request.type === 'receipt') patch.receiptPhoto = files[0];
-      else if (request.type === 'vacant') patch['photoByItem.' + request.key] = [...(this.data.photoByItem[request.key] || []), ...files];
+      else if (request.type === 'vacant') {
+        const photos = this.data.photoByItem[request.key] || [];
+        if (photos.length + files.length > 3) patch.error = '每项最多3张照片，请先移除多余照片';
+        else patch['photoByItem.' + request.key] = [...photos, ...files];
+      }
       else patch.photos = files;
     }
     this.setData(patch);
@@ -178,6 +202,9 @@ Page({
     if (this.data.busy || this.taskUpload) return;
     const request = { userId: context.userId, orderId: context.orderId, serviceCode: this.data.order?.serviceCode, type, key };
     if (!this.taskUploadAllowed(request)) return;
+    if (type === 'vacant' && (this.data.photoByItem[key] || []).length >= 3) {
+      this.setData({ error: '每项最多3张照片，请先移除再重拍' }); return;
+    }
     this.taskUpload = request;
     this.setData({ uploading: true, error: '' });
     try {
@@ -229,7 +256,7 @@ Page({
       this.orderId === context.orderId && getApp().globalData.user?._id === context.userId &&
       this.data.taskReady && !this.data.loading && this.data.order?.featureEnabled &&
       this.data.order.status === (action === 'start' ? 'accepted' : 'in_service') &&
-      !(action === 'deliver' && this.data.order.serviceCode === 'vacant');
+      !(action === 'deliver' && ['vacant', 'pet'].includes(this.data.order.serviceCode));
     if (!current()) return;
     const request = this.workRequest = {};
     const active = () => this.workRequest === request && current();
