@@ -102,17 +102,41 @@ Page({
     await this.load();
   },
   async publish(event) {
-    const item = this.data.list.find(row => row._id === event.currentTarget.dataset.id);
-    if (item && getApp().globalData.user.roles.includes('admin') && item.reviewRequested) {
-      try { await api.call('event', 'review', { eventId: item._id, approved: true }); await this.load(); }
-      catch (error) { this.setData({ error: error.message || '审核失败', errorFromForm: false }); }
-    } else await this.action('publish', event.currentTarget.dataset.id);
+    await this.action('publish', event.currentTarget.dataset.id);
   },
   async cancel(event) { await this.action('cancelEvent', event.currentTarget.dataset.id); },
   async retryCancellation(event) { await this.action('retryCancellation', event.currentTarget.dataset.id); },
   async action(action, eventId) {
-    try { await api.call('event', action, { eventId }); await this.load(); }
-    catch (error) { this.setData({ error: error.message || '操作失败', errorFromForm: false }); }
+    if (this.inactive || this.data.busy || this.data.loading || !this.data.ready) return;
+    if (!this.userId || getApp().globalData.user?._id !== this.userId) return this.load();
+    const item = this.data.list.find(row => row._id === eventId);
+    const allowed = item && (action === 'publish' ? item.status === 'draft' :
+      action === 'cancelEvent' || action === 'checkin' ? item.status === 'published' :
+      action === 'retryCancellation' && item.cancelRefund?.status === 'attention' && item.cancelRefund.failedCount > 0);
+    if (!allowed) return this.setData({ error: '活动状态已变化，请重新读取后操作', errorFromForm: false });
+    if (action === 'checkin' && !this.data.scanCode) return this.setData({ error: '请先扫描活动签到码', errorFromForm: false });
+    const sequence = this.loadSequence, userId = this.userId, communityId = this.data.communityId;
+    const current = () => !this.inactive && this.data.ready && !this.data.loading && sequence === this.loadSequence &&
+      this.data.communityId === communityId && getApp().globalData.user?._id === userId;
+    const payload = { eventId, ...(action === 'checkin' ? { checkinCode: this.data.scanCode } : {}) };
+    this.setData({ busy: true, error: '', errorFromForm: false });
+    try {
+      const user = await getApp().ensureSession();
+      if (!current() || user?._id !== userId) return;
+      if (action === 'publish' && user.roles.includes('admin') && item.reviewRequested) {
+        action = 'review';
+        payload.approved = true;
+      }
+      await api.call('event', action, payload, { loading: false, silent: true, redirectOnForbidden: false, isActive: current });
+      if (!current()) return;
+      if (action === 'checkin') this.setData({ scanCode: '', error: '' });
+      else await this.load();
+    } catch (error) {
+      if (current()) this.setData({ error: error.message || '操作失败，请重新读取活动核对结果', errorFromForm: false });
+    } finally {
+      if (current()) this.setData({ busy: false });
+      else if (!this.inactive && sequence === this.loadSequence) await this.load();
+    }
   },
   canEditCreation() {
     return !this.inactive && this.data.ready && !this.data.loading && !this.data.busy &&
@@ -217,15 +241,7 @@ Page({
     } catch (error) { this.setData({ error: error.errMsg || '扫码失败', errorFromForm: false }); }
   },
   async checkin(event) {
-    if (this.data.busy || this.data.loading || !this.data.ready) return;
-    const eventId = event.currentTarget.dataset.id;
-    const item = this.data.list.find(row => row._id === eventId);
-    if (!item || item.status !== 'published') return this.setData({ error: '活动未发布或已结束，不能签到', errorFromForm: false });
-    if (!this.data.scanCode) return this.setData({ error: '请先扫描活动签到码', errorFromForm: false });
-    this.setData({ busy: true, error: '', errorFromForm: false });
-    try { await api.call('event', 'checkin', { eventId, checkinCode: this.data.scanCode }); this.setData({ scanCode: '', error: '' }); }
-    catch (error) { this.setData({ error: error.message || '签到失败', errorFromForm: false }); }
-    finally { this.setData({ busy: false }); }
+    await this.action('checkin', event.currentTarget.dataset.id);
   },
   async showSignups(event) {
     if (this.inactive || !this.data.ready || this.data.loading) return;

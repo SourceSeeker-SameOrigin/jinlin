@@ -88,14 +88,14 @@
 <view class="section-title">{{item.title}}</view>
 <view>{{eventStatusNames[item.status] || '状态待确认'}} · {{item.signupCount}}/{{item.capacity}} 人</view>
 <view wx:if="{{item.reviewRequested}}" class="muted">待管理员审核</view>
-<button wx:if="{{item.status === 'draft'}}" data-id="{{item._id}}" bindtap="publish">提交发布/审核</button>
+<button wx:if="{{item.status === 'draft'}}" data-id="{{item._id}}" disabled="{{busy || loading || !ready}}" bindtap="publish">提交发布/审核</button>
 <button wx:if="{{item.status === 'published'}}" data-id="{{item._id}}" bindtap="showSignups">查看报名名单</button>
 <button wx:if="{{item.status === 'published'}}" disabled="{{busy || loading || !ready}}" data-id="{{item._id}}" bindtap="checkin">为此活动签到</button>
-<button wx:if="{{item.status === 'published'}}" data-id="{{item._id}}" bindtap="cancel">取消活动</button>
+<button wx:if="{{item.status === 'published'}}" data-id="{{item._id}}" disabled="{{busy || loading || !ready}}" bindtap="cancel">取消活动</button>
 <view wx:if="{{item.cancelRefund}}" class="muted">退款任务：{{refundJobStatusNames[item.cancelRefund.status] || '状态待确认'}} · 完成 {{item.cancelRefund.completedCount}}/{{item.cancelRefund.totalCount}}<text wx:if="{{item.cancelRefund.retryCount}}"> · 待重试 {{item.cancelRefund.retryCount}}</text>
 <text wx:if="{{item.cancelRefund.failedCount}}"> · 需处理 {{item.cancelRefund.failedCount}}</text>
 </view>
-<button wx:if="{{item.cancelRefund.status === 'attention' && item.cancelRefund.failedCount > 0}}" data-id="{{item._id}}" bindtap="retryCancellation">重试失败退款</button>
+<button wx:if="{{item.cancelRefund.status === 'attention' && item.cancelRefund.failedCount > 0}}" data-id="{{item._id}}" disabled="{{busy || loading || !ready}}" bindtap="retryCancellation">重试失败退款</button>
 </view>
 <view wx:if="{{ready && eventMore}}" class="card">
 <view wx:if="{{eventError}}" class="error">{{eventError}}</view>
