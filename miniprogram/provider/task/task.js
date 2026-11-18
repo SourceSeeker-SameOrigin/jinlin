@@ -26,8 +26,9 @@ Page({
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   clearTaskContext() {
     this.taskContext = null; this.locationRequest = null; this.locationBusy = false;
-    this.setData({ taskReady: false });
+    this.setData({ taskReady: false, order: null });
     if (this.releaseRequest) { this.releaseRequest = null; this.setData({ busy: false }); }
+    if (this.workRequest) { this.workRequest = null; this.setData({ busy: false }); }
   },
   async load() {
     this.clearTaskContext();
@@ -35,18 +36,31 @@ Page({
     if (!this.orderId || !this.visible) return;
     const token = this.taskRead = (this.taskRead || 0) + 1;
     const orderId = this.orderId;
-    const current = () => this.visible && this.taskRead === token && this.orderId === orderId;
+    let userId;
+    const current = () => this.visible && this.taskRead === token && this.orderId === orderId &&
+      (!userId || getApp().globalData.user?._id === userId);
     entryDisplay.clear(this);
-    this.setData({ loading: true, error: '', ...(this.data.order?.serviceCode === 'vacant' ? { order: null } : {}) });
+    this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
       if (!current()) return;
-      const userId = user && user._id;
-      const order = await api.call('order', 'detail', { orderId }, { loading: false });
+      userId = user && user._id;
+      if (!userId) throw new Error('登录资料暂不可用，请重试');
+      if (!current()) return;
+      if (this.draftOwner?.userId !== userId || this.draftOwner?.orderId !== orderId) {
+        this.setData({ photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
+          visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false },
+          visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
+          checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false });
+        this.draftOwner = { userId, orderId };
+      }
+      const order = await api.call('order', 'detail', { orderId },
+        { loading: false, silent: true, redirectOnForbidden: false, isActive: current });
       if (!current() || !userId || getApp().globalData.user?._id !== userId) return;
       const entryText = order.detail && ({ password: '门锁密码（点击当天读取）', key_handover: '钥匙交接', property_keybox: '物业钥匙柜' }[order.detail.entry] || '');
       const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
-      this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
+      this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code],
+        value: Object.prototype.hasOwnProperty.call(this.data.weightsTenths, code) ? String(this.data.weightsTenths[code] / 10) : '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '', entryText });
       this.taskContext = { userId, orderId, read: token };
       this.setData({ taskReady: true });
@@ -155,20 +169,38 @@ Page({
     const action = event.currentTarget.dataset.action;
     if (this.data.busy || !['start', 'release', 'deliver'].includes(action)) return;
     if (action === 'release') return this.releaseTask();
+    if (!this.visible || this.data.loading || !this.data.taskReady || this.workRequest) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
+    const current = () => this.visible && this.taskContext === context && this.taskRead === context.read &&
+      this.orderId === context.orderId && getApp().globalData.user?._id === context.userId &&
+      this.data.taskReady && !this.data.loading && this.data.order?.featureEnabled &&
+      this.data.order.status === (action === 'start' ? 'accepted' : 'in_service') &&
+      !(action === 'deliver' && this.data.order.serviceCode === 'vacant');
+    if (!current()) return;
+    const request = this.workRequest = {};
+    const active = () => this.workRequest === request && current();
     this.setData({ busy: true, error: '' });
     try {
-      const actionData = this.data.order.serviceCode === 'recycle' && action === 'deliver' ? { orderId: this.orderId, weightsTenths: this.data.weightsTenths } : { orderId: this.orderId, photos: this.data.photos,
+      const actionData = this.data.order.serviceCode === 'recycle' && action === 'deliver' ? { orderId: context.orderId, weightsTenths: this.data.weightsTenths } : { orderId: context.orderId, photos: this.data.photos,
         receiptPhoto: this.data.receiptPhoto, goodsActual: toFen(this.data.goodsYuan),
         visitReport: this.data.order.serviceCode === 'visit' ? { checks: this.data.visitChecks, notes: this.data.visitNotes,
           attention: this.data.visitAttention, attentionCallConfirmed: this.data.attentionCallConfirmed } : undefined };
-      await api.call('provider', action, actionData);
-      await this.load();
-    } catch (error) { this.setData({ error: error.message }); }
-    finally { this.setData({ busy: false }); }
+      await api.call('provider', action, actionData,
+        { loading: false, silent: true, redirectOnForbidden: false, isActive: active });
+      if (active()) await this.load();
+    } catch (error) { if (active()) this.setData({ error: error.message || '操作未完成，请刷新核对后重试' }); }
+    finally {
+      if (this.workRequest === request && this.visible && this.taskContext === context &&
+        this.orderId === context.orderId && getApp().globalData.user?._id === context.userId) {
+        this.workRequest = null;
+        this.setData({ busy: false });
+      }
+    }
   },
   callResident() {
-    if (!this.orderId) return; if (this.data.order.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
-    success: () => { if (this.data.order.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
+    if (!this.orderId) return; if (this.data.order?.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
+    success: () => { if (this.data.order?.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
   openChat() {
     if (!this.orderId) return; wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
   ,openPetTasks() {
