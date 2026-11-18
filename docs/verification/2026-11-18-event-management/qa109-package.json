@@ -21,7 +21,7 @@
     "sponsorPassed": 4,
     "signupCheckinRegression": "passed"
   },
-  "cloudDeployment": "pending authorization",
+  "cloudDeployment": "deployed; downloaded 76/76 source files match; SDK 4.0.2",
   "experienceVersion": "unchanged this turn",
-  "visualAcceptance": "pending Mac unlock and rendered button measurements"
+  "visualAcceptance": "Four widths: four-state rendered button measurements and actual next-activity click verified; recovered-result screenshots verified. Other states detailed visual review pending."
 }
