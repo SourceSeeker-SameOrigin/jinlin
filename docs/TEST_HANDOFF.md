@@ -885,3 +885,6 @@ QA113本轮补验：320/375/390/430均读到实际点击的“取消→合成失
 重现：运行vacant-photo-limits.cjs、pet-generic-delivery.cjs；GUI运行simulator-inspection-edit-setup.cjs准备既有游客工程，依次查看四张旧草稿→移除至3/2→重拍回3→满额禁用→合成提交失败重试；切本地喂宠模式核对只有专用上门入口。四宽分别取得同步画面及回执后才签收。原生相机及服务员真实喂宠履约另验。
 
 本轮未部署provider、未切体验版、未创建真实任务/照片/退款。待固定包另行请求云端授权。QA117四宽和原生拨号、QA115/116的375照片及390剩余画面、QA110—QA114其他历史缺项仍按前文保留；整体69页未完成。
+
+
+QA119固定包：源码3d10e68已推送fix/dev-integration。`/tmp/jinlin-deploy-3d10e68/manifest.json`与provider.zip已生成，76文件、127988字节，SHA-256 `d9f0fa52e92c0552cafb20e8277ae13e56e1789c30df9c6619c1ba2335a835d7`。以46d6577已部署provider基准逐文件核对，仅index.js改变，其余75文件保持原字节。直接加载解压后的入口，8/8通过，见[固定包回归](verification/2026-11-18-event-management/qa119-package-results.json)。开发云部署授权已在对话按5W2H提请，当前未收到答复、未上传部署。不得将本地固定包验证写成开发云通过。
