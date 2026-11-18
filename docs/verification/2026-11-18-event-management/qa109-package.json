@@ -23,5 +23,6 @@
   },
   "cloudDeployment": "deployed; downloaded 76/76 source files match; SDK 4.0.2",
   "experienceVersion": "unchanged this turn",
-  "visualAcceptance": "Four widths: four-state rendered button measurements and actual next-activity click verified; recovered-result screenshots verified. Other states detailed visual review pending."
+  "visualAcceptance": "390: manual lookup/retry, missing-result form, physical bottom scroll/confirm and recovery passed; 320/375/430 three other state screenshots remain pending. Prior four-width success-card and measurement evidence retained.",
+  "liveReadOnly": "passed: absent own request returns null; invalid request returns E_INVALID_PARAM"
 }

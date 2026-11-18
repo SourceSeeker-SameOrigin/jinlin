@@ -46,7 +46,14 @@ for (const suffix of ['wxml', 'wxss', 'json']) fs.copyFileSync(path.join(root, '
 const templatePath = path.join(project, 'events/manage/manage.wxml');
 fs.writeFileSync(templatePath, fs.readFileSync(templatePath, 'utf8').replace('<button type="primary"', '<button class="qa109-submit" type="primary"'));
 let source = fs.readFileSync(path.join(root, 'miniprogram/events/manage/manage.js'), 'utf8').replace("require('../../utils/api')", "require('../../probe/qa109-api')").replace('Page({', 'const definition = {').replace(/\}\);\s*$/, '};');
-source += `
+if (process.env.QA109_MANUAL === '1') source += `
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const observations=[];
+async function observe(pg,label){await pause(200);const width=wx.getWindowInfo().windowWidth;const buttons=await new Promise(r=>wx.createSelectorQuery().in(pg).selectAll('.ui-button, .qa109-submit').boundingClientRect(r).exec());observations.push({label,recovery:pg.data.recovery,error:pg.data.error,busy:pg.data.busy,buttons,calls:{...api.calls}});wx.getFileSystemManager().writeFileSync(wx.env.USER_DATA_PATH+'/jinlin-qa109-manual-'+width+'.json',JSON.stringify({width,observations}),'utf8');}
+definition.onReady=async function(){for(let i=0;i<80&&this.data.loading;i++)await pause(50);await observe(this,'initial');};
+for(const name of ['createActivity','newActivity']){const original=definition[name];definition[name]=async function(...args){await original.apply(this,args);await observe(this,name);};}
+Page(definition);`;
+else source += `
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 definition.onReady=async function(){const out={width:wx.getWindowInfo().windowWidth,states:[]};const pg=this;
 const capture=async label=>{await pause(180);const buttons=await new Promise(r=>wx.createSelectorQuery().in(pg).selectAll('.ui-button, .qa109-submit').boundingClientRect(r).exec());out.states.push({label,recovery:pg.data.recovery,error:pg.data.error,busy:pg.data.busy,buttons});};
