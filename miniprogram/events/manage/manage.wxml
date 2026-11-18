@@ -81,7 +81,7 @@
 <button type="primary" loading="{{busy}}" disabled="{{busy || loading || !ready || !communityId}}" bindtap="createActivity">{{recovery === 'confirm' ? '确认并用原编号提交' : '保存并提交活动审核'}}</button>
 </view>
 <view class="card">
-<button bindtap="scan">扫描签到码</button>
+<button bindtap="scan" disabled="{{scanning || loading || busy || !ready}}" loading="{{scanning}}">扫描签到码</button>
 <view wx:if="{{scanCode}}">签到码：{{scanCode}}</view>
 </view>
 <view class="card" wx:for="{{list}}" wx:key="_id">

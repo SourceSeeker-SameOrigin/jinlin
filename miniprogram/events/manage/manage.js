@@ -14,28 +14,34 @@ function amountFen(value, field) {
 }
 
 Page({
-  data: { loading: true, error: '', errorFromForm: false, list: [], scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
+  data: { loading: true, error: '', errorFromForm: false, list: [], scanning: false, scanCode: '', title: '', desc: '', location: '', type: 'interest', fee: '0', capacity: '20',
     startDate: '', startTime: '10:00', endDate: '', endTime: '12:00', deadlineDate: '', deadlineTime: '23:59',
     types: ['interest', 'charity'], typeLabels: ['兴趣活动', '公益活动'], eventStatusNames, signupStatusNames, refundJobStatusNames,
     sponsorName: '', sponsorAmount: '0', sponsorNote: '', attendees: [], isAdmin: false, busy: false,
     eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
     rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0,
     communities: [], communityIndex: 0, communityId: '', ready: false, recovery: '', recoveryStatus: '', recoveryTitle: '' },
-  onShow() { this.inactive = false; return this.load(); },
-  onHide() { this.inactive = true; this.invalidateReads(); this.setData({ ready: false }); },
-  onUnload() { this.inactive = true; this.invalidateReads(); },
+  async onShow() {
+    this.inactive = false;
+    const scan = this.scanRequest;
+    await this.load(scan);
+    if (scan && this.scanRequest === scan) this.applyScanResult(scan);
+  },
+  onHide() { this.inactive = true; this.invalidateReads(); this.setData({ ready: false, scanCode: '' }); },
+  onUnload() { this.inactive = true; this.scanRequest = null; this.invalidateReads(); },
   invalidateReads() {
     this.loadSequence = (this.loadSequence || 0) + 1;
     this.rosterSequence = (this.rosterSequence || 0) + 1;
   },
-  async load() {
+  async load(resumingScan) {
     if (this.inactive) return;
+    if (!resumingScan || resumingScan !== this.scanRequest) this.scanRequest = null;
     this.invalidateReads();
     const sequence = this.loadSequence;
     let loadingUserId;
     const current = () => !this.inactive && sequence === this.loadSequence &&
       (!loadingUserId || getApp().globalData.user?._id === loadingUserId);
-    this.setData({ loading: true, ready: false, busy: false, recovery: '', error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
+    this.setData({ loading: true, ready: false, busy: false, scanning: !!this.scanRequest?.pending, recovery: '', error: '', errorFromForm: false, list: [], attendees: [], scanCode: '',
       eventOffset: 0, eventMore: false, eventLoading: false, eventError: '',
       rosterId: '', rosterTitle: '', rosterMore: false, rosterLoading: false, rosterError: '', rosterOffset: 0 });
     try {
@@ -232,13 +238,38 @@ Page({
     }
   },
   async scan() {
+    if (this.inactive || this.scanRequest?.pending || this.data.loading || this.data.busy || !this.data.ready) return;
+    if (!this.userId || getApp().globalData.user?._id !== this.userId) return this.load();
+    const scan = { userId: this.userId, communityId: this.data.communityId, pending: true };
+    this.scanRequest = scan;
+    this.setData({ scanning: true, scanCode: '', error: '', errorFromForm: false });
     try {
       const result = await new Promise((resolve, reject) => wx.scanCode({ onlyFromCamera: true, success: resolve, fail: reject }));
       let code = result.scene || result.result || '';
       if (!code && result.path) code = decodeURIComponent((result.path.split('scene=')[1] || '').split('&')[0]);
       if (code.startsWith('e=')) code = code.slice(2);
-      this.setData({ scanCode: code || '' });
-    } catch (error) { this.setData({ error: error.errMsg || '扫码失败', errorFromForm: false }); }
+      scan.code = code || '';
+    } catch (error) {
+      scan.error = /cancel/i.test(error.errMsg || '') ? '' : (error.errMsg || '扫码失败，请重试');
+    } finally {
+      scan.pending = false;
+      this.applyScanResult(scan);
+    }
+  },
+  applyScanResult(scan) {
+    // Native camera may hide this page. Never write while hidden; onShow reloads
+    // the identity and community before accepting its result. Explicit refresh
+    // and unload invalidate the request, including a result still in flight.
+    if (this.scanRequest !== scan || this.inactive || this.data.loading) return;
+    if (!this.data.ready || this.userId !== scan.userId || getApp().globalData.user?._id !== scan.userId ||
+      this.data.communityId !== scan.communityId) {
+      this.scanRequest = null;
+      this.setData({ scanning: false });
+      return;
+    }
+    if (scan.pending) return;
+    this.scanRequest = null;
+    this.setData({ scanning: false, scanCode: scan.code || '', error: scan.error || '', errorFromForm: false });
   },
   async checkin(event) {
     await this.action('checkin', event.currentTarget.dataset.id);

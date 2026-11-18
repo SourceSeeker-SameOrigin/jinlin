@@ -13,7 +13,7 @@ const list=[{_id:'publish',title:'本地发布测试',status:'draft'},
 {_id:'checkin',title:'本地签到测试',status:'published'}];
 exports.call=async(n,a,d)=>{
  if(a==='listCommunities')return{list:[{_id:'sample',name:'本地合成小区'}]};
- if(a==='adminList')return{list:list.map(x=>({...x})),hasMore:false};
+ if(a==='adminList')return{list:list.map(x=>({signupCount:0,capacity:1,...x})),hasMore:false};
  if(['publish','review','cancelEvent','retryCancellation','checkin'].includes(a)){
  exports.calls.push({action:a,eventId:d.eventId});
  if(exports.hold)return new Promise((resolve,reject)=>exports.pending.push({resolve,reject}));return{};}
@@ -36,7 +36,7 @@ pg.onHide();await pg.onShow();api.pending.shift().reject(Error('旧错误不可�
 if(pg.data.error||pg.data.busy)throw Error('Stale response applied');
 api.hold=false;pg.setData({scanCode:'synthetic'});await pg[method]({currentTarget:{dataset:{id:action}}});
 out.cases.push({action,requests:api.calls.length-before,error:pg.data.error,busy:pg.data.busy,busyButtons});}
-await pause(150);out.buttons=await buttons();out.calls=api.calls;
+await pause(150);out.buttons=await buttons();out.calls=api.calls;pg.setData({scanCode:'synthetic-qa110-code'});
 const first=out.buttons[0];if(first)wx.pageScrollTo({scrollTop:Math.max(0,first.top-150),duration:0});
 }catch(e){out.exception=e.errMsg||e.message}
 wx.getFileSystemManager().writeFileSync(wx.env.USER_DATA_PATH+'/jinlin-qa110-'+out.width+'.json',JSON.stringify(out),'utf8');};

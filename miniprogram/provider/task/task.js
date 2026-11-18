@@ -17,29 +17,37 @@ Page({
   onShow() { this.visible = true; return this.load(); },
   leavePage() {
     this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
+    this.clearLocationContext();
     entryDisplay.clear(this);
     this.stopLocationTimer();
   },
   onHide() { this.leavePage(); },
   onUnload() { this.leavePage(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
+  clearLocationContext() {
+    this.locationContext = null; this.locationRequest = null; this.locationBusy = false;
+  },
   async load() {
+    this.clearLocationContext();
+    this.stopLocationTimer();
     if (!this.orderId || !this.visible) return;
     const token = this.taskRead = (this.taskRead || 0) + 1;
-    const current = () => this.visible && this.taskRead === token;
+    const orderId = this.orderId;
+    const current = () => this.visible && this.taskRead === token && this.orderId === orderId;
     entryDisplay.clear(this);
     this.setData({ loading: true, error: '', ...(this.data.order?.serviceCode === 'vacant' ? { order: null } : {}) });
-    this.stopLocationTimer();
     try {
-      await getApp().ensureSession();
+      const user = await getApp().ensureSession();
       if (!current()) return;
-      const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
-      if (!current()) return;
+      const userId = user && user._id;
+      const order = await api.call('order', 'detail', { orderId }, { loading: false });
+      if (!current() || !userId || getApp().globalData.user?._id !== userId) return;
       const entryText = order.detail && ({ password: '门锁密码（点击当天读取）', key_handover: '钥匙交接', property_keybox: '物业钥匙柜' }[order.detail.entry] || '');
       const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
       this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '', entryText });
-      if (order.canShareLocation && this.visible) {
+      this.locationContext = { userId, orderId, read: token };
+      if (order.canShareLocation && ['accepted', 'in_service'].includes(order.status)) {
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
       }
@@ -47,15 +55,20 @@ Page({
     finally { if (current()) this.setData({ loading: false }); }
   },
   async uploadLocation() {
-    if (!this.orderId) return;
-    const order = this.data.order;
-    if (!order || !order.canShareLocation || !['accepted','in_service'].includes(order.status) || this.locationBusy) return;
+    const context = this.locationContext;
+    const current = () => context && this.locationContext === context && this.visible &&
+      this.taskRead === context.read && this.orderId === context.orderId &&
+      getApp().globalData.user?._id === context.userId && this.data.order?.canShareLocation &&
+      ['accepted', 'in_service'].includes(this.data.order.status);
+    if (!current() || this.locationBusy) return;
+    const request = this.locationRequest = {};
     this.locationBusy = true;
     try {
       const point = await new Promise((resolve, reject) => wx.getLocation({ type: 'gcj02', success: resolve, fail: reject }));
-      await api.call('provider', 'updateLocation', { orderId: this.orderId, lat: point.latitude, lng: point.longitude }, { loading: false, silent: true });
+      if (!current() || this.locationRequest !== request) return;
+      await api.call('provider', 'updateLocation', { orderId: context.orderId, lat: point.latitude, lng: point.longitude }, { loading: false, silent: true });
     } catch (_) { /* 用户拒绝定位或定位暂不可用时，不影响订单操作。 */ }
-    finally { this.locationBusy = false; }
+    finally { if (this.locationRequest === request) { this.locationRequest = null; this.locationBusy = false; } }
   },
   goods(event) { this.setData({ goodsYuan: event.detail.value }); },
   weight(event) { const v = event.detail.value; const value = /^\d{1,5}(?:\.\d)?$/.test(v) ? Math.round(Number(v) * 10) : 0;
