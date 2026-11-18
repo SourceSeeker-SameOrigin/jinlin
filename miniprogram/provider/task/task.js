@@ -7,7 +7,7 @@ const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilitie
   { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
   { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
-  data: { readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+  data: { taskReady: false, readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
     weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
     vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
   onLoad(options = {}) {
@@ -17,18 +17,20 @@ Page({
   onShow() { this.visible = true; return this.load(); },
   leavePage() {
     this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
-    this.clearLocationContext();
+    this.clearTaskContext();
     entryDisplay.clear(this);
     this.stopLocationTimer();
   },
   onHide() { this.leavePage(); },
   onUnload() { this.leavePage(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
-  clearLocationContext() {
-    this.locationContext = null; this.locationRequest = null; this.locationBusy = false;
+  clearTaskContext() {
+    this.taskContext = null; this.locationRequest = null; this.locationBusy = false;
+    this.setData({ taskReady: false });
+    if (this.releaseRequest) { this.releaseRequest = null; this.setData({ busy: false }); }
   },
   async load() {
-    this.clearLocationContext();
+    this.clearTaskContext();
     this.stopLocationTimer();
     if (!this.orderId || !this.visible) return;
     const token = this.taskRead = (this.taskRead || 0) + 1;
@@ -46,7 +48,8 @@ Page({
       const categoryNames = { paper: '纸类', plastic: '塑料', metal: '金属', clothing: '衣物', appliance: '小家电' };
       this.setData({ order, recycleRows: order.serviceCode === 'recycle' ? order.detail.categories.map(code => ({ code, name: categoryNames[code], value: '' })) : [], slotText: slotText(order.slot), goodsCap: yuan(order.pricing.goodsCap),
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '', entryText });
-      this.locationContext = { userId, orderId, read: token };
+      this.taskContext = { userId, orderId, read: token };
+      this.setData({ taskReady: true });
       if (order.canShareLocation && ['accepted', 'in_service'].includes(order.status)) {
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
@@ -55,8 +58,8 @@ Page({
     finally { if (current()) this.setData({ loading: false }); }
   },
   async uploadLocation() {
-    const context = this.locationContext;
-    const current = () => context && this.locationContext === context && this.visible &&
+    const context = this.taskContext;
+    const current = () => context && this.taskContext === context && this.visible &&
       this.taskRead === context.read && this.orderId === context.orderId &&
       getApp().globalData.user?._id === context.userId && this.data.order?.canShareLocation &&
       ['accepted', 'in_service'].includes(this.data.order.status);
@@ -118,14 +121,40 @@ Page({
       this.setData(receipt ? { receiptPhoto: files[0] } : { photos: files });
     } catch (error) { this.setData({ error: error.message || '未完成拍照上传，请重试' }); }
   },
+  async releaseTask() {
+    if (!this.visible || this.data.loading || !this.data.taskReady || this.data.busy || this.releaseRequest) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId) return this.load();
+    const current = () => this.visible && this.taskContext === context && this.taskRead === context.read &&
+      this.orderId === context.orderId && getApp().globalData.user?._id === context.userId &&
+      this.data.taskReady && !this.data.loading && this.data.order?.status === 'accepted';
+    if (!current()) return;
+    const request = this.releaseRequest = {};
+    const active = () => this.releaseRequest === request && current();
+    this.setData({ busy: true, error: '' });
+    try {
+      const answer = await new Promise((resolve, reject) => wx.showModal({ title: '放弃任务',
+        content: '放弃后，你将不能再次接取这笔订单。确认放弃吗？', success: resolve, fail: reject }));
+      if (!active() || !answer.confirm) return;
+      await api.call('provider', 'release', { orderId: context.orderId },
+        { loading: false, silent: true, redirectOnForbidden: false, isActive: active });
+      if (!active()) return;
+      wx.redirectTo({ url: '/provider/workbench/workbench' });
+    } catch (error) {
+      if (active()) this.setData({ error: error.message || '放弃任务未完成，请刷新核对后重试' });
+    } finally {
+      if (this.releaseRequest === request && this.visible && this.taskContext === context &&
+        this.orderId === context.orderId && getApp().globalData.user?._id === context.userId) {
+        this.releaseRequest = null;
+        this.setData({ busy: false });
+      }
+    }
+  },
   async act(event) {
     if (!this.orderId) return;
     const action = event.currentTarget.dataset.action;
     if (this.data.busy || !['start', 'release', 'deliver'].includes(action)) return;
-    if (action === 'release') {
-      const answer = await new Promise(resolve => wx.showModal({ title: '放弃任务', content: '放弃后，你将不能再次接取这笔订单。确认放弃吗？', success: resolve }));
-      if (!answer.confirm) return;
-    }
+    if (action === 'release') return this.releaseTask();
     this.setData({ busy: true, error: '' });
     try {
       const actionData = this.data.order.serviceCode === 'recycle' && action === 'deliver' ? { orderId: this.orderId, weightsTenths: this.data.weightsTenths } : { orderId: this.orderId, photos: this.data.photos,
@@ -133,8 +162,7 @@ Page({
         visitReport: this.data.order.serviceCode === 'visit' ? { checks: this.data.visitChecks, notes: this.data.visitNotes,
           attention: this.data.visitAttention, attentionCallConfirmed: this.data.attentionCallConfirmed } : undefined };
       await api.call('provider', action, actionData);
-      if (action === 'release') wx.redirectTo({ url: '/provider/workbench/workbench' });
-      else await this.load();
+      await this.load();
     } catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
