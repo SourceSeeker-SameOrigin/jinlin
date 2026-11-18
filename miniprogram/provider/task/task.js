@@ -7,14 +7,14 @@ const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilitie
   { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
   { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
-  data: { taskReady: false, uploading: false, readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+  data: { taskReady: false, uploading: false, callingResident: false, readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
     weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
     vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
   onLoad(options = {}) {
     this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
     this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
   },
-  onShow() { this.visible = true; this.setData({ uploading: !!this.taskUpload }); return this.load(); },
+  onShow() { this.visible = true; this.setData({ uploading: !!this.taskUpload }); return this.load({ preservePhone: true }); },
   leavePage() {
     this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
     this.clearTaskContext();
@@ -22,7 +22,7 @@ Page({
     this.stopLocationTimer();
   },
   onHide() { this.leavePage(); },
-  onUnload() { this.taskUpload = null; this.leavePage(); },
+  onUnload() { this.taskUpload = null; this.phoneRequest = null; this.leavePage(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   clearTaskContext() {
     this.taskContext = null; this.locationRequest = null; this.locationBusy = false;
@@ -31,7 +31,9 @@ Page({
     if (this.workRequest) { this.workRequest = null; this.setData({ busy: false }); }
     if (this.reportRequest) { this.reportRequest = null; this.setData({ busy: false }); }
   },
-  async load() {
+  async load(options = {}) {
+    // 系统拨号返回可保留原请求，主动刷新则作废旧拨号回调。
+    if (options.preservePhone !== true) { this.phoneRequest = null; this.setData({ callingResident: false }); }
     this.clearTaskContext();
     this.stopLocationTimer();
     if (!this.orderId || !this.visible) return;
@@ -50,7 +52,8 @@ Page({
       if (!current()) return;
       if (this.draftOwner?.userId !== userId || this.draftOwner?.orderId !== orderId) {
         this.taskUpload = null;
-        this.setData({ uploading: false, photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
+        this.phoneRequest = null;
+        this.setData({ uploading: false, callingResident: false, photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
           visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false },
           visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
           checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false });
@@ -70,8 +73,8 @@ Page({
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
       }
-    } catch (error) { if (current()) { this.taskUpload = null; this.setData({ uploading: false, error: error.message || '任务加载失败' }); } }
-    finally { if (current()) { this.setData({ loading: false }); this.applyTaskUpload(); } }
+    } catch (error) { if (current()) { this.taskUpload = null; this.phoneRequest = null; this.setData({ uploading: false, callingResident: false, error: error.message || '任务加载失败' }); } }
+    finally { if (current()) { this.setData({ loading: false }); this.applyTaskUpload(); this.applyPhoneResult(); } }
   },
   async uploadLocation() {
     const context = this.taskContext;
@@ -99,7 +102,11 @@ Page({
       utilities: checked.has('utilities'), doors: checked.has('doors'), medical: checked.has('medical') } });
   },
   visitNotes(event) { this.setData({ visitNotes: event.detail.value }); },
-  visitAttention(event) { this.setData({ visitAttention: event.detail.value, attentionCallConfirmed: false }); },
+  visitAttention(event) {
+    this.attentionRevision = (this.attentionRevision || 0) + 1;
+    this.phoneRequest = null;
+    this.setData({ visitAttention: event.detail.value, attentionCallConfirmed: false, callingResident: false });
+  },
   checklist(event) { this.setData({ ['checklist.' + event.currentTarget.dataset.key]: Boolean((event.detail.value || []).length) }); },
   vacantNotes(event) { this.setData({ vacantNotes: event.detail.value }); },
   vacantAttention(event) { this.setData({ vacantAttention: event.detail.value }); },
@@ -245,8 +252,51 @@ Page({
     }
   },
   callResident() {
-    if (!this.orderId) return; if (this.data.order?.canCallResident) wx.makePhoneCall({ phoneNumber: this.data.order.userPhone,
-    success: () => { if (this.data.order?.serviceCode === 'visit' && this.data.visitAttention) this.setData({ attentionCallConfirmed: true }); } }); },
+    if (!this.visible || this.data.loading || !this.data.taskReady || this.phoneRequest) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
+    const order = this.data.order;
+    if (!order?.canCallResident || !order.userPhone) return;
+    const request = this.phoneRequest = { userId: context.userId, orderId: context.orderId,
+      phone: order.userPhone, serviceCode: order.serviceCode, attention: this.data.visitAttention,
+      revision: this.attentionRevision || 0 };
+    this.setData({ callingResident: true, error: '' });
+    const finish = result => {
+      if (this.phoneRequest !== request) return;
+      request.result = result;
+      this.applyPhoneResult();
+    };
+    try {
+      wx.makePhoneCall({ phoneNumber: request.phone, success: () => finish({ success: true }),
+        fail: error => finish({ error: /cancel/i.test(error.errMsg || error.message || '') ? '' : '未能发起电话联系，请重试' }) });
+    } catch (_) { finish({ error: '未能发起电话联系，请重试' }); }
+  },
+  applyPhoneResult() {
+    const request = this.phoneRequest;
+    if (!request || !this.visible || this.data.loading) return;
+    const context = this.taskContext, order = this.data.order;
+    const valid = this.data.taskReady && context && context.userId === request.userId &&
+      context.orderId === request.orderId && this.orderId === request.orderId &&
+      getApp().globalData.user?._id === request.userId && order?.canCallResident &&
+      order.userPhone === request.phone && order.serviceCode === request.serviceCode &&
+      (this.attentionRevision || 0) === request.revision;
+    if (!valid) {
+      this.phoneRequest = null;
+      if (context && getApp().globalData.user?._id === context.userId && this.orderId === context.orderId) {
+        this.setData({ callingResident: false });
+      }
+      return;
+    }
+    if (!request.result) return;
+    this.phoneRequest = null;
+    const patch = { callingResident: false };
+    if (request.result.error) patch.error = request.result.error;
+    // 仅记录原任务发起过联系，不将系统成功回调等同于对方已接听。
+    if (request.result.success && request.serviceCode === 'visit' && request.attention && this.data.visitAttention) {
+      patch.attentionCallConfirmed = true;
+    }
+    this.setData(patch);
+  },
   openChat() {
     if (!this.orderId) return; wx.navigateTo({ url: '/chat/room/room?orderId=' + encodeURIComponent(this.orderId) }); }
   ,openPetTasks() {

@@ -85,7 +85,7 @@ async function boundary(f,b){
  });
  await test('vacant-uses-separate-report',async()=>{const f=fixture('deliver');f.order.serviceCode='vacant';await f.page.onShow();await f.act();assert.equal(f.writes().length,0);});
  await test('cleared-task-phone-handler-safe',async()=>{const f=fixture();await f.page.onShow();f.page.onHide();assert.doesNotThrow(()=>f.page.callResident());});
- await test('cleared-task-phone-callback-safe',async()=>{const f=fixture();f.order.serviceCode='visit';f.order.canCallResident=true;await f.page.onShow();let callback;f.env.wx.makePhoneCall=o=>callback=o.success;f.page.callResident();f.page.onHide();assert.doesNotThrow(()=>callback());assert.equal(f.page.data.attentionCallConfirmed,false);});
+ await test('cleared-task-phone-callback-safe',async()=>{const f=fixture();f.order.serviceCode='visit';f.order.canCallResident=true;f.order.userPhone='synthetic-phone';await f.page.onShow();let callback;f.env.wx.makePhoneCall=o=>callback=o.success;f.page.callResident();f.page.onHide();assert.doesNotThrow(()=>callback());assert.equal(f.page.data.attentionCallConfirmed,false);});
  console.log(JSON.stringify({scope:'actual task page and API client, synthetic responses only; no cloud writes',pass:results.filter(x=>x.pass).length,fail:results.filter(x=>!x.pass).length,results},null,2));
  if(results.some(x=>!x.pass))process.exitCode=1;
 })().catch(e=>{console.error(e);process.exitCode=1;});
