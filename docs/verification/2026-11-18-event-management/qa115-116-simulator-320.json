@@ -1,0 +1,28 @@
+{
+  "width": 320,
+  "writes": [],
+  "uploads": [],
+  "records": [
+    {
+      "mode": "buy",
+      "ready": false,
+      "busy": false,
+      "uploading": false,
+      "error": "",
+      "photos": 0,
+      "receipt": false,
+      "items": []
+    },
+    {
+      "mode": "buy",
+      "status": "in_service",
+      "ready": true,
+      "busy": false,
+      "uploading": false,
+      "error": "",
+      "photos": 0,
+      "receipt": false,
+      "items": []
+    }
+  ]
+}

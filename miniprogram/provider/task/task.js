@@ -7,14 +7,14 @@ const vacantItems = [{ key: 'windows', label: '门窗检查' }, { key: 'utilitie
   { key: 'leakMold', label: '漏水与霉斑' }, { key: 'ventilation', label: '开窗通风 30 分钟' },
   { key: 'mail', label: '代收快递信件' }, { key: 'photos', label: '巡检拍照' }];
 Page({
-  data: { taskReady: false, readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
+  data: { taskReady: false, uploading: false, readingEntry: false, entryPassword: '', missingRecord: false, loading: true, busy: false, error: '', order: null, photos: [], receiptPhoto: '', goodsYuan: '',
     weightsTenths: {}, visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false }, visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
     vacantItems, checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false, entryText: '' },
   onLoad(options = {}) {
     this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
     this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
   },
-  onShow() { this.visible = true; return this.load(); },
+  onShow() { this.visible = true; this.setData({ uploading: !!this.taskUpload }); return this.load(); },
   leavePage() {
     this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
     this.clearTaskContext();
@@ -22,13 +22,14 @@ Page({
     this.stopLocationTimer();
   },
   onHide() { this.leavePage(); },
-  onUnload() { this.leavePage(); },
+  onUnload() { this.taskUpload = null; this.leavePage(); },
   stopLocationTimer() { if (this.locationTimer) clearInterval(this.locationTimer); this.locationTimer = null; },
   clearTaskContext() {
     this.taskContext = null; this.locationRequest = null; this.locationBusy = false;
     this.setData({ taskReady: false, order: null });
     if (this.releaseRequest) { this.releaseRequest = null; this.setData({ busy: false }); }
     if (this.workRequest) { this.workRequest = null; this.setData({ busy: false }); }
+    if (this.reportRequest) { this.reportRequest = null; this.setData({ busy: false }); }
   },
   async load() {
     this.clearTaskContext();
@@ -48,7 +49,8 @@ Page({
       if (!userId) throw new Error('登录资料暂不可用，请重试');
       if (!current()) return;
       if (this.draftOwner?.userId !== userId || this.draftOwner?.orderId !== orderId) {
-        this.setData({ photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
+        this.taskUpload = null;
+        this.setData({ uploading: false, photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
           visitChecks: { mental: false, diet: false, utilities: false, doors: false, medical: false },
           visitNotes: '', visitAttention: false, attentionCallConfirmed: false,
           checklist: {}, photoByItem: {}, vacantNotes: '', vacantAttention: false });
@@ -68,8 +70,8 @@ Page({
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
       }
-    } catch (error) { if (current()) this.setData({ error: error.message || '任务加载失败' }); }
-    finally { if (current()) this.setData({ loading: false }); }
+    } catch (error) { if (current()) { this.taskUpload = null; this.setData({ uploading: false, error: error.message || '任务加载失败' }); } }
+    finally { if (current()) { this.setData({ loading: false }); this.applyTaskUpload(); } }
   },
   async uploadLocation() {
     const context = this.taskContext;
@@ -101,14 +103,7 @@ Page({
   checklist(event) { this.setData({ ['checklist.' + event.currentTarget.dataset.key]: Boolean((event.detail.value || []).length) }); },
   vacantNotes(event) { this.setData({ vacantNotes: event.detail.value }); },
   vacantAttention(event) { this.setData({ vacantAttention: event.detail.value }); },
-  async vacantPhoto(event) {
-    if (!this.orderId) return;
-    const key = event.currentTarget.dataset.key;
-    try {
-      const files = await uploadPhotos('vacant/' + this.orderId + '/' + key, 1);
-      this.setData({ ['photoByItem.' + key]: [...(this.data.photoByItem[key] || []), ...files] });
-    } catch (error) { this.setData({ error: error.message || '照片上传失败，请重试' }); }
-  },
+  vacantPhoto(event) { return this.uploadTaskPhoto('vacant', event.currentTarget.dataset.key); },
   revealEntry() {
     const order = this.data.order;
     if (!this.orderId || this.data.busy || order?.serviceCode !== 'vacant' || order.detail?.entry !== 'password') return;
@@ -116,24 +111,75 @@ Page({
   },
   closeSecret() { entryDisplay.clear(this); },
   async submitVacantReport() {
-    if (!this.orderId) return;
-    if (this.data.busy) return;
+    if (!this.visible || this.data.loading || !this.data.taskReady || this.data.busy || this.data.uploading) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
+    const current = () => this.visible && this.taskContext === context && this.taskRead === context.read &&
+      this.orderId === context.orderId && getApp().globalData.user?._id === context.userId &&
+      this.data.taskReady && !this.data.loading && this.data.order?.serviceCode === 'vacant' &&
+      this.data.order.featureEnabled && this.data.order.status === 'in_service';
+    if (!current() || this.reportRequest) return;
+    const request = this.reportRequest = {};
+    const active = () => this.reportRequest === request && current();
+    const attention = this.data.vacantAttention;
     this.setData({ busy: true, error: '' });
     try {
-      await api.call('vacant', 'recordReport', { orderId: this.orderId, checklist: this.data.checklist,
-        photoByItem: this.data.photoByItem, notes: this.data.vacantNotes, attention: this.data.vacantAttention });
-      wx.showToast({ title: this.data.vacantAttention ? '报告已提交，请关注异常' : '巡检报告已提交' });
+      await api.call('vacant', 'recordReport', { orderId: context.orderId, checklist: this.data.checklist,
+        photoByItem: this.data.photoByItem, notes: this.data.vacantNotes, attention },
+      { loading: false, silent: true, redirectOnForbidden: false, isActive: active });
+      if (!active()) return;
+      wx.showToast({ title: attention ? '报告已提交，请关注异常' : '巡检报告已提交' });
       await this.load();
-    } catch (error) { this.setData({ error: error.message || '报告提交失败，请检查清单和照片' }); }
-    finally { this.setData({ busy: false }); }
+    } catch (error) { if (active()) this.setData({ error: error.message || '报告提交失败，请检查清单和照片' }); }
+    finally {
+      if (this.reportRequest === request && this.visible && this.taskContext === context &&
+        this.orderId === context.orderId && getApp().globalData.user?._id === context.userId) {
+        this.reportRequest = null; this.setData({ busy: false });
+      }
+    }
   },
-  async photo(event) {
-    if (!this.orderId) return;
+  photo(event) { return this.uploadTaskPhoto(event.currentTarget.dataset.type); },
+  taskUploadAllowed(request) {
+    const order = this.data.order;
+    return this.taskContext && this.taskContext.userId === request.userId && this.taskContext.orderId === request.orderId &&
+      order?.featureEnabled && order.status === 'in_service' && order.serviceCode === request.serviceCode &&
+      (request.type === 'photos' || (request.type === 'receipt' && ['buy', 'meal'].includes(order.serviceCode)) ||
+        (request.type === 'vacant' && order.serviceCode === 'vacant' && vacantItems.some(item => item.key === request.key)));
+  },
+  applyTaskUpload() {
+    const request = this.taskUpload;
+    if (!request || !this.visible || this.data.loading || getApp().globalData.user?._id !== request.userId || this.orderId !== request.orderId) return;
+    if (!this.data.taskReady || !this.taskUploadAllowed(request)) {
+      this.taskUpload = null; this.setData({ uploading: false }); return;
+    }
+    if (!request.result) return;
+    this.taskUpload = null;
+    const { files, error } = request.result;
+    const patch = { uploading: false };
+    if (error) patch.error = error;
+    else if (files?.length) {
+      if (request.type === 'receipt') patch.receiptPhoto = files[0];
+      else if (request.type === 'vacant') patch['photoByItem.' + request.key] = [...(this.data.photoByItem[request.key] || []), ...files];
+      else patch.photos = files;
+    }
+    this.setData(patch);
+  },
+  async uploadTaskPhoto(type, key) {
+    if (!this.visible || this.data.loading || !this.data.taskReady) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
+    if (this.data.busy || this.taskUpload) return;
+    const request = { userId: context.userId, orderId: context.orderId, serviceCode: this.data.order?.serviceCode, type, key };
+    if (!this.taskUploadAllowed(request)) return;
+    this.taskUpload = request;
+    this.setData({ uploading: true, error: '' });
     try {
-      const receipt = event.currentTarget.dataset.type === 'receipt';
-      const files = await uploadPhotos('orders/' + this.orderId, receipt ? 1 : 3);
-      this.setData(receipt ? { receiptPhoto: files[0] } : { photos: files });
-    } catch (error) { this.setData({ error: error.message || '未完成拍照上传，请重试' }); }
+      const folder = type === 'vacant' ? 'vacant/' + request.orderId + '/' + key : 'orders/' + request.orderId;
+      const files = await uploadPhotos(folder, type === 'photos' ? 3 : 1, { loading: false });
+      if (this.taskUpload === request) request.result = { files };
+    } catch (error) {
+      if (this.taskUpload === request) request.result = { error: /cancel/i.test(error.errMsg || error.message || '') ? '' : error.message || '未完成拍照上传，请重试' };
+    } finally { if (this.taskUpload === request) this.applyTaskUpload(); }
   },
   async releaseTask() {
     if (!this.visible || this.data.loading || !this.data.taskReady || this.data.busy || this.releaseRequest) return;
@@ -167,7 +213,7 @@ Page({
   async act(event) {
     if (!this.orderId) return;
     const action = event.currentTarget.dataset.action;
-    if (this.data.busy || !['start', 'release', 'deliver'].includes(action)) return;
+    if (this.data.busy || this.data.uploading || !['start', 'release', 'deliver'].includes(action)) return;
     if (action === 'release') return this.releaseTask();
     if (!this.visible || this.data.loading || !this.data.taskReady || this.workRequest) return;
     const context = this.taskContext;
