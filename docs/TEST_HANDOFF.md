@@ -1103,3 +1103,16 @@ QA118/119上轮四宽目标结果及云包回读保持原结论。历史独立�
 独立读取本轮文件，两宽均3次确认、1次合成release，三次结束均visible=true/busy=false，错误依次为空／放弃任务失败（本地合成）／空。390按钮366×45px、430按钮404×50px，均处于对应视口内。[390补充回执](verification/2026-11-18-event-management/qa113-layout-390-supplement.json) · [430补充回执](verification/2026-11-18-event-management/qa113-layout-430-supplement.json)。原四宽旧回执及320补充证据保留。
 
 结合320本日与375此前同步画面，QA113此三步反馈流程的320/375/390/430视觉缺项已关闭；不等于原生确认弹窗、实际导航返回或P11整页设计通过。Jest55套652项通过。仅补证据和验收记录，没有修改生产实现、部署云函数、切换体验版、真实放弃任务或产生资金操作。原生确认／导航返回，以及扫码、定位、拨号、相机、真实履约及69页其他未签收项继续待验。
+
+
+## 2026-11-19 QA113 实际导航与返回补验（430宽）
+
+本轮先复现原导航探针停在离页页：有 onShow，但 navigateTo 成功回调没有执行。移除任务代码、弹窗和接口后，用两个空白页面作最小对照，同样明确返回 `navigateTo:fail timeout`。正常退出并重新启动整个开发工具后，空白对照实际打开和返回，分别取得 `navigateTo:ok`、`navigateBack:ok` 及对应画面。基础库 `bg` 空值和 `__global` 报错仍存在，因此不能将它们直接判为超时根因，也没有据此修改生产代码。
+
+恢复实际任务页面后，430宽四次实际点击完成：取消→真实离开且旧确认到达→返回原任务→合成失败→主动重试成功，最后真实 redirectTo 到本地合成工作台。回执共4次确认、2次合成 release（失败一次、成功一次）；离页旧确认没有发出 release，返回后 taskReady=true、busy=false。失败提示、返回后的任务卡片和最终工作台均取得对应截图与控件文本；早一帧旧画面未计通过。
+
+证据：[实际导航回执](verification/2026-11-18-event-management/qa113-navigation-430.json)、[停滞回执](verification/2026-11-18-event-management/qa113-navigation-stalled-430.json)、[重启前最小对照](verification/2026-11-18-event-management/qa113-nav-control-before-restart.json)、[重启后最小对照](verification/2026-11-18-event-management/qa113-nav-control-after-restart.json)。复现脚本 `simulator-navigation-control-setup.cjs` 只改指定游客工程；正式任务流程仍用 `simulator-release-setup.cjs` 默认模式。
+
+随后增加仅供游客工程的 `--native-modal` 模式，直接调用 wx.showModal，接口仍本地拦截，计划取消→确认失败→确认成功。编译后工具明确报告 Mac 锁定，尚未实际打开本轮原生弹窗，因此此项未通过。此前四宽反馈布局通过保留；本轮完整导航新增证据仅430宽，不能扩展为四宽导航、手机确认或真实放弃任务通过。未部署云函数、切换体验版或写真实业务数据；69页整体仍未完成。
+
+本轮专项36/36、Jest55套652项通过；两个验证脚本语法与git diff --check通过。

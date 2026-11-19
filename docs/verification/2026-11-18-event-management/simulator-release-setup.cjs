@@ -1,6 +1,8 @@
 // Disposable tourist project: actual task page; synthetic identity/order/modal/API.
 const fs=require('fs'),path=require('path');
 const layoutOnly=process.argv.includes('--layout-only');
+const nativeModal=process.argv.includes('--native-modal');
+if(layoutOnly&&nativeModal)throw Error('Choose one mode');
 const project=fs.readFileSync('/tmp/jinlin-qa100-guest-path','utf8').trim();
 if(JSON.parse(fs.readFileSync(path.join(project,'project.config.json'))).appid!=='touristappid')throw Error('Tourist only');
 for(const folder of ['provider/task','provider/workbench','probe/away'])fs.mkdirSync(path.join(project,folder),{recursive:true});
@@ -12,8 +14,9 @@ fs.writeFileSync(path.join(project,'probe/qa113-api.js'),`
 exports.layoutOnly=${layoutOnly};exports.confirmations=0;exports.writes=0;exports.records=[];
 exports.save=function(extra){exports.records.push(extra);wx.getFileSystemManager().writeFileSync(wx.env.USER_DATA_PATH+'/jinlin-qa113-${layoutOnly ? 'layout-' : ''}'+wx.getWindowInfo().windowWidth+'.json',JSON.stringify({width:wx.getWindowInfo().windowWidth,confirmations:exports.confirmations,writes:exports.writes,records:exports.records}),'utf8');};
 exports.call=async(n,a,d)=>{if(a==='detail')return{_id:'qa113-order',status:'accepted',statusText:'已接单',serviceName:'代扔垃圾',serviceCode:'trash',canShareLocation:false,featureEnabled:true,address:{buildingName:'合成测试楼栋',unit:'合成单元',room:''},userPhone:'已隐藏',detail:{bags:1},pricing:{goodsCap:0},slot:{date:'2026-11-18',start:'07:00',end:'23:59'},note:'本地合成任务，不会履约'};
-if(a==='release'){exports.writes++;if(exports.layoutOnly || exports.confirmations===3)throw Error('放弃任务失败（本地合成）');return{};}throw Error('Unexpected API '+a);};
+if(a==='release'){exports.writes++;if(exports.layoutOnly || (${nativeModal} ? exports.writes===1 : exports.confirmations===3))throw Error('放弃任务失败（本地合成）');return{};}throw Error('Unexpected API '+a);};
 exports.showModal=o=>{const step=++exports.confirmations;
+if(${nativeModal}){return wx.showModal({...o,success(r){exports.save({state:'native-modal',step,confirm:r.confirm,cancel:r.cancel,writes:exports.writes});o.success(r);}});}
 if(exports.layoutOnly){setTimeout(()=>o.success({confirm:step===2,cancel:step!==2}),400);return;}
 if(step===2){wx.navigateTo({url:'/probe/away/index',success(){setTimeout(()=>{o.success({confirm:true});setTimeout(()=>wx.navigateBack(),300);},100);}});}
 else setTimeout(()=>o.success({confirm:step!==1,cancel:step===1}),400);
@@ -31,6 +34,6 @@ const onShow=definition.onShow;definition.onShow=async function(){await onShow.c
 const release=definition.releaseTask;definition.releaseTask=async function(){const pending=release.call(this);await pause(70);api.save({state:'busy',busy:this.data.busy,rect:await measure(this)});await pending;await pause(100);api.save({state:'settled',visible:this.visible,busy:this.data.busy,error:this.data.error});};
 Page(definition);`;
 fs.writeFileSync(path.join(project,'provider/task/task.js'),source);
-console.log(layoutOnly ? 'QA113 layout-only: three actual clicks: cancel, synthetic failure, cancel; navigation remains unverified' : 'QA113 navigation: four actual clicks: cancel, hide/return, synthetic failure, success');
+console.log(nativeModal ? 'QA113 native modal: cancel, confirm failure, confirm success; API remains synthetic' : layoutOnly ? 'QA113 layout-only: three actual clicks: cancel, synthetic failure, cancel; navigation remains unverified' : 'QA113 navigation: four actual clicks: cancel, hide/return, synthetic failure, success');
 
 const markup=path.join(project,'provider/task/task.wxml');fs.writeFileSync(markup,fs.readFileSync(markup,'utf8').replace('data-action="release"','id="qa113-release" data-action="release"'));
