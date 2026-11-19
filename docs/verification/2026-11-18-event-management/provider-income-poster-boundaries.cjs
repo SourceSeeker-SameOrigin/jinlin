@@ -1,0 +1,33 @@
+// Actual page code, synthetic identities and intercepted APIs/native callbacks only.
+const { runtime } = require('../2026-11-09-remediation/page-fixture.cjs');
+const assert = require('assert');
+const results = [];
+const flush = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
+const deferred = () => { let resolve, reject; const promise = new Promise((r,j) => { resolve=r; reject=j; }); return {promise,resolve,reject}; };
+const earnings = id => ({list:[{_id:id,amount:1000,createdAt:1}],pending:1000,settled:0,available:1000,canWithdraw:true,payoutEnabled:true,hasMore:false});
+function fixture(route) {
+  let handler = async (n,a) => a==='earnings' ? earnings('income-a') : a==='list' ? {list:[]} : a==='myStatus' ? {provider:{_id:'a',status:'approved'},todayCount:0,todayIncome:0} : a==='myTasks' ? {list:[],hasMore:false} : {};
+  const env=runtime((...args)=>handler(...args)); env.app.globalData.user={_id:'a',roles:['provider']};
+  const page=env.instance(`miniprogram/provider/${route}/${route}.js`); page.visible=true;
+  const events={transfers:0,downloads:0,saves:0,toasts:0};
+  env.wx.canIUse=()=>true;env.wx.requestMerchantTransfer=o=>{events.transfers++;o.success({});};env.wx.showToast=()=>events.toasts++;
+  env.wx.downloadFile=o=>{events.downloads++;o.success({statusCode:200,tempFilePath:'synthetic-image'});};
+  env.wx.saveImageToPhotosAlbum=o=>{events.saves++;o.success({});};
+  return {env,page,events,use:fn=>handler=fn};
+}
+function invalidate(f,kind){if(kind==='user')f.env.app.globalData.user={_id:'b',roles:['provider']};else{f.page[kind]?.();f.page.visible=false;}}
+function watch(f){let count=0;const set=f.page.setData;f.page.setData=function(p){count++;set.call(this,p);};return()=>count;}
+async function test(name,body){let evidence;try{await body(x=>evidence=x);results.push({name,pass:true,evidence});}catch(e){results.push({name,pass:false,evidence,error:e.message});}}
+(async()=>{
+ await test('income-normal-read',async record=>{const f=fixture('earnings');await f.page.load(true);record({ready:f.page.data.ready,rows:f.page.data.rows.length,available:f.page.data.available});assert(f.page.data.ready);assert.equal(f.page.data.available,'10.00');});
+ await test('income-failed-read-blocks-payout',async record=>{const f=fixture('earnings');await f.page.load(true);f.use(async()=>{throw Error('synthetic denied');});await f.page.load(true);await f.page.createPayout();const writes=f.env.requests.filter(r=>r[1]==='create').length;record({ready:f.page.data.ready,writes});assert(!f.page.data.ready);assert.equal(writes,0);});
+ for(const kind of ['onHide','onUnload','user'])await test('income-late-read-'+kind,async record=>{const f=fixture('earnings'),d=deferred();f.use(async(n,a)=>a==='earnings'?d.promise:{list:[]});const op=f.page.load(true);await flush();invalidate(f,kind);const count=watch(f);d.resolve(earnings('old-a'));await op;record({updates:count(),ready:f.page.data.ready,rows:f.page.data.rows.map(x=>x._id)});assert.equal(count(),0);});
+ await test('income-return-refresh-supersedes-old-read',async record=>{const f=fixture('earnings'),d=deferred();let reads=0;f.use(async(n,a)=>a==='earnings'?(++reads===1?d.promise:earnings('new-b')):{list:[]});const op=f.page.load(true);await flush();invalidate(f,'onHide');f.env.app.globalData.user={_id:'b'};f.page.onShow();await flush();d.resolve(earnings('old-a'));await op;await flush();record({reads,rows:f.page.data.rows.map(x=>x._id)});assert.equal(f.page.data.rows[0]._id,'new-b');});
+ for(const kind of ['same-page','onHide','onUnload','user'])await test('income-payout-entry-'+kind,async record=>{const f=fixture('earnings');await f.page.load(true);if(kind!=='same-page')invalidate(f,kind);f.use(async(n,a)=>a==='create'?{state:'created',packageInfo:'synthetic-package'}:a==='earnings'?earnings('a'):{list:[]});await f.page.createPayout();const writes=f.env.requests.filter(r=>r[1]==='create').length;record({writes,...f.events});assert.equal(writes,kind==='same-page'?1:0);});
+ for(const kind of ['onHide','user'])for(const outcome of ['success','failure'])await test('income-payout-late-'+outcome+'-'+kind,async record=>{const f=fixture('earnings'),d=deferred();await f.page.load(true);f.use(async(n,a)=>a==='create'?d.promise:a==='earnings'?earnings('a'):{list:[]});const op=f.page.createPayout();await flush();invalidate(f,kind);const count=watch(f);if(outcome==='success')d.resolve({state:'created',packageInfo:'synthetic-package'});else d.reject(Error('old payout error'));await op;record({updates:count(),...f.events});assert.equal(f.events.transfers,0);assert.equal(count(),0);assert.equal(f.events.toasts,0);});
+ for(const kind of ['same-page','onHide','user'])await test('poster-entry-'+kind,async record=>{const f=fixture('workbench');await f.page.load();if(kind!=='same-page')invalidate(f,kind);f.use(async()=>({tempFileURL:'https://synthetic.invalid/image'}));await f.page.saveReferralPoster();record({...f.events});assert.equal(f.events.saves,kind==='same-page'?1:0);});
+ for(const kind of ['onHide','user'])await test('poster-late-api-'+kind,async record=>{const f=fixture('workbench'),d=deferred();await f.page.load();f.use(async()=>d.promise);const op=f.page.saveReferralPoster();await flush();invalidate(f,kind);d.resolve({tempFileURL:'https://synthetic.invalid/image'});await op;record({...f.events});assert.equal(f.events.downloads,0);assert.equal(f.events.saves,0);});
+ for(const kind of ['same-page','onHide','user'])await test('poster-late-download-'+kind,async record=>{const f=fixture('workbench');await f.page.load();let download;f.env.wx.downloadFile=o=>{download=o;f.events.downloads++;};f.use(async()=>({tempFileURL:'https://synthetic.invalid/image'}));await f.page.saveReferralPoster();if(kind!=='same-page')invalidate(f,kind);download.success({statusCode:200,tempFilePath:'synthetic-image'});record({...f.events});assert.equal(f.events.saves,kind==='same-page'?1:0);});
+ for(const kind of ['same-page','onHide','user'])await test('poster-save-error-'+kind,async record=>{const f=fixture('workbench');await f.page.load();let save;f.env.wx.saveImageToPhotosAlbum=o=>{save=o;f.events.saves++;};f.use(async()=>({tempFileURL:'https://synthetic.invalid/image'}));await f.page.saveReferralPoster();if(kind!=='same-page')invalidate(f,kind);const count=watch(f);save.fail({errMsg:'synthetic album failure'});record({updates:count(),error:f.page.data.error});assert.equal(count(),kind==='same-page'?1:0);});
+ console.log(JSON.stringify({scope:'actual pages; all financial, download and album actions intercepted; no real transfer or files',pass:results.filter(x=>x.pass).length,fail:results.filter(x=>!x.pass).length,results},null,2));
+})();
