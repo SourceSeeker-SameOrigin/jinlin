@@ -29,22 +29,6 @@
       "confirmed": false
     },
     {
-      "phase": "applyPhoneResult",
-      "ready": true,
-      "calling": false,
-      "error": "",
-      "attention": false,
-      "confirmed": false
-    },
-    {
-      "phase": "loaded",
-      "ready": true,
-      "calling": false,
-      "error": "",
-      "attention": true,
-      "confirmed": false
-    },
-    {
       "phase": "callResident",
       "ready": true,
       "calling": true,
