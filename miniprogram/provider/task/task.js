@@ -51,6 +51,7 @@ Page({
       if (!userId) throw new Error('登录资料暂不可用，请重试');
       if (!current()) return;
       if (this.draftOwner?.userId !== userId || this.draftOwner?.orderId !== orderId) {
+        this.reportOutcome = null;
         this.taskUpload = null;
         this.phoneRequest = null;
         this.setData({ uploading: false, callingResident: false, photos: [], receiptPhoto: '', goodsYuan: '', weightsTenths: {},
@@ -69,11 +70,23 @@ Page({
         pickupText: order.detail && order.detail.pickupCodes ? order.detail.pickupCodes.join('、') : '', entryText });
       this.taskContext = { userId, orderId, read: token };
       this.setData({ taskReady: true });
+      if (this.reportOutcome?.userId === userId && this.reportOutcome?.orderId === orderId) {
+        const message = this.reportOutcome.message;
+        this.reportOutcome = null;
+        if (order.serviceCode === 'vacant' && order.status === 'in_service' && order.featureEnabled) {
+          this.setData({ error: (message || '报告提交失败') + '；已核对任务尚未完成，请检查草稿后重试提交' });
+        }
+      }
       if (order.canShareLocation && ['accepted', 'in_service'].includes(order.status)) {
         this.uploadLocation();
         this.locationTimer = setInterval(() => this.uploadLocation(), 30000);
       }
-    } catch (error) { if (current()) { this.taskUpload = null; this.phoneRequest = null; this.setData({ uploading: false, callingResident: false, error: error.message || '任务加载失败' }); } }
+    } catch (error) { if (current()) {
+      this.taskUpload = null; this.phoneRequest = null;
+      const pending = this.reportOutcome?.userId === userId && this.reportOutcome?.orderId === orderId;
+      this.setData({ uploading: false, callingResident: false,
+        error: pending ? '提交结果待核对，请重试读取。' + (error.message || '任务加载失败') : (error.message || '任务加载失败') });
+    } }
     finally { if (current()) { this.setData({ loading: false }); this.applyTaskUpload(); this.applyPhoneResult(); } }
   },
   async uploadLocation() {
@@ -157,7 +170,13 @@ Page({
       if (!active()) return;
       wx.showToast({ title: attention ? '报告已提交，请关注异常' : '巡检报告已提交' });
       await this.load();
-    } catch (error) { if (active()) this.setData({ error: error.message || '报告提交失败，请检查清单和照片' }); }
+    } catch (error) {
+      if (active()) {
+        this.reportOutcome = { userId: context.userId, orderId: context.orderId, message: error.message };
+        // 提交可能已经落库；先只读核对，读取失败时不恢复旧表单或再次提交。
+        await this.load();
+      }
+    }
     finally {
       if (this.reportRequest === request && this.visible && this.taskContext === context &&
         this.orderId === context.orderId && getApp().globalData.user?._id === context.userId) {

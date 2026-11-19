@@ -94,14 +94,14 @@ async function boundary(f,b) {
   await check('report-old-result-does-not-unlock-new-operation',async()=>{
     const f=fixture(),old=deferred(),next=deferred();let count=0;f.write(()=>++count===1?old.promise:next.promise);await f.page.onShow();reportDraft(f);
     const one=f.page.submitVacantReport();await f.page.load();const two=f.page.submitVacantReport();old.resolve({});await one;assert.equal(f.page.data.busy,true);assert.equal(f.toasts.length,0);
-    next.reject(Error('新请求失败'));await two;assert.equal(f.page.data.busy,false);assert.equal(f.page.data.error,'新请求失败');
+    next.reject(Error('新请求失败'));await two;assert.equal(f.page.data.busy,false);assert.ok(f.page.data.error.startsWith('新请求失败；已核对任务尚未完成'));
   });
   for(const b of ['ready','hidden','changed-user'])await check('report-actual-api-forbidden-'+b,async()=>{
     const f=fixture(),wait=deferred(),effects=[],module={exports:{}};
     vm.runInNewContext(fs.readFileSync('miniprogram/utils/api.js','utf8'),{module,wx:{cloud:{callFunction:()=>wait.promise},showToast:()=>effects.push('toast'),switchTab:()=>effects.push('redirect')}});
     f.write((d,o)=>module.exports.call('vacant','recordReport',d,o));await f.page.onShow();reportDraft(f);const op=f.page.submitVacantReport();await boundary(f,b);
     wait.resolve({result:{ok:false,code:'E_FORBIDDEN',message:'拒绝操作'}});await op;
-    assert.deepEqual(effects,[]);assert.equal(f.page.data.error,b==='ready'?'拒绝操作':'');
+    assert.deepEqual(effects,[]);if(b==='ready')assert.ok(f.page.data.error.startsWith('拒绝操作；已核对任务尚未完成'));else assert.equal(f.page.data.error,'');
   });
   console.log(JSON.stringify({scope:'Actual page; synthetic responses only; no cloud writes, camera or real files',pass:results.filter(r=>r.pass).length,fail:results.filter(r=>!r.pass).length,results},null,2));
   if(results.some(r=>!r.pass))process.exitCode=1;

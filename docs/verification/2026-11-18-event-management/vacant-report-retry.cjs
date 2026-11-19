@@ -51,16 +51,18 @@ function setup() {
       page.onLoad({ id: f.input.orderId }); await page.onShow();
       page.setData({ checklist: f.input.checklist, photoByItem: f.input.photoByItem, vacantNotes: f.input.notes });
       await page.submitVacantReport();
-      assert.equal(page.data.busy, false); assert.ok(page.data.error);
+      assert.equal(page.data.busy, false);
+      if (boundary === 'response-lost') { assert.equal(page.data.error, ''); assert.equal(page.data.order.status, 'delivered'); }
+      else assert.ok(page.data.error.includes('检查草稿后重试提交'));
       assert.equal(page.data.photoByItem.windows.length, 1);
       await page.submitVacantReport();
       const retryError = page.data.error;
-      if (boundary === 'response-lost') assert.equal(retryError, '只能在巡检当天提交报告');
+      if (boundary === 'response-lost') assert.equal(retryError, '');
       else assert.equal(page.data.order.status, 'delivered');
       // The existing error component's retry handler reloads, rather than re-submitting.
       await page.load();
       assert.equal(page.data.order.status, 'delivered'); assert.equal(page.data.error, '');
-      assert.equal(f.db.writes.length, 1); assert.equal(attempts, 2);
+      assert.equal(f.db.writes.length, 1); assert.equal(attempts, boundary === 'response-lost' ? 1 : 2);
       return { attempts, writes: f.db.writes.length, retryError, afterRead: page.data.order.status };
     });
   }
@@ -78,9 +80,7 @@ function setup() {
     });
   }
   console.log(JSON.stringify({ scope: 'Actual page and cloud code; synthetic records only; no real report or media writes',
-    acceptance: 'Safety checks only; full submission feedback is NOT accepted',
-    pendingDecision: { id: 'QA120', finding: 'Committed report with a lost response shows a date error when re-submitted; manual read resolves the status',
-      productionChanged: false },
+    acceptance: 'QA120 local integration only; simulator and native acceptance are separate',
     pass: results.filter(x => x.pass).length, fail: results.filter(x => !x.pass).length, results }, null, 2));
   if (results.some(x => !x.pass)) process.exitCode = 1;
 })().catch(error => { console.error(error); process.exitCode = 1; });
