@@ -10,6 +10,7 @@ Page({
   onShow() { this.visible = true; return this.load(); },
   leavePage() {
     this.visible = false; this.taskRead = (this.taskRead || 0) + 1;
+    this.taskContext = null;
     entryDisplay.clear(this);
     this.setData({ visits: [], parentStatus: '', entryMode: '' });
   },
@@ -18,22 +19,38 @@ Page({
   async load() {
     if (!this.orderId || !this.visible) return;
     const token = this.taskRead = (this.taskRead || 0) + 1;
-    const current = () => this.visible && this.taskRead === token;
+    const orderId = this.orderId;
+    let userId;
+    const current = () => this.visible && this.taskRead === token && this.orderId === orderId &&
+      (!userId || getApp().globalData.user?._id === userId);
+    this.taskContext = null;
     entryDisplay.clear(this);
     this.setData({ loading: true, error: '', visits: [], parentStatus: '', entryMode: '' });
     try {
-      await getApp().ensureSession();
+      const user = await getApp().ensureSession();
       if (!current()) return;
-      const result = await api.call('pet', 'listVisits', { orderId: this.orderId }, { loading: false, silent: true });
+      userId = user && user._id;
+      if (!userId) throw new Error('登录资料暂不可用，请重试');
+      if (!current()) return;
+      const result = await api.call('pet', 'listVisits', { orderId },
+        { loading: false, silent: true, redirectOnForbidden: false, isActive: current });
       if (!current()) return;
       this.setData({ visits: result.list || [], parentStatus: result.status, entryMode: result.entryMode });
+      this.taskContext = { userId, orderId, read: token };
     } catch (error) { if (current()) this.setData({ error: error.message || '上门清单加载失败' }); }
     finally { if (current()) this.setData({ loading: false }); }
   },
   reveal(event) {
+    if (!this.visible || this.data.loading) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
     const visitId = event.currentTarget.dataset.id;
     if (!this.orderId || this.data.entryMode !== 'password' || !this.data.visits.some(v => v._id === visitId && v.status === 'pending')) return;
-    return entryDisplay.reveal(this, () => api.call('pet', 'revealEntry', { orderId: this.orderId, visitId }));
+    const current = () => this.visible && this.taskContext === context && this.taskRead === context.read &&
+      getApp().globalData.user?._id === context.userId && this.orderId === context.orderId &&
+      this.data.entryMode === 'password' && this.data.visits.some(v => v._id === visitId && v.status === 'pending');
+    return entryDisplay.reveal(this, () => api.call('pet', 'revealEntry', { orderId: context.orderId, visitId },
+      { loading: false, silent: true, redirectOnForbidden: false, isActive: current }), current, () => this.load());
   },
   closeSecret() { entryDisplay.clear(this); },
   async done(event) {

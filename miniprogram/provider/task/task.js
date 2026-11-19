@@ -137,9 +137,15 @@ Page({
     this.setData({ ['photoByItem.' + key]: photos.filter((_, i) => i !== index), error: '' });
   },
   revealEntry() {
+    if (!this.visible || this.data.loading || !this.data.taskReady) return;
+    const context = this.taskContext;
+    if (!context || getApp().globalData.user?._id !== context.userId || this.orderId !== context.orderId) return this.load();
     const order = this.data.order;
     if (!this.orderId || this.data.busy || order?.serviceCode !== 'vacant' || order.detail?.entry !== 'password') return;
-    return entryDisplay.reveal(this, () => api.call('vacant', 'revealEntry', { orderId: this.orderId }));
+    const current = () => this.visible && this.taskContext === context && this.taskRead === context.read &&
+      getApp().globalData.user?._id === context.userId && this.orderId === context.orderId && this.data.taskReady;
+    return entryDisplay.reveal(this, () => api.call('vacant', 'revealEntry', { orderId: context.orderId },
+      { loading: false, silent: true, redirectOnForbidden: false, isActive: current }), current, () => this.load());
   },
   closeSecret() { entryDisplay.clear(this); },
   async submitVacantReport() {
