@@ -2,11 +2,12 @@ const api = require('../../utils/api');
 const { yuan } = require('../../utils/money');
 const { display } = require('../../utils/time');
 Page({
-  data: { loading: false, busy: false, error: '', pending: '0.00', settled: '0.00', available: '0.00',
+  data: { loading: false, ready: false, loadError: false, busy: false, error: '', pending: '0.00', settled: '0.00', available: '0.00',
     payoutEnabled: false, canWithdraw: false, payouts: [] },
   onShow() { this.load(); },
   async load() {
-    this.setData({ loading: true, error: '' });
+    if (this.data.loading) return;
+    this.setData({ loading: true, ready: false, loadError: false, error: '' });
     try {
       await getApp().ensureSession();
       const [income, payoutResult] = await Promise.all([
@@ -19,11 +20,12 @@ Page({
         payoutEnabled: income.payoutEnabled, canWithdraw: income.canWithdraw,
         payouts: (payoutResult.list || []).filter(item => item.payeeType === 'seller')
           .map(item => ({ ...item, amountText: yuan(item.amount), timeText: display(item.createdAt), stateText: stateText[item.state] || '处理中' })) });
-    } catch (error) { this.setData({ error: error.message || '收入加载失败' }); }
+      this.setData({ ready: true });
+    } catch (error) { this.setData({ loadError: true, error: error.message || '收入加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
   async withdraw() {
-    if (this.data.busy || !this.data.payoutEnabled || !this.data.canWithdraw) return;
+    if (!this.data.ready || this.data.loading || this.data.busy || !this.data.payoutEnabled || !this.data.canWithdraw) return;
     this.setData({ busy: true, error: '' });
     try {
       const payout = await api.call('payout', 'create', { payeeType: 'seller',

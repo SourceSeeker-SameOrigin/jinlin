@@ -11,7 +11,7 @@ const server = createServer(cloud);
 
 async function center(event, { user }) {
   const communityId = user.communityId || '';
-  await server.feature('coupons', communityId);
+  await server.featureEntry('coupons', user, communityId);
   const templates = await server.all('couponTemplates', { status: 'active', issueMode: 'claim' });
   const list = templates.filter(item => communityMatches(item, communityId) && item.issued < item.totalLimit)
     .map(item => ({ _id: item._id, name: item.name, kind: item.kind, value: item.value,
@@ -21,23 +21,43 @@ async function center(event, { user }) {
 }
 
 async function claim(event, { user, openid }) {
-  await server.feature('coupons', user.communityId);
+  await server.featureEntry('coupons', user);
   text(event.templateId, '优惠券模板');
-  return issueOne(server, { openid, templateId: event.templateId, mode: 'claim', communityId: user.communityId });
+  if (event.requestId !== undefined) {
+    ensure(typeof event.requestId === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(event.requestId), '领取编号不正确');
+  }
+  return issueOne(server, { openid, templateId: event.templateId, mode: 'claim',
+    communityId: user.communityId, claimRequestId: event.requestId });
 }
 
 async function mine(event, { user, openid }) {
-  await server.feature('coupons', user.communityId);
-  const result = await server.db.collection('coupons').where({ openid }).orderBy('createdAt', 'desc').limit(100).get();
-  const templates = new Map((await server.all('couponTemplates', {})).map(item => [item._id, item]));
+  await server.featureEntry('coupons', user);
+  const paged = event.offset !== undefined;
+  const offset = paged ? integer(event.offset, '优惠券分页位置') : 0;
+  const query = server.db.collection('coupons').where({ openid }).orderBy('createdAt', 'desc');
+  const pageSize = 20;
+  const result = paged
+    ? await query.orderBy('_id', 'desc').skip(offset).limit(pageSize + 1).get()
+    : await query.limit(100).get();
+  const rows = paged ? result.data.slice(0, pageSize) : result.data;
+  const templateIds = [...new Set(rows.map(item => item.templateId).filter(Boolean))];
+  const templates = new Map();
+  for (let i = 0; i < templateIds.length; i += pageSize) {
+    const batch = templateIds.slice(i, i + pageSize);
+    const found = await server.db.collection('couponTemplates')
+      .where({ _id: server.command.in(batch) }).limit(batch.length).get();
+    for (const item of found.data) templates.set(item._id, item);
+  }
   const now = new Date();
-  return { list: result.data.map(coupon => {
+  const list = rows.map(coupon => {
     const template = templates.get(coupon.templateId);
     const status = coupon.status === 'unused' && coupon.validTo <= now ? 'expired' : coupon.status;
     return { _id: coupon._id, templateId: coupon.templateId, name: template && template.name || '优惠券',
       kind: template && template.kind, value: template && template.value, maxOff: template && template.maxOff,
       threshold: template && template.threshold, status, validFrom: coupon.validFrom, validTo: coupon.validTo };
-  }) };
+  });
+  if (!paged) return { list };
+  return { list, nextOffset: offset + rows.length, hasMore: result.data.length > pageSize };
 }
 
 async function adminTemplates(event, { user }) {

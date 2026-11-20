@@ -87,6 +87,8 @@ async function buy(event, { user, openid }) {
     sameSnapshot(currentUser, user, ['orderRevision', 'communityId', 'buildingId', 'unit', 'room', 'phone', 'blocked', 'addresses']);
     const currentCommunity = await read(transaction, 'communities', community._id);
     sameSnapshot(currentCommunity, community, ['status', 'cardPlans', 'rates', 'dutyWindows', 'features']);
+    const { nextMembershipRevision } = require('./lib/shared/membershipRevision');
+    await transaction.collection('communities').doc(community._id).update({data:{membershipRevision:nextMembershipRevision(currentCommunity)}});
     const currentBuilding = await read(transaction, 'buildings', building._id);
     sameSnapshot(currentBuilding, building, ['communityId', 'name', 'units']);
     const now = new Date();

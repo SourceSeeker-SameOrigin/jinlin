@@ -1,12 +1,15 @@
 const api = require('../../utils/api');
 const ISSUE_MODES = ['claim', 'auto_new_user', 'referral', 'event', 'manual'];
 const MODE_LABELS = ['用户领取', '新用户自动发放', '推荐发放', '活动发放', '管理员手动发放'];
+const KIND_LABELS = ['满减券', '比例减免券', '免单券'];
 const EMPTY = { name: '', kind: 'amount_off', value: '100', maxOff: '100', threshold: '0',
   servicesText: 'all', validDays: '30', totalLimit: '100', perUserLimit: '1', issueMode: 'claim',
   communitiesText: 'all', status: 'active', phone: '', userIdsText: '' };
 Page({
   data: { loading: false, saving: false, error: '', rows: [], form: { ...EMPTY }, modeLabels: MODE_LABELS,
-    kindOptions: ['amount_off', 'percent_off', 'free'], kindIndex: 0 },
+    kindOptions: ['amount_off', 'percent_off', 'free'], kindLabels: KIND_LABELS, kindIndex: 0, modeIndex: 0, issueTemplateIndex: 0,
+    kindNames: { amount_off: '满减券', percent_off: '比例减免券', free: '免单券' },
+    statusNames: { active: '发放中', paused: '已暂停' } },
   onShow() { this.load(); },
   async load() {
     this.setData({ loading: true, error: '' });
@@ -14,19 +17,27 @@ Page({
       const user = await getApp().ensureSession();
       if (!user.roles.includes('admin')) throw new Error('只有运营管理员可管理优惠券');
       const result = await api.call('coupon', 'adminTemplates', {}, { loading: false, silent: true });
-      this.setData({ rows: result.list });
+      this.setData({ rows: result.list, issueTemplateIndex: Math.max(0, result.list.findIndex(item => item._id === this.data.form.issueTemplateId)) });
     } catch (error) { this.setData({ error: error.message || '加载失败' }); }
     finally { this.setData({ loading: false }); }
   },
-  field(event) { this.setData({ ['form.' + event.currentTarget.dataset.field]: event.detail.value }); },
-  chooseMode(event) { this.setData({ 'form.issueMode': ISSUE_MODES[Number(event.detail.value)] }); },
+  field(event) {
+    const field = event.currentTarget.dataset.field;
+    const value = ['servicesText', 'communitiesText'].includes(field) && event.detail.value.trim() === '全部' ? 'all' : event.detail.value;
+    this.setData({ ['form.' + field]: value });
+  },
+  chooseMode(event) {
+    const modeIndex = Number(event.detail.value);
+    if (!ISSUE_MODES[modeIndex]) return;
+    this.setData({ modeIndex, 'form.issueMode': ISSUE_MODES[modeIndex] });
+  },
   edit(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];
-    this.setData({ kindIndex: Math.max(0, this.data.kindOptions.indexOf(row.kind)), form: { ...EMPTY, ...row,
+    this.setData({ kindIndex: Math.max(0, this.data.kindOptions.indexOf(row.kind)), modeIndex: Math.max(0, ISSUE_MODES.indexOf(row.issueMode)), form: { ...EMPTY, ...row,
       templateId: row._id, servicesText: row.services.join(','), communitiesText:
         row.communityIds === 'all' ? 'all' : row.communityIds.join(',') } });
   },
-  reset() { this.setData({ form: { ...EMPTY }, kindIndex: 0, error: '' }); },
+  reset() { this.setData({ form: { ...EMPTY }, kindIndex: 0, modeIndex: 0, issueTemplateIndex: 0, error: '' }); },
   chooseKind(event) {
     const kindIndex = Number(event.detail.value);
     this.setData({ kindIndex, 'form.kind': this.data.kindOptions[kindIndex] });
@@ -48,7 +59,7 @@ Page({
   },
   templatePick(event) {
     const item = this.data.rows[Number(event.detail.value)];
-    this.setData({ 'form.issueTemplateId': item && item._id || '' });
+    this.setData({ issueTemplateIndex: item ? Number(event.detail.value) : 0, 'form.issueTemplateId': item && item._id || '' });
   },
   async toggleStatus(event) {
     const row = this.data.rows[event.currentTarget.dataset.index];

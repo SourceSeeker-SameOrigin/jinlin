@@ -2,12 +2,16 @@ const api = require('../../utils/api');
 const { uploadPhotos } = require('../../utils/media');
 const { display } = require('../../utils/time');
 Page({
-  data: { loading: true, busy: false, error: '', batch: null },
-  onLoad(options) { this.batchId = options.id; },
+  data: { missingRecord: false, loading: true, busy: false, error: '', batch: null },
+  onLoad(options = {}) {
+    this.batchId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.batchId, loading: !!this.batchId });
+  },
   onShow() { this.visible = true; this.load(); },
   onHide() { this.visible = false; },
   onUnload() { this.visible = false; },
   async load() {
+    if (!this.batchId) return;
     this.setData({ loading: true, error: '' });
     try {
       await getApp().ensureSession();
@@ -18,6 +22,7 @@ Page({
     finally { this.setData({ loading: false }); }
   },
   async start() {
+    if (!this.batchId) return;
     if (this.data.busy) return;
     this.setData({ busy: true, error: '' });
     try { await api.call('station', 'startBatch', { batchId: this.batchId }); await this.load(); }
@@ -25,6 +30,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async delivered(event) {
+    if (!this.batchId) return;
     if (this.data.busy) return;
     const itemId = event.currentTarget.dataset.id;
     this.setData({ busy: true, error: '' });
@@ -43,6 +49,7 @@ Page({
     finally { this.setData({ busy: false }); }
   },
   async failed(event) {
+    if (!this.batchId) return;
     if (this.data.busy) return;
     const answer = await new Promise(resolve => wx.showModal({ title: '标记未送达', editable: true,
       placeholderText: '填写原因（选填）', success: resolve }));

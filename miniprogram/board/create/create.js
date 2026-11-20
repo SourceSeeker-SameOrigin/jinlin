@@ -1,10 +1,11 @@
 const api = require('../../utils/api');
+const { lifecycle, currentVisit, currentUserAction } = require('../../utils/visible-list');
 const { uploadPhotos } = require('../../utils/media');
 const { ymd, addDays } = require('../../utils/time');
 const { toFen } = require('../../utils/money');
 const { pay } = require('../../utils/payment');
 Page({
-  data: { loading: true, busy: false, error: '', type: 'ask', title: '', content: '', scope: 'community',
+  data: { ready: false, loadError: false, loading: true, busy: false, error: '', type: 'ask', title: '', content: '', scope: 'community',
     federationEnabled: false, scopeOptions: ['本小区', '联合社区'], directionOptions: ['求帮带', '我能帮带'],
     destinationTypes: ['境内', '境外'], direction: 'request', destination: '', destinationType: 'domestic',
     departDate: '', departTime: '09:00', returnDate: '', returnTime: '18:00', disclaimerAgreed: false, images: [],
@@ -14,8 +15,15 @@ Page({
     const today = ymd(new Date());
     this.setData({ type, scope: 'community', departDate: today, returnDate: today,
       slotDate: type === 'task' ? ymd(addDays(new Date(), 1)) : today, today }); },
-  onShow() { this.load(); },
+  ...lifecycle,
+  onShow() {
+    if (this._hidden) this.setData({ busy: false });
+    return lifecycle.onShow.call(this);
+  },
   async load() {
+    if (this.loadInFlight) return;
+    this.loadInFlight = true;
+    this.setData({ loading: true, ready: false, loadError: false, error: '' });
     try {
       const user = await getApp().ensureSession();
       this.user = user;
@@ -24,9 +32,11 @@ Page({
       const slotOptions = (community.dutyWindows || []).map(window => ({ ...window, label: window.start + '—' + window.end }));
       if (this.data.type === 'task' && !slotOptions.length) throw new Error('小区尚未配置值班时段，暂不能发布悬赏');
       this.setData({ federationEnabled: this.data.type !== 'task' && community.enabledFeatures.federation,
-        slotOptions, slotLabel: slotOptions[0] ? slotOptions[0].label : '', slotIndex: 0, needEnterHome: false });
-    } catch (error) { this.setData({ error: error.message || '页面初始化失败' }); }
-    finally { this.setData({ loading: false }); }
+        slotOptions, slotLabel: slotOptions[this.data.slotIndex] ? slotOptions[this.data.slotIndex].label : '',
+        slotIndex: this.data.slotIndex });
+      this.setData({ ready: true });
+    } catch (error) { this.setData({ loadError: true, error: error.message || '页面初始化失败' }); }
+    finally { this.loadInFlight = false; this.setData({ loading: false }); }
   },
   field(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   choose(event) {
@@ -44,11 +54,13 @@ Page({
   toggleEnterHome(event) { this.setData({ needEnterHome: event.detail.value.includes('yes') }); },
   scope(event) { this.setData({ scope: Number(event.detail.value) === 1 ? 'federation' : 'community' }); },
   async photos() {
+    if (!this.data.ready || this.data.loading || this.data.busy) return;
     try { this.setData({ images: await uploadPhotos('board/' + this.user._id, 3) }); }
     catch (error) { this.setData({ error: error.message || '图片上传失败' }); }
   },
   async submit() {
-    if (this.data.busy) return;
+    if (!this.data.ready || this.data.loading || this.data.busy) return;
+    const current = currentUserAction(currentVisit(this));
     this.setData({ busy: true, error: '' });
     try {
       const data = { requestId: this.requestId,
@@ -67,17 +79,19 @@ Page({
         destinationType: this.data.destinationType, departAt: new Date(this.data.departDate + 'T' + this.data.departTime + ':00+08:00'),
         returnAt: this.data.returnDate && this.data.returnTime ? new Date(this.data.returnDate + 'T' + this.data.returnTime + ':00+08:00') : null,
         disclaimerAgreed: this.data.disclaimerAgreed };
-      const result = await api.call('board', 'create', data);
+      const result = await api.call('board', 'create', data, { isActive: current });
+      if (!current()) return;
       if (result.imageWarnings.length) wx.showToast({ title: '内容已发布，部分图片未提交审核', icon: 'none' });
       if (this.data.type === 'task') {
         if (result.paymentError || !result.payment) {
           wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(result.orderId) }); return;
         }
-        const paid = await pay({ ...result.payment, orderId: result.orderId });
+        const paid = await pay({ ...result.payment, orderId: result.orderId }, current);
+        if (!current()) return;
         if (!paid) { wx.redirectTo({ url: '/pages/orders/detail?id=' + encodeURIComponent(result.orderId) }); return; }
       }
       wx.redirectTo({ url: '/board/detail/detail?id=' + encodeURIComponent(result.postId) });
-    } catch (error) { this.setData({ error: error.message || '发布失败' }); }
-    finally { this.setData({ busy: false }); }
+    } catch (error) { if (current()) this.setData({ error: error.message || '发布失败' }); }
+    finally { if (current()) this.setData({ busy: false }); }
   }
 });

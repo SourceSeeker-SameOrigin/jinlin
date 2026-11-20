@@ -6,24 +6,37 @@ const today = new Date();
 Page({
   data: { loading: false, exporting: false, error: '', rows: [], hasMore: true, statusIndex: 0,
     subsidyFrom: dateText(new Date(today.getFullYear(), today.getMonth(), 1)), subsidyTo: dateText(today),
-    statuses: ['全部', '待支付', '待接单', '已接单', '服务中', '待确认', '已完成', '售后处理中', '已退款', '已取消', '已关闭'] },
-  onShow() { this.load(true); },
+    statuses: ['全部', '待报价', '待支付', '待接单', '已接单', '服务中', '待确认', '已完成', '售后处理中', '已退款', '已取消', '已关闭'] },
+  onShow() { this._hidden = false; return this.load(true); },
+  onHide() { this._hidden = true; this.sequence = (this.sequence || 0) + 1; },
+  onUnload() { this._closed = true; this.sequence = (this.sequence || 0) + 1; },
+  visible() { return !this._closed && !this._hidden; },
   onReachBottom() { if (this.data.hasMore && !this.data.loading) this.load(); },
-  retry() { this.load(true); },
-  filter(event) { this.setData({ statusIndex: Number(event.detail.value) }); this.load(true); },
+  retry() { return this.load(this._failedReset !== false); },
+  filter(event) {
+    const statusIndex = Number(event.detail.value);
+    if (!this.visible() || this.data.busy || !Number.isInteger(statusIndex) || statusIndex < 0 || statusIndex >= this.data.statuses.length) return;
+    this.setData({ statusIndex }); return this.load(true);
+  },
   async load(reset = false) {
-    const sequence = (this.sequence || 0) + 1; this.sequence = sequence;
-    this.setData({ loading: true, error: '' });
+    if (!this.visible() || (!reset && (this.data.loading || this.data.busy || !this.data.hasMore))) return;
+    const sequence = this.sequence = (this.sequence || 0) + 1;
+    const current = () => this.visible() && sequence === this.sequence;
+    const statusIndex = this.data.statusIndex;
+    const offset = reset ? 0 : this.data.rows.length;
+    this._failedReset = reset;
+    this.setData({ loading: true, error: '', ...(reset ? { rows: [], hasMore: true } : {}) });
     try {
       const user = await getApp().ensureSession();
-      const result = await api.call('admin', 'listOrders', { status: ['', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'][this.data.statusIndex],
-        offset: reset ? 0 : this.data.rows.length }, { loading: false, silent: true });
-      if (sequence !== this.sequence) return;
+      if (!current()) return;
+      const result = await api.call('admin', 'listOrders', { status: ['', 'pending_quote', 'pending_pay', 'paid', 'accepted', 'in_service', 'delivered', 'completed', 'disputed', 'refunded', 'cancelled', 'closed'][statusIndex],
+        offset }, { loading: false, silent: true, isActive: current });
+      if (!current()) return;
       const rows = result.list.map(order => ({ ...order, amount: yuan(order.pricing.payAmount + order.pricing.goodsCap), createdText: display(order.createdAt) }));
       this.setData({ rows: reset ? rows : [...this.data.rows, ...rows], hasMore: result.hasMore,
         readOnly: result.readOnly, isAdmin: user.roles.includes('admin') });
-    } catch (error) { if (sequence === this.sequence) this.setData({ error: error.message || '订单加载失败' }); }
-    finally { if (sequence === this.sequence) this.setData({ loading: false }); }
+    } catch (error) { if (current()) this.setData({ error: error.message || '订单加载失败' }); }
+    finally { if (current()) this.setData({ loading: false }); }
   },
   date(event) { this.setData({ [event.currentTarget.dataset.field]: event.detail.value }); },
   async exportSubsidy() {

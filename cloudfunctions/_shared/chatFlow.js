@@ -108,7 +108,7 @@ function createChatFlow(cloud, server) {
       unread: conversation.unread && conversation.unread[openid] || 0, enabled: true };
   }
 
-  async function pullMessages(conversation, reference, openid, event, config) {
+  async function pullMessages(conversation, reference, openid, event, config, review = false) {
     const now = new Date();
     const isReadOnly = conversation.type === 'idle' ? idleReadOnly(reference, conversation) : readOnly(reference, conversation, config, now);
     if (isReadOnly && !conversation.closedAt) await db.collection('conversations').doc(conversation._id)
@@ -117,7 +117,7 @@ function createChatFlow(cloud, server) {
     const filter = { convId: conversation._id };
     if (afterId) filter._id = command.gt(afterId);
     const result = await db.collection('messages').where(filter).orderBy('_id', 'asc').limit(50).get();
-    return { conversationId: conversation._id, list: result.data.map(item => messageView(item, openid)), hasMore: result.data.length === 50,
+    return { conversationId: conversation._id, list: result.data.map(item => messageView(item, openid, review)), hasMore: result.data.length === 50,
       lastId: result.data.length ? result.data[result.data.length - 1]._id : afterId,
       readOnly: isReadOnly, unread: conversation.unread && conversation.unread[openid] || 0 };
   }
@@ -133,6 +133,7 @@ function createChatFlow(cloud, server) {
 
   async function send(event, { openid }) {
     text(event.conversationId, '会话');
+    require('./ugc').ensureCanPublish(await server.user(openid));
     ensure(['text', 'image'].includes(event.type), '消息类型不正确');
     const conversation = await server.get('conversations', event.conversationId);
     const reference = conversation && conversation.type === 'idle'
@@ -149,7 +150,7 @@ function createChatFlow(cloud, server) {
       content = await checkText(cloud, event.content, { blacklist: config.blacklist, type: 'message', openid });
     } else {
       fileId = text(event.fileId, '图片文件', 300);
-      ensure(fileId.startsWith('cloud://'), '图片文件地址不正确');
+      require('./providerData').fileInFolder(fileId, 'chat/' + conversation._id);
     }
     const recipient = conversation.members.find(member => member !== openid);
     ensure(recipient, '会话参与者不完整', 'E_CONFIG');
@@ -196,6 +197,7 @@ function createChatFlow(cloud, server) {
   }
 
   async function list(event, { openid }) {
+    await server.featureEntry('chat', await server.user(openid));
     const result = await db.collection('conversations').where({ members: openid })
       .orderBy('lastAt', 'desc').limit(100).get();
     const list = [];
@@ -265,16 +267,15 @@ function createChatFlow(cloud, server) {
       if (order && order.providerOpenid) conversation = await server.get('conversations',
         orderConversationId(order._id, order.providerOpenid));
     }
-    ensure(conversation && conversation.type === 'order', '订单会话不存在');
-    const order = await server.get('orders', conversation.refId);
-    ensure(order, '关联订单不存在');
-    await server.feature('chat', order.communityId);
+    ensure(conversation && ['order', 'idle'].includes(conversation.type), '会话不存在');
+    const reference = await server.get(conversation.type === 'idle' ? 'idleItems' : 'orders', conversation.refId);
+    ensure(reference, '关联业务不存在');
     let reason;
     let caseId;
     if (event.caseType === 'complaint') {
-      ensure(order.status === 'disputed' && order.complaint && !order.complaint.resolution,
+      ensure(conversation.type === 'order' && reference.status === 'disputed' && reference.complaint && !reference.complaint.resolution,
         '该订单当前没有待处理投诉', 'E_FORBIDDEN');
-      reason = 'complaint'; caseId = order._id;
+      reason = 'complaint'; caseId = reference._id;
     } else if (event.caseType === 'report') {
       text(event.reportId, '举报记录');
       const report = await server.get('reports', event.reportId);
@@ -284,11 +285,12 @@ function createChatFlow(cloud, server) {
       caseMessage = message;
       reason = 'report'; caseId = report._id;
     } else ensure(false, '请提供有效的投诉或举报案件', 'E_FORBIDDEN');
+    await server.feature('chat', reference.communityId);
     await db.collection('auditLogs').add({ data: { action: 'chat_admin_view', actorOpenid: openid,
-      orderId: order._id, conversationId: conversation._id, caseType: reason, caseId, at: new Date() } });
-    const result = await pullMessages(conversation, order, openid, event, await server.config());
+      ...(conversation.type === 'order' ? { orderId: reference._id } : { itemId: reference._id }), conversationId: conversation._id, caseType: reason, caseId, at: new Date() } });
+    const result = await pullMessages(conversation, reference, openid, event, await server.config(), true);
     if (caseMessage && !result.list.some(item => item._id === caseMessage._id)) {
-      result.list.push(messageView(caseMessage, openid));
+      result.list.push(messageView(caseMessage, openid, true));
       result.list.sort((left, right) => left._id.localeCompare(right._id));
     }
     const senderRows = await Promise.all(result.list.map(item => server.get('messages', item._id)));

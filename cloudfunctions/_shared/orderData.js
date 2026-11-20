@@ -49,7 +49,8 @@ function cleanDetail(serviceCode, detail, community) {
     ensure(['password', 'key_handover', 'property_keybox'].includes(detail.entry), '入户方式不正确');
     return { date, entry: detail.entry, checklist: ['windows','utilities','leakMold','ventilation','mail','photos'] };
   }
-  if (serviceCode === 'help') return { category: detail.category, desc: detail.desc.trim(), blocks: detail.blocks };
+  if (serviceCode === 'help') return { category: detail.category, desc: detail.desc.trim(),
+    ...require('./helpPricing').helpTerms(community.prices.help, detail) };
   if (serviceCode === 'custom') return { title: text(detail.title, '任务标题', 100).trim(),
     desc: text(detail.desc, '任务说明', 2000).trim(), needEnterHome: detail.needEnterHome === true };
   ensure(false, '暂不支持该服务');
@@ -68,7 +69,7 @@ function addressSnapshot(user, community, building, selected = null) {
     '请重新绑定本小区门牌');
   ensure(building.units.includes(user.unit), '请选择有效单元');
   text(user.room, '门牌号', 30);
-  ensure(/^1\d{10}$/.test(user.phone || ''), '请先授权手机号并绑定门牌');
+  ensure(/^1\d{10}$/.test(user.phone || ''), '请先填写联系电话并绑定门牌');
   return { buildingName: building.name, unit: user.unit, room: user.room };
 }
 

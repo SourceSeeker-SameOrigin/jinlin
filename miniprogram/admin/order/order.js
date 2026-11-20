@@ -2,20 +2,28 @@ const api = require('../../utils/api');
 const { yuan, toFen } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
 Page({
-  data: { loading: true, busy: false, error: '', order: null, readOnly: true, providers: [], providerIndex: 0,
+  data: { missingRecord: false, loading: true, busy: false, error: '', order: null, readOnly: true, providers: [], providerIndex: 0,
     serviceRefundYuan: '0', goodsRefundYuan: '0', refundTotal: '0.00', providerLiable: false, resolutionNote: '', voidRefundYuan: '0', voidNote: '' },
-  onLoad(options) { this.orderId = options.id; },
+  onLoad(options = {}) {
+    this.orderId = typeof options.id === 'string' ? options.id.trim() : '';
+    this.setData({ missingRecord: !this.orderId, loading: !!this.orderId });
+  },
   onShow() { this.load(); },
   async load() {
+    if (!this.orderId) return;
     this.setData({ loading: true, error: '' });
     try {
       const user = await getApp().ensureSession();
       const readOnly = !user.roles.includes('admin');
       const order = await api.call('order', 'detail', { orderId: this.orderId }, { loading: false });
       const details = Object.entries(order.detail || {}).map(([key, value]) => ({ key,
-        label: ({ stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数', sorted: '已分类', shop: '店名', items: '代买清单', goodsCap: '商品预付（分）', category: '类别', desc: '描述', blocks: '时长块数' })[key] || key,
-        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : String(value) }));
+        label: ({ stationCode: '驿站', pickupCodes: '取件码', largeCount: '大件数', placement: '交付方式', bags: '袋数', sorted: '已分类', shop: '店名', items: '代买清单', goodsCap: '商品预付（分）', category: '类别', desc: '描述', blocks: '时长块数', billingMode: '计价方式', includedMinutes: '包含时长（分钟）', overtimePolicy: '超时规则' })[key] || key,
+        value: Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : ({per_visit:'按次计价',per15min:'每15分钟计价',new_order:'不自动扣费，另行确认新订单',door:'放门口',hand:'当面交'})[value] || String(value) }));
+      // The detail API exposes status history, not the private payment record or payment mode.
+      // A paid history entry confirms a payment transition, never a real cash charge.
+      const paymentRecorded = (order.timeline || []).some(item => item.status === 'paid');
       this.setData({ order, readOnly, details, slotText: slotText(order.slot), amount: yuan(order.pricing.payAmount + order.pricing.goodsCap),
+        paymentRecordText: paymentRecorded ? '已记录支付成功（不代表真实扣款）' : '未见支付成功记录',
         canCancel: ['pending_pay', 'paid', 'accepted', 'in_service'].includes(order.status) &&
           (order.kind !== 'membership_purchase' || order.status === 'pending_pay'),
         refunds: order.refunds.map(item => ({ ...item, amountText: yuan(item.amount), statusText: { failed: '失败', processing: '处理中', success: '成功' }[item.status], time: display(item.at) })) });
@@ -29,18 +37,22 @@ Page({
   },
   provider(event) { this.setData({ providerIndex: Number(event.detail.value) }); },
   openChat() {
+    if (!this.orderId) return;
     wx.navigateTo({ url: '/admin/chat/chat?caseType=complaint&orderId=' + encodeURIComponent(this.orderId) });
   },
   async assign() {
+    if (!this.orderId) return;
     const provider = this.data.providers[this.data.providerIndex];
     if (!provider) { this.setData({ error: '请选择服务员' }); return; }
     await this.perform('assign', { providerId: provider._id });
   },
   async cancel() {
+    if (!this.orderId) return;
     const answer = await new Promise(resolve => wx.showModal({ title: '强制取消', content: '确认取消订单并退还剩余已付款项吗？', success: resolve }));
     if (answer.confirm) await this.perform('forceCancel');
   },
-  retryRefund(event) { this.perform('retryRefund', { outRefundNo: event.currentTarget.dataset.no }); },
+  retryRefund(event) {
+    if (!this.orderId) return; this.perform('retryRefund', { outRefundNo: event.currentTarget.dataset.no }); },
   resolutionField(event) {
     const field = event.currentTarget.dataset.field;
     if (!['serviceRefundYuan', 'goodsRefundYuan', 'resolutionNote', 'voidRefundYuan', 'voidNote'].includes(field)) return;
@@ -50,6 +62,7 @@ Page({
   },
   liable(event) { this.setData({ providerLiable: event.detail.value.includes('liable') }); },
   async resolve() {
+    if (!this.orderId) return;
     const serviceRefundAmount = toFen(this.data.serviceRefundYuan);
     const goodsRefundAmount = this.data.order.serviceCode === 'buy' ? toFen(this.data.goodsRefundYuan) : 0;
     if (serviceRefundAmount === null || goodsRefundAmount === null) { this.setData({ error: '退款金额请填写最多两位小数的元数' }); return; }
@@ -60,6 +73,7 @@ Page({
       providerLiable: this.data.providerLiable, note: this.data.resolutionNote });
   },
   async voidCard() {
+    if (!this.orderId) return;
     const amount = toFen(this.data.voidRefundYuan);
     if (amount === null) { this.setData({ error: '请填写有效退款金额' }); return; }
     const answer = await new Promise(resolve => wx.showModal({ title: '作废月卡',
@@ -67,11 +81,12 @@ Page({
     if (answer.confirm) await this.perform('voidMembership', { refundAmount: amount, note: this.data.voidNote });
   },
   async perform(action, data = {}) {
+    if (!this.orderId) return;
     if (this.data.busy || this.data.readOnly) return;
     this.setData({ busy: true, error: '' });
     try { await api.call('admin', action, { orderId: this.orderId, ...data }); await this.load(); }
     catch (error) { this.setData({ error: error.message }); }
     finally { this.setData({ busy: false }); }
   },
-  preview(event) { wx.previewImage({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
+  preview(event) { require('../../utils/media-links').preview({ current: event.currentTarget.dataset.url, urls: [event.currentTarget.dataset.url] }); }
 });

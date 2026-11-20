@@ -57,6 +57,7 @@
 | couponTemplates | status_issueMode | status 升序、issueMode 升序 | 否 |
 | coupons | user_status_expiry | openid 升序、status 升序、validTo 升序 | 否 |
 | coupons | user_created | openid 升序、createdAt 倒序 | 否 |
+| coupons | user_created_id | openid 升序、createdAt 倒序、_id 倒序（QA76 分页，开发云已回读确认） | 否 |
 | pointsLedger | user_created | openid 升序、createdAt 倒序 | 否 |
 | idleItems | feed | communityId 升序、scope 升序、status 升序、createdAt 倒序 | 否 |
 | idleItems | seller_created | sellerOpenid 升序、communityId 升序、createdAt 倒序 | 否 |
@@ -70,8 +71,8 @@
 | merchants | status_created | status 升序、createdAt 倒序 | 否 |
 | merchants | community_status_name | communityIds 升序、status 升序、name 升序 | 否 |
 | merchantServices | merchant_status_title | merchantId 升序、status 升序、title 升序 | 否 |
+| merchantServices | merchant_created_id | merchantId 升序、createdAt 倒序、_id 倒序（QA130 本人服务分页，开发云尚待核验/创建） | 否 |
 | orders | community_service_status_completed | communityId 升序、serviceCode 升序、status 升序、completedAt 升序 | 否 |
-| pointsLedger | openid_created | openid 升序、createdAt 倒序 | 否 |
 | deliveryBatches | community_status_created | communityId 升序、status 升序、createdAt 倒序 | 否 |
 | deliveryBatches | community_station_created | communityId 升序、stationCode 升序、createdAt 倒序 | 否 |
 | deliveryBatches | community_station_status_completed | communityId 升序、stationCode 升序、status 升序、completedAt 升序 | 否 |
@@ -79,3 +80,5 @@
 | stationApplications | status_created | status 升序、createdAt 倒序 | 否 |
 | stationApplications | user_openid_unique | userOpenid 升序 | 是 |
 默认 `_id` 索引由数据库提供，无需重复创建。创建唯一索引失败时先检查重复数据；不要删除现有业务记录来强行通过。验收时逐项核对索引字段、顺序及唯一属性。
+
+2026-11-07 用户确认：`pointsLedger` 的 `user_created` 与原 `openid_created` 字段和顺序完全相同，仅保留 `user_created`，不重复创建等价索引。

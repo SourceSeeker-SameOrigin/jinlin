@@ -30,11 +30,12 @@ function commentId(postIdValue, openid, requestId) {
   return 'bc_' + crypto.createHash('sha256').update(postIdValue + ':' + openid + ':' + requestId).digest('hex').slice(0, 36);
 }
 
-async function communityContext(user) {
+async function communityContext(user, checkFeature = true) {
+  if (checkFeature && !user.communityId) await server.feature('board');
   ensure(user.communityId, '请先绑定小区门牌');
   const community = await server.get('communities', user.communityId);
   ensure(community && community.status === 'active', '小区暂不可用');
-  await server.feature('board', community._id);
+  if (checkFeature) await server.feature('board', community._id);
   return community;
 }
 
@@ -93,7 +94,7 @@ async function list(event, { user, openid }) {
 }
 
 async function detail(event, { user, openid }) {
-  const community = await communityContext(user);
+  const community = await communityContext(user, false);
   text(event.postId, '帖子');
   let post = await server.get('posts', event.postId);
   ensure(post && await canViewPost(post, community), '内容不存在或不在可见范围', 'E_FORBIDDEN');
@@ -103,13 +104,14 @@ async function detail(event, { user, openid }) {
       '悬赏任务尚未支付或已关闭', 'E_FORBIDDEN');
     post = { ...post, status: taskPostStatus(order, post) };
   }
+  ensure(!post.moderationHidden || post.authorOpenid === openid || user.roles.includes('admin'), '内容正在审核中', 'E_FORBIDDEN');
+  await server.feature('board', post.communityId);
   if (post.status === 'open' && post.expireAt && post.expireAt <= new Date() && ['ask', 'carry'].includes(post.type)) {
     await db.collection('posts').where({ _id: post._id, status: 'open' })
       .update({ data: { status: 'closed', updatedAt: new Date() } });
     post = { ...post, status: 'closed' };
   }
   if (post.type === 'carry') await server.feature('travelCarry', community._id);
-  ensure(!post.moderationHidden || post.authorOpenid === openid || user.roles.includes('admin'), '内容正在审核中', 'E_FORBIDDEN');
   const comments = await db.collection('comments').where({ postId: post._id, status: 'ok' })
     .orderBy('createdAt', 'asc').limit(100).get();
   const source = post.communityId === community._id ? null : await server.get('communities', post.communityId);
@@ -247,17 +249,18 @@ async function createTask(event, { user, openid, community, config, title, conte
 }
 
 async function comment(event, { user, openid }) {
-  const community = await communityContext(user);
+  const community = await communityContext(user, false);
   ensureCanPublish(user);
   text(event.postId, '帖子'); text(event.requestId, '请求编号', 80);
   ensure(/^[a-zA-Z0-9_-]{8,80}$/.test(event.requestId), '请求编号不正确');
   const post = await server.get('posts', event.postId);
-  ensure(post && post.status === 'open' && await canViewPost(post, community), '帖子已关闭或无权评论');
+  ensure(post && post.status === 'open' && await canViewPost(post, community), '帖子已关闭或无权评论', 'E_FORBIDDEN');
+  ensure(!post.moderationHidden, '内容正在审核中', 'E_FORBIDDEN');
+  await server.feature('board', post.communityId);
   if (post.type === 'task') {
     const order = await server.get('orders', post.orderId);
     ensure(order && taskPostStatus(order, post) === 'open', '该悬赏任务当前不能评论', 'E_BAD_STATE');
   }
-  ensure(!post.moderationHidden, '内容正在审核中');
   const config = await server.config();
   const content = await checkText(cloud, event.content, { blacklist: config.blacklist || [], type: 'comment', openid });
   const id = commentId(post._id, openid, event.requestId);
@@ -282,10 +285,11 @@ async function comment(event, { user, openid }) {
 }
 
 async function close(event, { user, openid }) {
-  const community = await communityContext(user);
+  const community = await communityContext(user, false);
   text(event.postId, '帖子');
   const post = await server.get('posts', event.postId);
   ensure(post && post.communityId === community._id && post.authorOpenid === openid, '无权关闭此内容', 'E_FORBIDDEN');
+  if (post.type !== 'task') await server.feature('board', post.communityId);
   if (post.type === 'task') {
     const order = await server.get('orders', post.orderId);
     ensure(order && order.userOpenid === openid && ['pending_pay', 'paid'].includes(order.status),
@@ -305,14 +309,15 @@ async function close(event, { user, openid }) {
 }
 
 async function report(event, { user, openid }) {
-  const community = await communityContext(user);
+  const community = await communityContext(user, false);
   const targetType = event.targetType || 'post';
   ensure(['post', 'comment'].includes(targetType), '举报对象不正确');
   const collection = COLLECTIONS[targetType];
   text(event.targetId, '举报内容');
   const target = await server.get(collection, event.targetId);
   let parentPost = targetType === 'post' ? target : target && await server.get('posts', target.postId);
-  ensure(target && parentPost && await canViewPost(parentPost, community), '内容不存在或不在可见范围');
+  ensure(target && parentPost && await canViewPost(parentPost, community), '内容不存在或不在可见范围', 'E_FORBIDDEN');
+  await server.feature('board', parentPost.communityId);
   ensure(target.authorOpenid !== openid, '不能举报自己的内容');
   const id = 'r_' + crypto.createHash('sha256').update(targetType + ':' + target._id + ':' + openid).digest('hex').slice(0, 36);
   const record = reportData(targetType, target._id, openid, event.reason, event.text || '');
@@ -329,4 +334,4 @@ async function report(event, { user, openid }) {
   });
 }
 
-exports.main = server.entry({ list, detail, create, comment, close, report }, ['resident', 'admin', 'property']);
+exports.main = server.entry({ list, detail, create, comment, close, report }, ['resident', 'admin', 'property'], 'board');
