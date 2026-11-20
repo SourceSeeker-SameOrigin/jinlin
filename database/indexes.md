@@ -71,6 +71,7 @@
 | merchants | status_created | status 升序、createdAt 倒序 | 否 |
 | merchants | community_status_name | communityIds 升序、status 升序、name 升序 | 否 |
 | merchantServices | merchant_status_title | merchantId 升序、status 升序、title 升序 | 否 |
+| merchantServices | merchant_created_id | merchantId 升序、createdAt 倒序、_id 倒序（QA130 本人服务分页，开发云尚待核验/创建） | 否 |
 | orders | community_service_status_completed | communityId 升序、serviceCode 升序、status 升序、completedAt 升序 | 否 |
 | deliveryBatches | community_status_created | communityId 升序、status 升序、createdAt 倒序 | 否 |
 | deliveryBatches | community_station_created | communityId 升序、stationCode 升序、createdAt 倒序 | 否 |

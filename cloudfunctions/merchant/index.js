@@ -167,8 +167,16 @@ async function upsertService(event, { openid }) {
 
 async function myServices(event, { openid }) {
   const merchant = await mine(openid);
-  const rows = await db.collection('merchantServices').where({ merchantId: merchant._id }).orderBy('createdAt', 'desc').limit(100).get();
-  return { merchant: visibleMerchant(merchant), list: rows.data.map(item => visibleService(item, openid)) };
+  const query = db.collection('merchantServices').where({ merchantId: merchant._id })
+    .orderBy('createdAt', 'desc').orderBy('_id', 'desc');
+  if (event.offset === undefined) {
+    const rows = await query.limit(100).get();
+    return { merchant: visibleMerchant(merchant), list: rows.data.map(item => visibleService(item, openid)) };
+  }
+  const offset = integer(event.offset, '分页位置');
+  const rows = await query.skip(offset).limit(21).get();
+  const list = rows.data.slice(0, 20).map(item => visibleService(item, openid));
+  return { merchant: visibleMerchant(merchant), list, nextOffset: offset + list.length, hasMore: rows.data.length > 20 };
 }
 
 function bookingId(event, openid) {

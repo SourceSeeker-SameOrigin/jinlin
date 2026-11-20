@@ -6,30 +6,30 @@
 <view class="masthead-subtitle">管理服务，回应邻里所需</view>
 </view>
 </view>
-<view class="card">
+<view class="card" wx:if="{{ready && !loading}}">
 <view class="field">
 <view class="label">服务名称</view>
-<input class="ui-input" placeholder="服务名称" data-field="title" value="{{title}}" bindinput="input"/>
+<input class="ui-input" placeholder="服务名称" data-field="title" value="{{title}}" bindinput="input" disabled="{{busy}}"/>
 </view>
 <view class="field"><view class="label">服务说明</view>
-<textarea class="ui-textarea" placeholder="服务说明" data-field="desc" value="{{desc}}" bindinput="input"/></view>
-<picker range="{{types}}" value="{{priceTypeIndex}}" bindchange="chooseType">
+<textarea class="ui-textarea" placeholder="服务说明" data-field="desc" value="{{desc}}" bindinput="input" disabled="{{busy}}"/></view>
+<picker range="{{types}}" value="{{priceTypeIndex}}" bindchange="chooseType" disabled="{{busy}}">
 <view class="picker">计价方式：{{types[priceTypeIndex]}}</view>
 </picker>
 <view class="field" wx:if="{{priceTypeIndex === 0}}">
 <view class="label">固定价（元）</view>
-<input class="ui-input" type="digit" placeholder="固定价（元）" data-field="price" value="{{price}}" bindinput="input"/>
+<input class="ui-input" type="digit" placeholder="固定价（元）" data-field="price" value="{{price}}" bindinput="input" disabled="{{busy}}"/>
 </view>
 <view class="field">
 <view class="label">计价单位</view>
-<input class="ui-input" placeholder="计价单位" data-field="unit" value="{{unit}}" bindinput="input"/>
+<input class="ui-input" placeholder="计价单位" data-field="unit" value="{{unit}}" bindinput="input" disabled="{{busy}}"/>
 </view>
-<button bindtap="photos" disabled="{{!ready || loading || busy}}">上传服务图片（最多 9 张）</button>
+<button bindtap="photos" disabled="{{!ready || loading || busy || images.length >= 9}}">上传服务图片（最多 9 张）</button>
 <private-media wx:for="{{images}}" wx:key="*this" src="{{item}}" media-class="photo"/>
 <button type="primary" bindtap="save" loading="{{busy}}" disabled="{{!ready || loading || busy}}">保存为待审核服务</button>
 <view class="muted">新服务默认下架；图片通过内容安全审核后，管理员才能上架。</view>
 </view>
-<view wx:if="{{error}}" class="error">{{error}}<button wx:if="{{loadError}}" bindtap="load" disabled="{{loading}}">重新加载</button></view>
+<view wx:if="{{error && !pageError}}" class="error">{{error}}<button wx:if="{{loadError}}" bindtap="retry" disabled="{{loading}}">重新加载</button></view>
 <view class="card" wx:for="{{list}}" wx:key="_id">
 <view class="section-title">{{item.title}} · {{item.status === 'on' ? '已上架' : (item.status === 'off' ? '已下架' : '状态待确认')}}</view>
 <view>{{item.desc}}</view>
@@ -39,5 +39,9 @@
 <text wx:else>预约后报价</text>
 </view>
 </view>
+<view wx:if="{{pageError}}" class="error">{{error}}<button bindtap="retry" disabled="{{loading || busy}}">重试加载更多</button></view>
+<button wx:elif="{{hasMore}}" bindtap="more" disabled="{{loading || busy}}">加载更多</button>
+<view wx:elif="{{ready && list.length}}" class="muted">已显示全部服务</view>
+<view wx:elif="{{ready && !list.length}}" class="muted">暂无服务，可在上方新增</view>
 <view wx:if="{{loading}}">正在加载…</view>
 </view>
