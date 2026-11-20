@@ -35,7 +35,7 @@ async function test(name, fn) {
       return result.data;
     });
     env.app.globalData.user = db.data.users[0];
-    const page = env.instance('miniprogram/merchant/orders/orders.js'); await page.load();
+    const page = env.instance('miniprogram/merchant/orders/orders.js'); await page.onShow();
     const template = fs.readFileSync('miniprogram/merchant/orders/orders.wxml', 'utf8');
     // Only invoke a bound pagination handler when one exists; never fabricate a UI action.
     const handler = /bindtap="([^"]+)"[^>]*>\s*加载更多/.exec(template)?.[1];
