@@ -3,29 +3,31 @@ const { yuan } = require('../../utils/money');
 const { display, slotText } = require('../../utils/time');
 const subscriptions = require('../../utils/subscriptions');
 Page({
-  data: { ready: false, loading: true, busy: false, error: '', provider: null, tasks: [], todayCount: 0, todayIncome: '0.00' },
-  onShow() { this.visible = true; return this.load(); },
+  data: { ready: false, loading: true, savingPoster: false, busy: false, error: '', provider: null, tasks: [], todayCount: 0, todayIncome: '0.00' },
+  onShow() { this.visible = true; return this.load({ preservePoster: true }); },
   clearContext() {
+    if (!this.posterRequest?.native) this.posterRequest = null;
     this.context = null; this.operation = null; this.read = (this.read || 0) + 1;
-    this.setData({ ready: false, busy: false, provider: null, tasks: [], hasMore: false,
+    this.setData({ ready: false, busy: false, savingPoster: !!this.posterRequest, provider: null, tasks: [], hasMore: false,
       todayCount: 0, todayIncome: '0.00', insuranceText: '', stationDeliveryEnabled: false, reminderHint: '' });
   },
   onHide() { this.visible = false; this.clearContext(); },
-  onUnload() { this.onHide(); },
+  onUnload() { this.posterRequest = null; this.onHide(); },
   current(context) {
     return Boolean(context && this.visible && this.read === context.read &&
       getApp().globalData.user?._id === context.userId);
   },
   rows(list) { return list.map(order => ({ ...order, amountText: yuan(order.pricing.payAmount + order.pricing.goodsCap),
     createdText: display(order.createdAt), slotText: slotText(order.slot) })); },
-  async load() {
+  async load(options = {}) {
     if (!this.visible) return;
+    if (!options.preservePoster) this.posterRequest = null;
     this.clearContext();
     this.pageError = false;
     const read = this.read;
     let userId;
     const current = () => this.visible && this.read === read && (!userId || getApp().globalData.user?._id === userId);
-    const options = { loading: false, silent: true, redirectOnForbidden: false, isActive: current };
+    const apiOptions = { loading: false, silent: true, redirectOnForbidden: false, isActive: current };
     this.setData({ remainingReminders: subscriptions.remaining() });
     this.setData({ loading: true, error: '' });
     try {
@@ -33,12 +35,13 @@ Page({
       if (!current()) return;
       userId = user?._id;
       if (!userId) throw Error('登录资料暂不可用，请重试');
+      if (this.posterRequest && this.posterRequest.userId !== userId) this.posterRequest = null;
       if (!current()) return;
-      const result = await api.call('provider', 'myStatus', {}, options);
+      const result = await api.call('provider', 'myStatus', {}, apiOptions);
       if (!current()) return;
       let tasks = { list: [], hasMore: false };
       if (result.provider?.status === 'approved') {
-        tasks = await api.call('provider', 'myTasks', {}, options);
+        tasks = await api.call('provider', 'myTasks', {}, apiOptions);
         if (!current()) return;
       }
       this.setData({ provider: result.provider, todayCount: result.todayCount, todayIncome: yuan(result.todayIncome),
@@ -47,13 +50,13 @@ Page({
           getApp().globalData.community.features.stationDelivery),
         insuranceText: result.provider ? display(result.provider.insuranceUntil).slice(0, 10) : '' });
       this.context = { userId, read };
-      this.setData({ ready: true });
-    } catch (error) { if (current()) this.setData({ error: error.message || '加载失败，请重试' }); }
-    finally { if (current()) this.setData({ loading: false }); }
+      this.setData({ ready: true, savingPoster: !!this.posterRequest });
+    } catch (error) { if (current()) { this.posterRequest = null; this.setData({ savingPoster: false, error: error.message || '加载失败，请重试' }); } }
+    finally { if (current()) { this.setData({ loading: false }); this.applyPosterResult(); } }
   },
   retry() { return this.pageError ? this.more() : this.load(); },
   async more() {
-    if (!this.visible || this.data.loading || this.data.busy || !this.data.hasMore) return;
+    if (!this.visible || this.data.loading || this.data.busy || this.data.savingPoster || !this.data.hasMore) return;
     if (!this.current(this.context)) return this.load();
     const context = this.context = { ...this.context, read: ++this.read };
     const current = () => this.context === context && this.current(context);
@@ -104,16 +107,48 @@ Page({
     const count = subscriptions.remaining();
     this.setData({ remainingReminders: count, reminderHint: count < 3 ? '提醒次数少于 3 次，可再次点击订阅补充' : '' });
   },
+  applyPosterResult() {
+    const request = this.posterRequest;
+    if (!request?.result || !this.current(this.context) || !this.data.ready || this.data.loading) return;
+    this.posterRequest = null;
+    this.setData({ savingPoster: false });
+    if (request.userId !== this.context.userId) return;
+    if (request.result.error) this.setData({ error: request.result.error });
+    else wx.showToast({ title: '推荐码已保存', icon: 'success' });
+  },
   async saveReferralPoster() {
+    if (!this.visible || !this.data.ready || this.data.loading || this.data.savingPoster) return;
+    const context = this.context;
+    if (!this.current(context)) return this.load();
+    if (this.data.provider?.status !== 'approved') return;
+    const request = this.posterRequest = { userId: context.userId, native: false };
+    const current = () => this.posterRequest === request && this.context === context && this.current(context) && this.data.ready;
+    const fail = error => {
+      if (!current()) return;
+      this.posterRequest = null;
+      this.setData({ savingPoster: false, error: error.errMsg || error.message || '推荐码保存失败' });
+    };
+    this.setData({ savingPoster: true, error: '' });
     try {
-      const result = await api.call('provider', 'referralPoster');
+      const result = await api.call('provider', 'referralPoster', {},
+        { loading: false, silent: true, redirectOnForbidden: false, isActive: current });
+      if (!current()) return;
       wx.downloadFile({ url: result.tempFileURL, success: file => {
-        if (file.statusCode !== 200) { this.setData({ error: '推荐码下载失败' }); return; }
-        wx.saveImageToPhotosAlbum({ filePath: file.tempFilePath,
-          success: () => wx.showToast({ title: '推荐码已保存', icon: 'success' }),
-          fail: error => this.setData({ error: error.errMsg || '保存失败，请检查相册权限' }) });
-      }, fail: error => this.setData({ error: error.errMsg || '下载失败' }) });
-    } catch (error) { this.setData({ error: error.message || '生成推荐码失败' }); }
+        if (!current()) return;
+        if (file.statusCode !== 200) return fail(Error('推荐码下载失败'));
+        request.native = true;
+        const finish = async result => {
+          if (this.posterRequest !== request) return;
+          if (getApp().globalData.user?._id !== request.userId) { this.posterRequest = null; return; }
+          request.result = result;
+          // 相册授权可能隐藏页面，返回后重新核验原本人资格再显示结果。
+          if (this.visible) await this.load({ preservePoster: true });
+        };
+        try { wx.saveImageToPhotosAlbum({ filePath: file.tempFilePath,
+          success: () => finish({}), fail: error => finish({ error: error.errMsg || '保存失败，请检查相册权限' }) }); }
+        catch (error) { finish({ error: error.message || '保存失败，请检查相册权限' }); }
+      }, fail });
+    } catch (error) { fail(error); }
   },
   task(event) {
     if (!this.visible || this.data.loading || !this.data.ready) return;
